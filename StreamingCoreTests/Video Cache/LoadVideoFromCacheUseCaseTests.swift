@@ -98,6 +98,18 @@ class LoadVideoFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.retrieve])
     }
 
+    func test_load_hasNoSideEffectsOnExpiredCache() {
+        let videos = uniqueVideoList()
+        let fixedCurrentDate = Date()
+        let expiredTimestamp = fixedCurrentDate.minusVideoCacheMaxAge().adding(seconds: -1)
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+
+        _ = try? sut.load()
+        store.completeRetrieval(with: videos.local, timestamp: expiredTimestamp)
+
+        XCTAssertEqual(store.receivedMessages, [.retrieve])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
