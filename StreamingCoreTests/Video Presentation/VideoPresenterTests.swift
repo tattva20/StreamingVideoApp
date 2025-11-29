@@ -30,6 +30,17 @@ class VideoPresenterTests: XCTestCase {
         ])
     }
 
+    func test_didFinishLoadingWithError_displaysErrorMessageAndStopsLoading() {
+        let (sut, view) = makeSUT()
+
+        sut.didFinishLoading(with: anyNSError())
+
+        XCTAssertEqual(view.messages, [
+            .display(isLoading: false),
+            .display(error: "Could not load videos. Please try again.")
+        ])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(file: StaticString = #filePath,

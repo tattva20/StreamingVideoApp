@@ -15,4 +15,9 @@ public final class VideoPresenter {
         view.display(isLoading: false)
         view.display(videos: videos)
     }
+
+    public func didFinishLoading(with error: Error) {
+        view.display(isLoading: false)
+        view.display(error: "Could not load videos. Please try again.")
+    }
 }
