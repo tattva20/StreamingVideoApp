@@ -30,6 +30,17 @@ class CacheVideoUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos])
     }
 
+    func test_save_requestsNewCacheInsertionWithTimestampOnSuccessfulDeletion() {
+        let timestamp = Date()
+        let videos = uniqueVideoList()
+        let (sut, store) = makeSUT(currentDate: { timestamp })
+
+        try? sut.save(videos.models)
+        store.completeDeletionSuccessfully()
+
+        XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos, .insert(videos.local, timestamp)])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,

@@ -27,6 +27,17 @@ public final class LocalVideoLoader {
 
     public func save(_ videos: [Video]) throws {
         try store.deleteCachedVideos()
+        let localVideos = videos.map { video in
+            LocalVideo(
+                id: video.id,
+                title: video.title,
+                description: video.description,
+                url: video.url,
+                thumbnailURL: video.thumbnailURL,
+                duration: video.duration
+            )
+        }
+        try store.insert(localVideos, timestamp: currentDate())
     }
 }
 
