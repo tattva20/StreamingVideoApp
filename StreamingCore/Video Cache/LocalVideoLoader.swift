@@ -51,6 +51,8 @@ public final class LocalVideoLoader {
     }
 }
 
+extension LocalVideoLoader: VideoCache {}
+
 final class VideoCachePolicy {
     private static let maxCacheAgeInDays = 7
 
