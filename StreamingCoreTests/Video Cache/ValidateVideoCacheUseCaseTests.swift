@@ -10,6 +10,15 @@ class ValidateVideoCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [])
     }
 
+    func test_validateCache_deletesCacheOnRetrievalError() {
+        let (sut, store) = makeSUT()
+
+        try? sut.validateCache()
+        store.completeRetrieval(with: anyNSError())
+
+        XCTAssertEqual(store.receivedMessages, [.retrieve, .deleteCachedVideos])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,

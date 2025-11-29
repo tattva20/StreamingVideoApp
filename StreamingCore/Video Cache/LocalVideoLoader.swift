@@ -39,6 +39,14 @@ public final class LocalVideoLoader {
         }
         try store.insert(localVideos, timestamp: currentDate())
     }
+
+    public func validateCache() throws {
+        do {
+            _ = try store.retrieve()
+        } catch {
+            try store.deleteCachedVideos()
+        }
+    }
 }
 
 final class VideoCachePolicy {
