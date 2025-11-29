@@ -18,6 +18,18 @@ class VideoPresenterTests: XCTestCase {
         XCTAssertEqual(view.messages, [.display(isLoading: true)])
     }
 
+    func test_didFinishLoadingWithVideos_displaysVideosAndStopsLoading() {
+        let (sut, view) = makeSUT()
+        let videos = [uniqueVideo(), uniqueVideo()]
+
+        sut.didFinishLoading(with: videos)
+
+        XCTAssertEqual(view.messages, [
+            .display(isLoading: false),
+            .display(videos: videos)
+        ])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(file: StaticString = #filePath,

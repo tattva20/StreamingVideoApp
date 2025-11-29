@@ -10,4 +10,9 @@ public final class VideoPresenter {
     public func didStartLoading() {
         view.display(isLoading: true)
     }
+
+    public func didFinishLoading(with videos: [Video]) {
+        view.display(isLoading: false)
+        view.display(videos: videos)
+    }
 }
