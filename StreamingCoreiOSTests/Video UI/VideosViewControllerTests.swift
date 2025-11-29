@@ -31,10 +31,13 @@ class VideosViewControllerTests: XCTestCase {
     }
 
     private class LoaderSpy: VideoLoader {
-        private(set) var loadCallCount = 0
+        var loadCallCount: Int {
+            return completions.count
+        }
+        private(set) var completions = [(Result<[Video], Error>) -> Void]()
 
         func load(completion: @escaping (Result<[Video], Error>) -> Void) {
-            loadCallCount += 1
+            completions.append(completion)
         }
     }
 }
