@@ -8,4 +8,9 @@ public final class LocalVideoLoader {
         self.store = store
         self.currentDate = currentDate
     }
+
+    public func load() throws -> [Video] {
+        _ = try store.retrieve()
+        return []
+    }
 }
