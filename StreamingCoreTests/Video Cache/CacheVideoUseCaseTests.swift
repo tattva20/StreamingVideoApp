@@ -19,6 +19,17 @@ class CacheVideoUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos])
     }
 
+    func test_save_doesNotRequestCacheInsertionOnDeletionError() {
+        let videos = [uniqueVideo(), uniqueVideo()]
+        let (sut, store) = makeSUT()
+        let deletionError = anyNSError()
+
+        try? sut.save(videos)
+        store.completeDeletion(with: deletionError)
+
+        XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
