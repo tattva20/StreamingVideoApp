@@ -24,9 +24,9 @@ class CacheVideoUseCaseTests: XCTestCase {
         let videos = [uniqueVideo(), uniqueVideo()]
         let (sut, store) = makeSUT()
         let deletionError = anyNSError()
+        store.completeDeletion(with: deletionError)
 
         try? sut.save(videos)
-        store.completeDeletion(with: deletionError)
 
         XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos])
     }
