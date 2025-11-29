@@ -35,9 +35,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 private class StubVideoLoader: VideoLoader {
-    func load(completion: @escaping (Result<[Video], Error>) -> Void) {
+    func load() async throws -> [Video] {
         // Sample videos with publicly available test video URLs (using HTTPS)
-        let sampleVideos = [
+        try await Task.sleep(for: .milliseconds(500))
+
+        return [
             Video(
                 id: UUID(),
                 title: "Big Buck Bunny",
@@ -63,10 +65,6 @@ private class StubVideoLoader: VideoLoader {
                 duration: 15
             )
         ]
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            completion(.success(sampleVideos))
-        }
     }
 }
 
