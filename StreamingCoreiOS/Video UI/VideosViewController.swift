@@ -1,11 +1,14 @@
 import UIKit
 import StreamingCore
 
-public final class VideosViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+public final class VideosViewController: UIViewController {
     private let loader: VideoLoader
-    private(set) public var tableView: UITableView?
-    private var videos = [Video]()
+    private let listViewController = ListViewController()
     public var onVideoSelection: ((Video) -> Void)?
+
+    public var tableView: UITableView? {
+        return listViewController.tableView
+    }
 
     public init(loader: VideoLoader) {
         self.loader = loader
@@ -21,46 +24,32 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
 
         title = "Videos"
 
-        let tableView = UITableView()
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
-
+        addChild(listViewController)
+        view.addSubview(listViewController.view)
+        listViewController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            listViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            listViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            listViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            listViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        listViewController.didMove(toParent: self)
 
-        self.tableView = tableView
+        listViewController.tableView?.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                self.videos = try await self.loader.load()
-                self.tableView?.reloadData()
+                let videos = try await self.loader.load()
+                let cellControllers = videos.map { video in
+                    VideoCellController(video: video, selection: { [weak self] selectedVideo in
+                        self?.onVideoSelection?(selectedVideo)
+                    })
+                }
+                self.listViewController.display(cellControllers)
             } catch {
                 // Handle error silently for now
             }
         }
-    }
-
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return videos.count
-    }
-
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "VideoCell", for: indexPath) as! VideoCell
-        let video = videos[indexPath.row]
-        cell.titleLabel.text = video.title
-        return cell
-    }
-
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let video = videos[indexPath.row]
-        onVideoSelection?(video)
     }
 }
