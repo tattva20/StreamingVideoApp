@@ -22,6 +22,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     private lazy var localVideoLoader = LocalVideoLoader(store: store, currentDate: Date.init)
 
+    private lazy var httpClient: HTTPClient = URLSessionHTTPClient()
+
+    private lazy var remoteVideoLoader: VideoLoader = {
+        // Using local HTTP server for testing
+        // Run: python3 serve-videos.py (in StreamingCore directory)
+        // Then videos.json will be served at http://localhost:8000/videos.json
+        //
+        // For production, replace with your actual API URL:
+        // let apiURL = URL(string: "https://your-api.com/videos")!
+        let apiURL = URL(string: "http://localhost:8000/videos.json")!
+        return RemoteVideoLoader(url: apiURL, client: httpClient)
+    }()
+
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
@@ -53,44 +66,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func makeVideoLoaderWithCacheFallback() -> VideoLoader {
-        // Composition: Stub (simulates remote) -> Cache on success -> Fallback to local cache on error
-        let remoteLoader = StubVideoLoader()
-        let cachedRemoteLoader = VideoLoaderCacheDecorator(decoratee: remoteLoader, cache: localVideoLoader)
-        return VideoLoaderComposite(primary: cachedRemoteLoader, fallback: localVideoLoader)
-    }
-}
-
-private class StubVideoLoader: VideoLoader {
-    func load() async throws -> [Video] {
-        // Sample videos with publicly available test video URLs (using HTTPS)
-        try await Task.sleep(for: .milliseconds(500))
-
-        return [
-            Video(
-                id: UUID(),
-                title: "Big Buck Bunny",
-                description: "A short computer-animated comedy film",
-                url: URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!,
-                thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
-                duration: 596
-            ),
-            Video(
-                id: UUID(),
-                title: "Elephant Dream",
-                description: "The first Blender open movie",
-                url: URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!,
-                thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
-                duration: 653
-            ),
-            Video(
-                id: UUID(),
-                title: "For Bigger Blazes",
-                description: "Sample video for testing",
-                url: URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4")!,
-                thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
-                duration: 15
-            )
-        ]
+        // Composition: Remote API -> Cache on success -> Fallback to local cache on error
+        let cachedRemoteLoader = VideoLoaderCacheDecorator(
+            decoratee: remoteVideoLoader,
+            cache: localVideoLoader
+        )
+        return VideoLoaderComposite(
+            primary: cachedRemoteLoader,
+            fallback: localVideoLoader
+        )
     }
 }
 
