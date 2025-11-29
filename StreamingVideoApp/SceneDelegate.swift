@@ -13,6 +13,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
+    private lazy var store = InMemoryVideoStore()
+    private lazy var localVideoLoader = LocalVideoLoader(store: store, currentDate: Date.init)
+
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
@@ -23,14 +26,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func makeRootViewController() -> UIViewController {
-        // For demo purposes, using a stub loader with sample videos
-        let videosVC = VideosViewController(loader: StubVideoLoader())
+        let videoLoader = makeVideoLoaderWithCacheFallback()
+        let videosVC = VideosViewController(loader: videoLoader)
         videosVC.onVideoSelection = { [weak videosVC] video in
             let playerVC = VideoPlayerViewController(video: video)
             videosVC?.present(playerVC, animated: true)
         }
 
         return UINavigationController(rootViewController: videosVC)
+    }
+
+    private func makeVideoLoaderWithCacheFallback() -> VideoLoader {
+        // Composition: Stub (simulates remote) -> Cache on success -> Fallback to local cache on error
+        let remoteLoader = StubVideoLoader()
+        let cachedRemoteLoader = VideoLoaderCacheDecorator(decoratee: remoteLoader, cache: localVideoLoader)
+        return VideoLoaderComposite(primary: cachedRemoteLoader, fallback: localVideoLoader)
     }
 }
 
@@ -92,9 +102,8 @@ extension SceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+        // Validate cache when app enters background
+        try? localVideoLoader.validateCache()
     }
 
 
