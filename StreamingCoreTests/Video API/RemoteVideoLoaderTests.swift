@@ -98,6 +98,20 @@ class RemoteVideoLoaderTests: XCTestCase {
         })
     }
 
+    func test_load_doesNotDeliverResultAfterSUTInstanceHasBeenDeallocated() {
+        let url = anyURL()
+        let client = HTTPClientSpy()
+        var sut: RemoteVideoLoader? = RemoteVideoLoader(url: url, client: client)
+
+        var capturedResults = [RemoteVideoLoader.Result]()
+        sut?.load { capturedResults.append($0) }
+
+        sut = nil
+        client.complete(withStatusCode: 200, data: makeVideosJSON([]))
+
+        XCTAssertTrue(capturedResults.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(url: URL = anyURL(),
