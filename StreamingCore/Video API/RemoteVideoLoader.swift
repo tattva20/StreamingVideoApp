@@ -9,8 +9,6 @@ public final class RemoteVideoLoader {
         case invalidData
     }
 
-    public typealias Result = Swift.Result<[Video], Error>
-
     public init(url: URL, client: HTTPClient) {
         self.url = url
         self.client = client
@@ -44,20 +42,9 @@ public final class RemoteVideoLoader {
             )
         }
     }
-
-    public func load(completion: @escaping (Result) -> Void) {
-        Task {
-            do {
-                let videos = try await load()
-                completion(.success(videos))
-            } catch let error as Error {
-                completion(.failure(error))
-            } catch {
-                completion(.failure(.connectivity))
-            }
-        }
-    }
 }
+
+extension RemoteVideoLoader: VideoLoader {}
 
 private struct VideosRoot: Decodable {
     let videos: [RemoteVideo]

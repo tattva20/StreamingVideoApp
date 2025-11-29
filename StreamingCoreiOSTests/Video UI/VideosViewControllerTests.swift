@@ -11,67 +11,80 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertEqual(loader.loadCallCount, 0)
     }
 
-    func test_viewDidLoad_loadsVideos() {
+    func test_viewDidLoad_loadsVideos() async {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
 
+        await Task.yield()
+
         XCTAssertEqual(loader.loadCallCount, 1)
     }
 
-    func test_viewDidLoad_loadsVideosOnlyOnce() {
+    func test_viewDidLoad_loadsVideosOnlyOnce() async {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
         sut.loadViewIfNeeded()
 
+        await Task.yield()
+
         XCTAssertEqual(loader.loadCallCount, 1)
     }
 
-    func test_loadCompletion_rendersSuccessfullyLoadedVideos() {
+    func test_loadCompletion_rendersSuccessfullyLoadedVideos() async {
         let video0 = makeVideo(title: "a title")
         let video1 = makeVideo(title: "another title")
         let (sut, loader) = makeSUT()
 
+        loader.stub = .success([video0, video1])
         sut.loadViewIfNeeded()
-        loader.completions[0](.success([video0, video1]))
+
+        await Task.yield()
 
         XCTAssertEqual(sut.numberOfRenderedVideos(), 2)
     }
 
-    func test_loadCompletion_doesNotAlterCurrentRenderingStateOnError() {
+    func test_loadCompletion_doesNotAlterCurrentRenderingStateOnError() async {
         let video = makeVideo(title: "a title")
         let (sut, loader) = makeSUT()
 
+        loader.stub = .success([video])
         sut.loadViewIfNeeded()
-        loader.completions[0](.success([video]))
+
+        await Task.yield()
+
         XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
 
-        loader.completions[0](.failure(anyNSError()))
+        loader.stub = .failure(anyNSError())
         XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
     }
 
-    func test_videoView_hasTitle() {
+    func test_videoView_hasTitle() async {
         let video = makeVideo(title: "a title")
         let (sut, loader) = makeSUT()
 
+        loader.stub = .success([video])
         sut.loadViewIfNeeded()
-        loader.completions[0](.success([video]))
+
+        await Task.yield()
 
         let view = sut.videoView(at: 0)
 
         XCTAssertNotNil(view?.titleLabel.text)
     }
 
-    func test_videoSelection_notifiesDelegate() {
+    func test_videoSelection_notifiesDelegate() async {
         let video0 = makeVideo(title: "a title")
         let video1 = makeVideo(title: "another title")
         let (sut, loader) = makeSUT()
         var selectedVideos = [Video]()
         sut.onVideoSelection = { selectedVideos.append($0) }
 
+        loader.stub = .success([video0, video1])
         sut.loadViewIfNeeded()
-        loader.completions[0](.success([video0, video1]))
+
+        await Task.yield()
 
         sut.simulateTapOnVideo(at: 0)
         XCTAssertEqual(selectedVideos, [video0])
@@ -101,12 +114,14 @@ class VideosViewControllerTests: XCTestCase {
 
     private class LoaderSpy: VideoLoader {
         var loadCallCount: Int {
-            return completions.count
+            return loadCalls.count
         }
-        private(set) var completions = [(Result<[Video], Error>) -> Void]()
+        private(set) var loadCalls = [Void]()
+        var stub: Result<[Video], Error> = .success([])
 
-        func load(completion: @escaping (Result<[Video], Error>) -> Void) {
-            completions.append(completion)
+        func load() async throws -> [Video] {
+            loadCalls.append(())
+            return try stub.get()
         }
     }
 }

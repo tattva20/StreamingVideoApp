@@ -37,10 +37,13 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
 
         self.tableView = tableView
 
-        loader.load { [weak self] result in
-            if case let .success(videos) = result {
-                self?.videos = videos
-                self?.tableView?.reloadData()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                self.videos = try await self.loader.load()
+                self.tableView?.reloadData()
+            } catch {
+                // Handle error silently for now
             }
         }
     }
