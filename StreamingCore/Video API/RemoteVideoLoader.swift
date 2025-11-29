@@ -22,8 +22,18 @@ public final class RemoteVideoLoader {
             case .failure:
                 completion(.failure(.connectivity))
             case let .success((data, response)):
-                if response.statusCode == 200, let _ = try? JSONDecoder().decode(VideosRoot.self, from: data) {
-                    completion(.success([]))
+                if response.statusCode == 200, let root = try? JSONDecoder().decode(VideosRoot.self, from: data) {
+                    let videos = root.videos.map { remoteVideo in
+                        Video(
+                            id: remoteVideo.id,
+                            title: remoteVideo.title,
+                            description: remoteVideo.description,
+                            url: remoteVideo.url,
+                            thumbnailURL: remoteVideo.thumbnailURL,
+                            duration: remoteVideo.duration
+                        )
+                    }
+                    completion(.success(videos))
                 } else {
                     completion(.failure(.invalidData))
                 }

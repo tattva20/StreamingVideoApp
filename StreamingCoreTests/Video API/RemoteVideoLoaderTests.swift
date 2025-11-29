@@ -69,6 +69,35 @@ class RemoteVideoLoaderTests: XCTestCase {
         })
     }
 
+    func test_load_deliversVideosOn200HTTPResponseWithJSONVideos() {
+        let (sut, client) = makeSUT()
+
+        let video1 = makeVideo(
+            id: UUID(),
+            title: "a title",
+            description: "a description",
+            url: URL(string: "https://any-url.com/video1.mp4")!,
+            thumbnailURL: URL(string: "https://any-url.com/thumb1.jpg")!,
+            duration: 120
+        )
+
+        let video2 = makeVideo(
+            id: UUID(),
+            title: "another title",
+            description: nil,
+            url: URL(string: "https://any-url.com/video2.mp4")!,
+            thumbnailURL: URL(string: "https://any-url.com/thumb2.jpg")!,
+            duration: 240
+        )
+
+        let videos = [video1.model, video2.model]
+
+        expect(sut, toCompleteWith: .success(videos), when: {
+            let json = makeVideosJSON([video1.json, video2.json])
+            client.complete(withStatusCode: 200, data: json)
+        })
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(url: URL = anyURL(),
@@ -101,6 +130,21 @@ class RemoteVideoLoaderTests: XCTestCase {
         default:
             XCTFail("Expected result \(expectedResult), got \(String(describing: capturedResults.first)) instead", file: file, line: line)
         }
+    }
+
+    private func makeVideo(id: UUID, title: String, description: String?, url: URL, thumbnailURL: URL, duration: TimeInterval) -> (model: Video, json: [String: Any]) {
+        let model = Video(id: id, title: title, description: description, url: url, thumbnailURL: thumbnailURL, duration: duration)
+
+        let json: [String: Any] = [
+            "id": id.uuidString,
+            "title": title,
+            "description": description as Any,
+            "url": url.absoluteString,
+            "thumbnail_url": thumbnailURL.absoluteString,
+            "duration": duration
+        ].compactMapValues { $0 }
+
+        return (model, json)
     }
 
     private func makeVideosJSON(_ videos: [[String: Any]]) -> Data {
