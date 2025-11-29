@@ -41,6 +41,15 @@ class CacheVideoUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos, .insert(videos.local, timestamp)])
     }
 
+    func test_save_failsOnDeletionError() {
+        let (sut, store) = makeSUT()
+        let deletionError = anyNSError()
+
+        expect(sut, toCompleteWithError: deletionError, when: {
+            store.completeDeletion(with: deletionError)
+        })
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
@@ -51,5 +60,23 @@ class CacheVideoUseCaseTests: XCTestCase {
         trackForMemoryLeaks(store, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, store)
+    }
+
+    private func expect(_ sut: LocalVideoLoader,
+                       toCompleteWithError expectedError: NSError,
+                       when action: () -> Void,
+                       file: StaticString = #filePath,
+                       line: UInt = #line) {
+        let videos = [uniqueVideo(), uniqueVideo()]
+
+        var receivedError: Error?
+        do {
+            try sut.save(videos)
+            action()
+        } catch {
+            receivedError = error
+        }
+
+        XCTAssertEqual(receivedError as NSError?, expectedError, file: file, line: line)
     }
 }
