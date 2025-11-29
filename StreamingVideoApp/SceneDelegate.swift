@@ -36,13 +36,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 private class StubVideoLoader: VideoLoader {
     func load(completion: @escaping (Result<[Video], Error>) -> Void) {
-        // Sample videos with publicly available test video URLs
+        // Sample videos with publicly available test video URLs (using HTTPS)
         let sampleVideos = [
             Video(
                 id: UUID(),
                 title: "Big Buck Bunny",
                 description: "A short computer-animated comedy film",
-                url: URL(string: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!,
+                url: URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!,
                 thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
                 duration: 596
             ),
@@ -50,7 +50,7 @@ private class StubVideoLoader: VideoLoader {
                 id: UUID(),
                 title: "Elephant Dream",
                 description: "The first Blender open movie",
-                url: URL(string: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!,
+                url: URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!,
                 thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
                 duration: 653
             ),
@@ -58,7 +58,7 @@ private class StubVideoLoader: VideoLoader {
                 id: UUID(),
                 title: "For Bigger Blazes",
                 description: "Sample video for testing",
-                url: URL(string: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4")!,
+                url: URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4")!,
                 thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
                 duration: 15
             )
