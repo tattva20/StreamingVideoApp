@@ -39,7 +39,23 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertEqual(sut.numberOfRenderedVideos(), 2)
     }
 
+    func test_loadCompletion_doesNotAlterCurrentRenderingStateOnError() {
+        let video = makeVideo(title: "a title")
+        let (sut, loader) = makeSUT()
+
+        sut.loadViewIfNeeded()
+        loader.completions[0](.success([video]))
+        XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
+
+        loader.completions[0](.failure(anyNSError()))
+        XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
+    }
+
     // MARK: - Helpers
+
+    private func anyNSError() -> NSError {
+        return NSError(domain: "any error", code: 0)
+    }
 
     private func makeVideo(title: String) -> Video {
         return Video(id: UUID(), title: title, description: "a description", url: URL(string: "https://any-url.com")!, thumbnailURL: URL(string: "https://any-url.com")!, duration: 120)
