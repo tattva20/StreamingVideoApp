@@ -23,11 +23,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func makeRootViewController() -> UIViewController {
-        let url = URL(string: "https://demo-videos-api.com/videos")!
-        let client = URLSessionHTTPClient()
-        let remoteLoader = RemoteVideoLoader(url: url, client: client)
-
-        let videosVC = VideosViewController(loader: remoteLoader)
+        // For demo purposes, using a stub loader with sample videos
+        let videosVC = VideosViewController(loader: StubVideoLoader())
         videosVC.onVideoSelection = { [weak videosVC] video in
             let playerVC = VideoPlayerViewController(video: video)
             videosVC?.present(playerVC, animated: true)
@@ -35,7 +32,45 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         return UINavigationController(rootViewController: videosVC)
     }
+}
 
+private class StubVideoLoader: VideoLoader {
+    func load(completion: @escaping (Result<[Video], Error>) -> Void) {
+        // Sample videos with publicly available test video URLs
+        let sampleVideos = [
+            Video(
+                id: UUID(),
+                title: "Big Buck Bunny",
+                description: "A short computer-animated comedy film",
+                url: URL(string: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!,
+                thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
+                duration: 596
+            ),
+            Video(
+                id: UUID(),
+                title: "Elephant Dream",
+                description: "The first Blender open movie",
+                url: URL(string: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!,
+                thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
+                duration: 653
+            ),
+            Video(
+                id: UUID(),
+                title: "For Bigger Blazes",
+                description: "Sample video for testing",
+                url: URL(string: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4")!,
+                thumbnailURL: URL(string: "https://via.placeholder.com/150")!,
+                duration: 15
+            )
+        ]
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            completion(.success(sampleVideos))
+        }
+    }
+}
+
+extension SceneDelegate {
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
         // This occurs shortly after the scene enters the background, or when its session is discarded.
