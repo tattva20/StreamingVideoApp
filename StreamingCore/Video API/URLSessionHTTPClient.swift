@@ -7,15 +7,13 @@ public final class URLSessionHTTPClient: HTTPClient {
         self.session = session
     }
 
-    public func get(from url: URL, completion: @escaping (HTTPClient.Result) -> Void) {
-        session.dataTask(with: url) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-            } else if let data = data, let response = response as? HTTPURLResponse {
-                completion(.success((data, response)))
-            } else {
-                completion(.failure(NSError(domain: "URLSessionHTTPClient", code: 0)))
-            }
-        }.resume()
+    public func get(from url: URL) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await session.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "URLSessionHTTPClient", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response type"])
+        }
+
+        return (data, httpResponse)
     }
 }

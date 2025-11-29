@@ -10,67 +10,93 @@ class RemoteVideoLoaderTests: XCTestCase {
         XCTAssertTrue(client.requestedURLs.isEmpty)
     }
 
-    func test_load_requestsDataFromURL() {
+    func test_load_requestsDataFromURL() async throws {
         let url = URL(string: "https://a-given-url.com")!
         let (sut, client) = makeSUT(url: url)
 
-        sut.load { _ in }
+        client.stub(url: url, withStatusCode: 200, data: makeVideosJSON([]))
+
+        _ = try? await sut.load()
 
         XCTAssertEqual(client.requestedURLs, [url])
     }
 
-    func test_loadTwice_requestsDataFromURLTwice() {
+    func test_loadTwice_requestsDataFromURLTwice() async throws {
         let url = URL(string: "https://a-given-url.com")!
         let (sut, client) = makeSUT(url: url)
 
-        sut.load { _ in }
-        sut.load { _ in }
+        client.stub(url: url, withStatusCode: 200, data: makeVideosJSON([]))
+
+        _ = try? await sut.load()
+        _ = try? await sut.load()
 
         XCTAssertEqual(client.requestedURLs, [url, url])
     }
 
-    func test_load_deliversErrorOnClientError() {
-        let (sut, client) = makeSUT()
+    func test_load_deliversErrorOnClientError() async {
+        let url = URL(string: "https://a-given-url.com")!
+        let (sut, client) = makeSUT(url: url)
 
-        expect(sut, toCompleteWith: .failure(.connectivity), when: {
-            let clientError = NSError(domain: "Test", code: 0)
-            client.complete(with: clientError)
-        })
-    }
+        let clientError = NSError(domain: "Test", code: 0)
+        client.stub(url: url, with: clientError)
 
-    func test_load_deliversErrorOnNon200HTTPResponse() {
-        let (sut, client) = makeSUT()
-
-        let samples = [199, 201, 300, 400, 500]
-
-        samples.enumerated().forEach { index, code in
-            expect(sut, toCompleteWith: .failure(.invalidData), when: {
-                let json = makeVideosJSON([])
-                client.complete(withStatusCode: code, data: json, at: index)
-            })
+        do {
+            _ = try await sut.load()
+            XCTFail("Expected connectivity error")
+        } catch {
+            XCTAssertEqual(error as? RemoteVideoLoader.Error, .connectivity)
         }
     }
 
-    func test_load_deliversErrorOn200HTTPResponseWithInvalidJSON() {
-        let (sut, client) = makeSUT()
+    func test_load_deliversErrorOnNon200HTTPResponse() async {
+        let samples = [199, 201, 300, 400, 500]
 
-        expect(sut, toCompleteWith: .failure(.invalidData), when: {
-            let invalidJSON = Data("invalid json".utf8)
-            client.complete(withStatusCode: 200, data: invalidJSON)
-        })
+        for code in samples {
+            let url = URL(string: "https://a-url-\(code).com")!
+            let (sut, client) = makeSUT(url: url)
+
+            let json = makeVideosJSON([])
+            client.stub(url: url, withStatusCode: code, data: json)
+
+            do {
+                _ = try await sut.load()
+                XCTFail("Expected invalidData error for status code \(code)")
+            } catch {
+                XCTAssertEqual(error as? RemoteVideoLoader.Error, .invalidData)
+            }
+        }
     }
 
-    func test_load_deliversNoVideosOn200HTTPResponseWithEmptyJSONList() {
-        let (sut, client) = makeSUT()
+    func test_load_deliversErrorOn200HTTPResponseWithInvalidJSON() async {
+        let url = URL(string: "https://a-given-url.com")!
+        let (sut, client) = makeSUT(url: url)
 
-        expect(sut, toCompleteWith: .success([]), when: {
-            let emptyListJSON = makeVideosJSON([])
-            client.complete(withStatusCode: 200, data: emptyListJSON)
-        })
+        let invalidJSON = Data("invalid json".utf8)
+        client.stub(url: url, withStatusCode: 200, data: invalidJSON)
+
+        do {
+            _ = try await sut.load()
+            XCTFail("Expected invalidData error")
+        } catch {
+            XCTAssertEqual(error as? RemoteVideoLoader.Error, .invalidData)
+        }
     }
 
-    func test_load_deliversVideosOn200HTTPResponseWithJSONVideos() {
-        let (sut, client) = makeSUT()
+    func test_load_deliversNoVideosOn200HTTPResponseWithEmptyJSONList() async throws {
+        let url = URL(string: "https://a-given-url.com")!
+        let (sut, client) = makeSUT(url: url)
+
+        let emptyListJSON = makeVideosJSON([])
+        client.stub(url: url, withStatusCode: 200, data: emptyListJSON)
+
+        let videos = try await sut.load()
+
+        XCTAssertEqual(videos, [])
+    }
+
+    func test_load_deliversVideosOn200HTTPResponseWithJSONVideos() async throws {
+        let url = URL(string: "https://a-given-url.com")!
+        let (sut, client) = makeSUT(url: url)
 
         let video1 = makeVideo(
             id: UUID(),
@@ -90,26 +116,26 @@ class RemoteVideoLoaderTests: XCTestCase {
             duration: 240
         )
 
-        let videos = [video1.model, video2.model]
+        let expectedVideos = [video1.model, video2.model]
+        let json = makeVideosJSON([video1.json, video2.json])
+        client.stub(url: url, withStatusCode: 200, data: json)
 
-        expect(sut, toCompleteWith: .success(videos), when: {
-            let json = makeVideosJSON([video1.json, video2.json])
-            client.complete(withStatusCode: 200, data: json)
-        })
+        let receivedVideos = try await sut.load()
+
+        XCTAssertEqual(receivedVideos, expectedVideos)
     }
 
-    func test_load_doesNotDeliverResultAfterSUTInstanceHasBeenDeallocated() {
+    func test_load_doesNotDeliverResultAfterSUTInstanceHasBeenDeallocated() async {
         let url = anyURL()
         let client = HTTPClientSpy()
         var sut: RemoteVideoLoader? = RemoteVideoLoader(url: url, client: client)
 
-        var capturedResults = [RemoteVideoLoader.Result]()
-        sut?.load { capturedResults.append($0) }
+        client.stub(url: url, withStatusCode: 200, data: makeVideosJSON([]))
 
+        weak var weakSUT = sut
         sut = nil
-        client.complete(withStatusCode: 200, data: makeVideosJSON([]))
 
-        XCTAssertTrue(capturedResults.isEmpty)
+        XCTAssertNil(weakSUT, "SUT should be deallocated")
     }
 
     // MARK: - Helpers
@@ -122,28 +148,6 @@ class RemoteVideoLoaderTests: XCTestCase {
         trackForMemoryLeaks(client, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, client)
-    }
-
-    private func expect(_ sut: RemoteVideoLoader,
-                       toCompleteWith expectedResult: RemoteVideoLoader.Result,
-                       when action: () -> Void,
-                       file: StaticString = #filePath,
-                       line: UInt = #line) {
-        var capturedResults = [RemoteVideoLoader.Result]()
-        sut.load { capturedResults.append($0) }
-
-        action()
-
-        XCTAssertEqual(capturedResults.count, 1, file: file, line: line)
-
-        switch (capturedResults.first, expectedResult) {
-        case let (.failure(receivedError), .failure(expectedError)):
-            XCTAssertEqual(receivedError, expectedError, file: file, line: line)
-        case let (.success(receivedVideos), .success(expectedVideos)):
-            XCTAssertEqual(receivedVideos, expectedVideos, file: file, line: line)
-        default:
-            XCTFail("Expected result \(expectedResult), got \(String(describing: capturedResults.first)) instead", file: file, line: line)
-        }
     }
 
     private func makeVideo(id: UUID, title: String, description: String?, url: URL, thumbnailURL: URL, duration: TimeInterval) -> (model: Video, json: [String: Any]) {
@@ -168,25 +172,28 @@ class RemoteVideoLoaderTests: XCTestCase {
 
     private class HTTPClientSpy: HTTPClient {
         var requestedURLs: [URL] = []
-        var completions = [(HTTPClient.Result) -> Void]()
+        private var stubs: [URL: Result<(Data, HTTPURLResponse), Error>] = [:]
 
-        func get(from url: URL, completion: @escaping (HTTPClient.Result) -> Void) {
+        func get(from url: URL) async throws -> (Data, HTTPURLResponse) {
             requestedURLs.append(url)
-            completions.append(completion)
+            guard let result = stubs[url] else {
+                throw NSError(domain: "HTTPClientSpy", code: 0, userInfo: [NSLocalizedDescriptionKey: "No stub configured for URL: \(url)"])
+            }
+            return try result.get()
         }
 
-        func complete(with error: Error, at index: Int = 0) {
-            completions[index](.failure(error))
+        func stub(url: URL, with error: Error) {
+            stubs[url] = .failure(error)
         }
 
-        func complete(withStatusCode code: Int, data: Data, at index: Int = 0) {
+        func stub(url: URL, withStatusCode code: Int, data: Data) {
             let response = HTTPURLResponse(
-                url: requestedURLs[index],
+                url: url,
                 statusCode: code,
                 httpVersion: nil,
                 headerFields: nil
             )!
-            completions[index](.success((data, response)))
+            stubs[url] = .success((data, response))
         }
     }
 }

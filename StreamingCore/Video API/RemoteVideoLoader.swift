@@ -16,29 +16,44 @@ public final class RemoteVideoLoader {
         self.client = client
     }
 
-    public func load(completion: @escaping (Result) -> Void) {
-        client.get(from: url) { [weak self] result in
-            guard self != nil else { return }
+    public func load() async throws -> [Video] {
+        let (data, response): (Data, HTTPURLResponse)
 
-            switch result {
-            case .failure:
+        do {
+            (data, response) = try await client.get(from: url)
+        } catch {
+            throw Error.connectivity
+        }
+
+        guard response.statusCode == 200 else {
+            throw Error.invalidData
+        }
+
+        guard let root = try? JSONDecoder().decode(VideosRoot.self, from: data) else {
+            throw Error.invalidData
+        }
+
+        return root.videos.map { remoteVideo in
+            Video(
+                id: remoteVideo.id,
+                title: remoteVideo.title,
+                description: remoteVideo.description,
+                url: remoteVideo.url,
+                thumbnailURL: remoteVideo.thumbnailURL,
+                duration: remoteVideo.duration
+            )
+        }
+    }
+
+    public func load(completion: @escaping (Result) -> Void) {
+        Task {
+            do {
+                let videos = try await load()
+                completion(.success(videos))
+            } catch let error as Error {
+                completion(.failure(error))
+            } catch {
                 completion(.failure(.connectivity))
-            case let .success((data, response)):
-                if response.statusCode == 200, let root = try? JSONDecoder().decode(VideosRoot.self, from: data) {
-                    let videos = root.videos.map { remoteVideo in
-                        Video(
-                            id: remoteVideo.id,
-                            title: remoteVideo.title,
-                            description: remoteVideo.description,
-                            url: remoteVideo.url,
-                            thumbnailURL: remoteVideo.thumbnailURL,
-                            duration: remoteVideo.duration
-                        )
-                    }
-                    completion(.success(videos))
-                } else {
-                    completion(.failure(.invalidData))
-                }
             }
         }
     }
