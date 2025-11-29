@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData
 import StreamingCore
 import StreamingCoreiOS
 
@@ -13,7 +14,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-    private lazy var store = InMemoryVideoStore()
+    private lazy var store: VideoStore = {
+        let storeURL = NSPersistentContainer.defaultDirectoryURL()
+            .appendingPathComponent("video-store.sqlite")
+        return try! CoreDataVideoStore(storeURL: storeURL)
+    }()
+
     private lazy var localVideoLoader = LocalVideoLoader(store: store, currentDate: Date.init)
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
