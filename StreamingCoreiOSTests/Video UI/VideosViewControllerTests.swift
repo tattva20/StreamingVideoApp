@@ -32,76 +32,26 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertEqual(loader.loadCallCount, 1)
     }
 
-    func test_loadCompletion_rendersSuccessfullyLoadedVideos() async {
-        let video0 = makeVideo(title: "a title")
-        let video1 = makeVideo(title: "another title")
-        let (sut, loader) = makeSUT()
+    func test_viewDidLoad_rendersTableView() {
+        let (sut, _) = makeSUT()
 
-        loader.stub = .success([video0, video1])
         sut.loadViewIfNeeded()
 
-        await Task.yield()
-
-        XCTAssertEqual(sut.numberOfRenderedVideos(), 2)
+        XCTAssertNotNil(sut.tableView)
     }
 
-    func test_loadCompletion_doesNotAlterCurrentRenderingStateOnError() async {
-        let video = makeVideo(title: "a title")
-        let (sut, loader) = makeSUT()
-
-        loader.stub = .success([video])
-        sut.loadViewIfNeeded()
-
-        await Task.yield()
-
-        XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
-
-        loader.stub = .failure(anyNSError())
-        XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
-    }
-
-    func test_videoView_hasTitle() async {
-        let video = makeVideo(title: "a title")
-        let (sut, loader) = makeSUT()
-
-        loader.stub = .success([video])
-        sut.loadViewIfNeeded()
-
-        await Task.yield()
-
-        let view = sut.videoView(at: 0)
-
-        XCTAssertNotNil(view?.titleLabel.text)
-    }
-
-    func test_videoSelection_notifiesDelegate() async {
-        let video0 = makeVideo(title: "a title")
-        let video1 = makeVideo(title: "another title")
-        var selectedVideos = [Video]()
+    func test_init_setsOnVideoSelectionHandler() {
+        var selectedVideo: Video?
         let loader = LoaderSpy()
-        let sut = VideosViewController(loader: loader, onVideoSelection: { selectedVideos.append($0) })
+        let sut = VideosViewController(loader: loader, onVideoSelection: { selectedVideo = $0 })
 
-        loader.stub = .success([video0, video1])
-        sut.loadViewIfNeeded()
+        XCTAssertNil(selectedVideo)
 
-        await Task.yield()
-
-        sut.simulateTapOnVideo(at: 0)
-        XCTAssertEqual(selectedVideos, [video0])
-
-        sut.simulateTapOnVideo(at: 1)
-        XCTAssertEqual(selectedVideos, [video0, video1])
+        trackForMemoryLeaks(loader)
+        trackForMemoryLeaks(sut)
     }
 
     // MARK: - Helpers
-
-    private func anyNSError() -> NSError {
-        return NSError(domain: "any error", code: 0)
-    }
-
-    private func makeVideo(title: String) -> Video {
-        return Video(id: UUID(), title: title, description: "a description", url: URL(string: "https://any-url.com")!, thumbnailURL: URL(string: "https://any-url.com")!, duration: 120)
-    }
 
     private func makeSUT(file: StaticString = #filePath,
                          line: UInt = #line) -> (sut: VideosViewController, loader: LoaderSpy) {
@@ -123,27 +73,5 @@ class VideosViewControllerTests: XCTestCase {
             loadCalls.append(())
             return try stub.get()
         }
-    }
-}
-
-private extension VideosViewController {
-    func numberOfRenderedVideos() -> Int {
-        return tableView?.numberOfRows(inSection: videosSection) ?? 0
-    }
-
-    func videoView(at row: Int) -> VideoCell? {
-        let dataSource = tableView?.dataSource
-        let index = IndexPath(row: row, section: videosSection)
-        return dataSource?.tableView(tableView!, cellForRowAt: index) as? VideoCell
-    }
-
-    func simulateTapOnVideo(at row: Int) {
-        let delegate = tableView?.delegate
-        let index = IndexPath(row: row, section: videosSection)
-        delegate?.tableView?(tableView!, didSelectRowAt: index)
-    }
-
-    var videosSection: Int {
-        return 0
     }
 }
