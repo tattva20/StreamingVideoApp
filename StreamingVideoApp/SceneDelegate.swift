@@ -25,13 +25,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private lazy var httpClient: HTTPClient = URLSessionHTTPClient()
 
     private lazy var remoteVideoLoader: VideoLoader = {
-        // Using local HTTP server for testing
-        // Run: python3 serve-videos.py (in StreamingCore directory)
-        // Then videos.json will be served at http://localhost:8000/videos.json
-        //
-        // For production, replace with your actual API URL:
-        // let apiURL = URL(string: "https://your-api.com/videos")!
-        let apiURL = URL(string: "http://localhost:8000/videos.json")!
+        // Production API: GitHub Pages
+        // Repository: https://github.com/tattva20/streaming-videos-api
+        // Serves videos.json with direct streaming URLs
+        let apiURL = URL(string: "https://tattva20.github.io/streaming-videos-api/videos.json")!
         return RemoteVideoLoader(url: apiURL, client: httpClient)
     }()
 
