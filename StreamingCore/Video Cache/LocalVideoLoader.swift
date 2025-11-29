@@ -42,7 +42,9 @@ public final class LocalVideoLoader {
 
     public func validateCache() throws {
         do {
-            _ = try store.retrieve()
+            if let cache = try store.retrieve(), !VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
+                try store.deleteCachedVideos()
+            }
         } catch {
             try store.deleteCachedVideos()
         }

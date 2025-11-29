@@ -28,6 +28,18 @@ class ValidateVideoCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.retrieve])
     }
 
+    func test_validateCache_doesNotDeleteNonExpiredCache() {
+        let videos = uniqueVideoList()
+        let fixedCurrentDate = Date()
+        let nonExpiredTimestamp = fixedCurrentDate.minusVideoCacheMaxAge().adding(seconds: 1)
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+
+        try? sut.validateCache()
+        store.completeRetrieval(with: videos.local, timestamp: nonExpiredTimestamp)
+
+        XCTAssertEqual(store.receivedMessages, [.retrieve])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
