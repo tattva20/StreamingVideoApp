@@ -60,6 +60,22 @@ class CacheVideoUseCaseTests: XCTestCase {
         })
     }
 
+    func test_save_succeedsOnSuccessfulCacheInsertion() {
+        let (sut, store) = makeSUT()
+        let videos = [uniqueVideo(), uniqueVideo()]
+
+        var receivedError: Error?
+        do {
+            try sut.save(videos)
+            store.completeDeletionSuccessfully()
+            store.completeInsertionSuccessfully()
+        } catch {
+            receivedError = error
+        }
+
+        XCTAssertNil(receivedError)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
