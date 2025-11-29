@@ -11,6 +11,14 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertEqual(loader.loadCallCount, 0)
     }
 
+    func test_viewDidLoad_loadsVideos() {
+        let (sut, loader) = makeSUT()
+
+        sut.loadViewIfNeeded()
+
+        XCTAssertEqual(loader.loadCallCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(file: StaticString = #filePath,
