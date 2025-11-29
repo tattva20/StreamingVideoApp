@@ -19,10 +19,22 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
     public override func viewDidLoad() {
         super.viewDidLoad()
 
+        title = "Videos"
+
         let tableView = UITableView()
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
+
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
         self.tableView = tableView
 
         loader.load { [weak self] result in
