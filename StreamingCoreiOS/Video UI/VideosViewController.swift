@@ -7,7 +7,7 @@ public final class VideosViewController: UIViewController {
     private let listViewController = ListViewController()
     private let viewAdapter: VideosViewAdapter
 
-    public var tableView: UITableView? {
+    public var tableView: UITableView {
         return listViewController.tableView
     }
 
@@ -33,7 +33,7 @@ public final class VideosViewController: UIViewController {
         title = "Videos"
 
         setupListViewController()
-        listViewController.tableView?.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
+        listViewController.tableView.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
 
         adapter.loadResource()
     }

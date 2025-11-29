@@ -1,42 +1,67 @@
 import UIKit
+import StreamingCore
 
-public final class ListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    public private(set) var tableView: UITableView?
+public final class ListViewController: UITableViewController, ResourceLoadingView, ResourceErrorView {
+    public private(set) var errorView = ErrorView()
     private var cellControllers = [CellController]()
+
+    public var onRefresh: (() -> Void)?
 
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        let tableView = UITableView()
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
+        configureTableView()
+        configureRefreshControl()
+    }
 
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+    private func configureTableView() {
+        tableView.tableHeaderView = errorView.makeContainer()
 
-        self.tableView = tableView
+        errorView.onHide = { [weak self] in
+            self?.tableView.beginUpdates()
+            self?.tableView.sizeTableHeaderToFit()
+            self?.tableView.endUpdates()
+        }
+    }
+
+    private func configureRefreshControl() {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
+        self.refreshControl = refreshControl
+    }
+
+    @objc private func refresh() {
+        onRefresh?()
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        tableView.sizeTableHeaderToFit()
     }
 
     public func display(_ cellControllers: [CellController]) {
         self.cellControllers = cellControllers
-        tableView?.reloadData()
+        tableView.reloadData()
     }
 
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public func display(_ viewModel: ResourceLoadingViewModel) {
+        refreshControl?.update(isRefreshing: viewModel.isLoading)
+    }
+
+    public func display(_ viewModel: ResourceErrorViewModel) {
+        errorView.message = viewModel.message
+    }
+
+    public override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return cellControllers.count
     }
 
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         return cellControllers[indexPath.row].view(in: tableView)
     }
 
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    public override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         cellControllers[indexPath.row].didSelect()
     }
 }

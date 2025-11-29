@@ -4,12 +4,6 @@ import StreamingCoreiOS
 @MainActor
 final class ListViewControllerTests: XCTestCase {
 
-    func test_init_doesNotLoadTableView() {
-        let (_, view) = makeSUT()
-
-        XCTAssertNil(view.tableView, "Expected tableView to be nil before view is loaded")
-    }
-
     func test_viewDidLoad_rendersTableView() {
         let (_, view) = makeSUT()
 
