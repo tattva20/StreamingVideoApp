@@ -46,6 +46,17 @@ class LoadVideoFromCacheUseCaseTests: XCTestCase {
         })
     }
 
+    func test_load_deliversNoVideosOnCacheExpiration() {
+        let videos = uniqueVideoList()
+        let fixedCurrentDate = Date()
+        let expirationTimestamp = fixedCurrentDate.minusVideoCacheMaxAge()
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+
+        expect(sut, toCompleteWith: .success([]), when: {
+            store.completeRetrieval(with: videos.local, timestamp: expirationTimestamp)
+        })
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,

@@ -10,7 +10,7 @@ public final class LocalVideoLoader {
     }
 
     public func load() throws -> [Video] {
-        if let cache = try store.retrieve() {
+        if let cache = try store.retrieve(), VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
             return cache.videos.map { localVideo in
                 Video(
                     id: localVideo.id,
@@ -23,5 +23,16 @@ public final class LocalVideoLoader {
             }
         }
         return []
+    }
+}
+
+final class VideoCachePolicy {
+    private static let maxCacheAgeInDays = 7
+
+    static func validate(_ timestamp: Date, against date: Date) -> Bool {
+        guard let maxCacheAge = Calendar(identifier: .gregorian).date(byAdding: .day, value: maxCacheAgeInDays, to: timestamp) else {
+            return false
+        }
+        return date < maxCacheAge
     }
 }
