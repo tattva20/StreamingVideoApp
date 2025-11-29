@@ -48,7 +48,7 @@
          </BuildableReference>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6ECF5BE42EDB4252004A0835"
+            BlueprintIdentifier = "6ECF5BE92EDB4252004A0835"
             BuildableName = "StreamingCoreiOS.framework"
             BlueprintName = "StreamingCoreiOS"
             ReferencedContainer = "container:StreamingCore.xcodeproj">

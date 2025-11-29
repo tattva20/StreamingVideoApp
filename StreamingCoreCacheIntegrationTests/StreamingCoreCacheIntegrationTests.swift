@@ -10,27 +10,26 @@ import StreamingCore
 
 @MainActor
 final class StreamingCoreCacheIntegrationTests: XCTestCase {
-    private var store: InMemoryVideoStore!
 
-    override func setUp() {
-        super.setUp()
-        store = InMemoryVideoStore()
+    override func setUp() async throws {
+        try await super.setUp()
+        setupEmptyStoreState()
     }
 
-    override func tearDown() {
-        store = nil
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
+        undoStoreSideEffects()
     }
 
     func test_load_deliversNoVideosOnEmptyCache() throws {
-        let sut = makeSUT()
+        let sut = try makeSUT()
 
         expect(sut, toLoad: [])
     }
 
     func test_load_deliversVideosSavedOnASeparateLoaderInstance() throws {
-        let sutToPerformSave = makeSUT()
-        let sutToPerformLoad = makeSUT()
+        let sutToPerformSave = try makeSUT()
+        let sutToPerformLoad = try makeSUT()
         let videos = uniqueVideos().models
 
         save(videos, with: sutToPerformSave)
@@ -39,9 +38,9 @@ final class StreamingCoreCacheIntegrationTests: XCTestCase {
     }
 
     func test_save_overridesVideosSavedOnASeparateLoaderInstance() throws {
-        let sutToPerformFirstSave = makeSUT()
-        let sutToPerformLastSave = makeSUT()
-        let sutToPerformLoad = makeSUT()
+        let sutToPerformFirstSave = try makeSUT()
+        let sutToPerformLastSave = try makeSUT()
+        let sutToPerformLoad = try makeSUT()
         let firstVideos = uniqueVideos().models
         let lastVideos = uniqueVideos().models
 
@@ -52,8 +51,8 @@ final class StreamingCoreCacheIntegrationTests: XCTestCase {
     }
 
     func test_validateCache_doesNotDeleteRecentlySavedVideos() throws {
-        let sutToPerformSave = makeSUT()
-        let sutToPerformValidation = makeSUT()
+        let sutToPerformSave = try makeSUT()
+        let sutToPerformValidation = try makeSUT()
         let videos = uniqueVideos().models
 
         save(videos, with: sutToPerformSave)
@@ -63,8 +62,8 @@ final class StreamingCoreCacheIntegrationTests: XCTestCase {
     }
 
     func test_validateCache_deletesVideosSavedInADistantPast() throws {
-        let sutToPerformSave = makeSUT(currentDate: .distantPast)
-        let sutToPerformValidation = makeSUT(currentDate: Date())
+        let sutToPerformSave = try makeSUT(currentDate: .distantPast)
+        let sutToPerformValidation = try makeSUT(currentDate: Date())
         let videos = uniqueVideos().models
 
         save(videos, with: sutToPerformSave)
@@ -79,8 +78,11 @@ final class StreamingCoreCacheIntegrationTests: XCTestCase {
         currentDate: Date = Date(),
         file: StaticString = #filePath,
         line: UInt = #line
-    ) -> LocalVideoLoader {
+    ) throws -> LocalVideoLoader {
+        let storeURL = testSpecificStoreURL()
+        let store = try CoreDataVideoStore(storeURL: storeURL, contextQueue: .main)
         let sut = LocalVideoLoader(store: store, currentDate: { currentDate })
+        trackForMemoryLeaks(store, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return sut
     }
@@ -144,6 +146,24 @@ final class StreamingCoreCacheIntegrationTests: XCTestCase {
 
     private func anyURL() -> URL {
         return URL(string: "https://any-url.com")!
+    }
+
+    private func setupEmptyStoreState() {
+        deleteStoreArtifacts()
+    }
+
+    private func undoStoreSideEffects() {
+        deleteStoreArtifacts()
+    }
+
+    private func deleteStoreArtifacts() {
+        try? FileManager.default.removeItem(at: testSpecificStoreURL())
+    }
+
+    private func testSpecificStoreURL() -> URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+            .first!
+            .appendingPathComponent("\(type(of: self)).store")
     }
 
 }
