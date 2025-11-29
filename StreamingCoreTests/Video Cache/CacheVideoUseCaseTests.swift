@@ -13,6 +13,7 @@ class CacheVideoUseCaseTests: XCTestCase {
     func test_save_requestsCacheDeletion() {
         let videos = [uniqueVideo(), uniqueVideo()]
         let (sut, store) = makeSUT()
+        store.completeDeletion(with: anyNSError())
 
         try? sut.save(videos)
 
@@ -44,20 +45,32 @@ class CacheVideoUseCaseTests: XCTestCase {
     func test_save_failsOnDeletionError() {
         let (sut, store) = makeSUT()
         let deletionError = anyNSError()
+        store.completeDeletion(with: deletionError)
 
-        expect(sut, toCompleteWithError: deletionError, when: {
-            store.completeDeletion(with: deletionError)
-        })
+        var receivedError: Error?
+        do {
+            try sut.save([uniqueVideo(), uniqueVideo()])
+        } catch {
+            receivedError = error
+        }
+
+        XCTAssertEqual(receivedError as NSError?, deletionError)
     }
 
     func test_save_failsOnInsertionError() {
         let (sut, store) = makeSUT()
         let insertionError = anyNSError()
+        store.completeDeletionSuccessfully()
+        store.completeInsertion(with: insertionError)
 
-        expect(sut, toCompleteWithError: insertionError, when: {
-            store.completeDeletionSuccessfully()
-            store.completeInsertion(with: insertionError)
-        })
+        var receivedError: Error?
+        do {
+            try sut.save([uniqueVideo(), uniqueVideo()])
+        } catch {
+            receivedError = error
+        }
+
+        XCTAssertEqual(receivedError as NSError?, insertionError)
     }
 
     func test_save_succeedsOnSuccessfulCacheInsertion() {
@@ -86,23 +99,5 @@ class CacheVideoUseCaseTests: XCTestCase {
         trackForMemoryLeaks(store, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, store)
-    }
-
-    private func expect(_ sut: LocalVideoLoader,
-                       toCompleteWithError expectedError: NSError,
-                       when action: () -> Void,
-                       file: StaticString = #filePath,
-                       line: UInt = #line) {
-        let videos = [uniqueVideo(), uniqueVideo()]
-
-        var receivedError: Error?
-        do {
-            try sut.save(videos)
-            action()
-        } catch {
-            receivedError = error
-        }
-
-        XCTAssertEqual(receivedError as NSError?, expectedError, file: file, line: line)
     }
 }
