@@ -21,13 +21,31 @@ public final class RemoteVideoLoader {
             switch result {
             case .failure:
                 completion(.failure(.connectivity))
-            case let .success((_, response)):
-                if response.statusCode == 200 {
+            case let .success((data, response)):
+                if response.statusCode == 200, let _ = try? JSONDecoder().decode(VideosRoot.self, from: data) {
                     completion(.success([]))
                 } else {
                     completion(.failure(.invalidData))
                 }
             }
         }
+    }
+}
+
+private struct VideosRoot: Decodable {
+    let videos: [RemoteVideo]
+}
+
+private struct RemoteVideo: Decodable {
+    let id: UUID
+    let title: String
+    let description: String?
+    let url: URL
+    let thumbnailURL: URL
+    let duration: TimeInterval
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, url, duration
+        case thumbnailURL = "thumbnail_url"
     }
 }
