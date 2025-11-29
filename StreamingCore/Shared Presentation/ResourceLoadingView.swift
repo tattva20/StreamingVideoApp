@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol ResourceLoadingView {
+public protocol ResourceLoadingView: AnyObject {
     func display(_ viewModel: ResourceLoadingViewModel)
 }
 
