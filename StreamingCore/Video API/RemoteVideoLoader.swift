@@ -21,8 +21,12 @@ public final class RemoteVideoLoader {
             switch result {
             case .failure:
                 completion(.failure(.connectivity))
-            case .success:
-                break
+            case let .success((_, response)):
+                if response.statusCode == 200 {
+                    completion(.success([]))
+                } else {
+                    completion(.failure(.invalidData))
+                }
             }
         }
     }

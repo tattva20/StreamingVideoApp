@@ -38,6 +38,19 @@ class RemoteVideoLoaderTests: XCTestCase {
         })
     }
 
+    func test_load_deliversErrorOnNon200HTTPResponse() {
+        let (sut, client) = makeSUT()
+
+        let samples = [199, 201, 300, 400, 500]
+
+        samples.enumerated().forEach { index, code in
+            expect(sut, toCompleteWith: .failure(.invalidData), when: {
+                let json = makeVideosJSON([])
+                client.complete(withStatusCode: code, data: json, at: index)
+            })
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(url: URL = anyURL(),
@@ -72,6 +85,11 @@ class RemoteVideoLoaderTests: XCTestCase {
         }
     }
 
+    private func makeVideosJSON(_ videos: [[String: Any]]) -> Data {
+        let json = ["videos": videos]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }
+
     private class HTTPClientSpy: HTTPClient {
         var requestedURLs: [URL] = []
         var completions = [(HTTPClient.Result) -> Void]()
@@ -83,6 +101,16 @@ class RemoteVideoLoaderTests: XCTestCase {
 
         func complete(with error: Error, at index: Int = 0) {
             completions[index](.failure(error))
+        }
+
+        func complete(withStatusCode code: Int, data: Data, at index: Int = 0) {
+            let response = HTTPURLResponse(
+                url: requestedURLs[index],
+                statusCode: code,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            completions[index](.success((data, response)))
         }
     }
 }
