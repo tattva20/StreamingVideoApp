@@ -5,13 +5,14 @@ import StreamingCore
 public final class VideosViewController: UIViewController {
     private let adapter: LoadResourcePresentationAdapter<[Video], VideosViewAdapter>
     private let listViewController = ListViewController()
+    private let viewAdapter: VideosViewAdapter
 
     public var tableView: UITableView? {
         return listViewController.tableView
     }
 
     public init(loader: VideoLoader, onVideoSelection: ((Video) -> Void)?) {
-        let viewAdapter = VideosViewAdapter(
+        self.viewAdapter = VideosViewAdapter(
             controller: listViewController,
             videoSelectionHandler: onVideoSelection
         )
