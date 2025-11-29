@@ -60,6 +60,15 @@ class RemoteVideoLoaderTests: XCTestCase {
         })
     }
 
+    func test_load_deliversNoVideosOn200HTTPResponseWithEmptyJSONList() {
+        let (sut, client) = makeSUT()
+
+        expect(sut, toCompleteWith: .success([]), when: {
+            let emptyListJSON = makeVideosJSON([])
+            client.complete(withStatusCode: 200, data: emptyListJSON)
+        })
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(url: URL = anyURL(),
