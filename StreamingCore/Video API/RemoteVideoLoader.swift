@@ -4,7 +4,7 @@ public final class RemoteVideoLoader {
     private let url: URL
     private let client: HTTPClient
 
-    public enum Error: Swift.Error {
+    public enum Error: Swift.Error, Equatable {
         case connectivity
         case invalidData
     }
@@ -17,6 +17,13 @@ public final class RemoteVideoLoader {
     }
 
     public func load(completion: @escaping (Result) -> Void) {
-        client.get(from: url) { _ in }
+        client.get(from: url) { result in
+            switch result {
+            case .failure:
+                completion(.failure(.connectivity))
+            case .success:
+                break
+            }
+        }
     }
 }
