@@ -16,10 +16,26 @@ class VideoPlayerViewControllerTests: XCTestCase {
         XCTAssertEqual(asset?.url, video.url)
     }
 
+    func test_viewDidLoad_enablesPictureInPicture() {
+        let sut = makeSUT()
+
+        sut.loadViewIfNeeded()
+
+        XCTAssertTrue(sut.allowsPictureInPicturePlayback, "Expected PiP to be enabled")
+    }
+
+    func test_viewDidLoad_configuresPlayerForBackgroundPlayback() {
+        let sut = makeSUT()
+
+        sut.loadViewIfNeeded()
+
+        XCTAssertNotNil(sut.player, "Expected player to be configured")
+    }
+
     // MARK: - Helpers
 
-    private func makeSUT(video: Video, file: StaticString = #filePath, line: UInt = #line) -> VideoPlayerViewController {
-        let sut = VideoPlayerViewController(video: video)
+    private func makeSUT(video: Video? = nil, file: StaticString = #filePath, line: UInt = #line) -> VideoPlayerViewController {
+        let sut = VideoPlayerViewController(video: video ?? makeVideo())
         trackForMemoryLeaks(sut, file: file, line: line)
         return sut
     }
