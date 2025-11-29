@@ -6,17 +6,34 @@
 //
 
 import UIKit
+import StreamingCore
+import StreamingCoreiOS
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = makeRootViewController()
+        self.window = window
+        window.makeKeyAndVisible()
+    }
+
+    private func makeRootViewController() -> UIViewController {
+        let url = URL(string: "https://demo-videos-api.com/videos")!
+        let client = URLSessionHTTPClient()
+        let remoteLoader = RemoteVideoLoader(url: url, client: client)
+
+        let videosVC = VideosViewController(loader: remoteLoader)
+        videosVC.onVideoSelection = { [weak videosVC] video in
+            let playerVC = VideoPlayerViewController(video: video)
+            videosVC?.present(playerVC, animated: true)
+        }
+
+        return UINavigationController(rootViewController: videosVC)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
