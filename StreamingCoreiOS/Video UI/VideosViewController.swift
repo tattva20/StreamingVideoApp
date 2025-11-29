@@ -1,10 +1,11 @@
 import UIKit
 import StreamingCore
 
-public final class VideosViewController: UIViewController, UITableViewDataSource {
+public final class VideosViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     private let loader: VideoLoader
     private(set) public var tableView: UITableView?
     private var videos = [Video]()
+    public var onVideoSelection: ((Video) -> Void)?
 
     public init(loader: VideoLoader) {
         self.loader = loader
@@ -20,6 +21,7 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
 
         let tableView = UITableView()
         tableView.dataSource = self
+        tableView.delegate = self
         tableView.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
         self.tableView = tableView
 
@@ -40,5 +42,10 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
         let video = videos[indexPath.row]
         cell.titleLabel.text = video.title
         return cell
+    }
+
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let video = videos[indexPath.row]
+        onVideoSelection?(video)
     }
 }

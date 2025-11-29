@@ -63,6 +63,23 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertNotNil(view?.titleLabel.text)
     }
 
+    func test_videoSelection_notifiesDelegate() {
+        let video0 = makeVideo(title: "a title")
+        let video1 = makeVideo(title: "another title")
+        let (sut, loader) = makeSUT()
+        var selectedVideos = [Video]()
+        sut.onVideoSelection = { selectedVideos.append($0) }
+
+        sut.loadViewIfNeeded()
+        loader.completions[0](.success([video0, video1]))
+
+        sut.simulateTapOnVideo(at: 0)
+        XCTAssertEqual(selectedVideos, [video0])
+
+        sut.simulateTapOnVideo(at: 1)
+        XCTAssertEqual(selectedVideos, [video0, video1])
+    }
+
     // MARK: - Helpers
 
     private func anyNSError() -> NSError {
@@ -103,6 +120,12 @@ private extension VideosViewController {
         let dataSource = tableView?.dataSource
         let index = IndexPath(row: row, section: videosSection)
         return dataSource?.tableView(tableView!, cellForRowAt: index) as? VideoCell
+    }
+
+    func simulateTapOnVideo(at row: Int) {
+        let delegate = tableView?.delegate
+        let index = IndexPath(row: row, section: videosSection)
+        delegate?.tableView?(tableView!, didSelectRowAt: index)
     }
 
     var videosSection: Int {
