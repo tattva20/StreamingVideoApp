@@ -51,6 +51,18 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertEqual(sut.numberOfRenderedVideos(), 1)
     }
 
+    func test_videoView_hasTitle() {
+        let video = makeVideo(title: "a title")
+        let (sut, loader) = makeSUT()
+
+        sut.loadViewIfNeeded()
+        loader.completions[0](.success([video]))
+
+        let view = sut.videoView(at: 0)
+
+        XCTAssertNotNil(view?.titleLabel.text)
+    }
+
     // MARK: - Helpers
 
     private func anyNSError() -> NSError {
@@ -85,6 +97,12 @@ class VideosViewControllerTests: XCTestCase {
 private extension VideosViewController {
     func numberOfRenderedVideos() -> Int {
         return tableView?.numberOfRows(inSection: videosSection) ?? 0
+    }
+
+    func videoView(at row: Int) -> VideoCell? {
+        let dataSource = tableView?.dataSource
+        let index = IndexPath(row: row, section: videosSection)
+        return dataSource?.tableView(tableView!, cellForRowAt: index) as? VideoCell
     }
 
     var videosSection: Int {

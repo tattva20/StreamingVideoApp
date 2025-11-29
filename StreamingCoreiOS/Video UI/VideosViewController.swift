@@ -20,6 +20,7 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
 
         let tableView = UITableView()
         tableView.dataSource = self
+        tableView.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
         self.tableView = tableView
 
         loader.load { [weak self] result in
@@ -35,6 +36,9 @@ public final class VideosViewController: UIViewController, UITableViewDataSource
     }
 
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        return UITableViewCell()
+        let cell = tableView.dequeueReusableCell(withIdentifier: "VideoCell", for: indexPath) as! VideoCell
+        let video = videos[indexPath.row]
+        cell.titleLabel.text = video.title
+        return cell
     }
 }
