@@ -40,11 +40,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     private func makeRootViewController() -> UIViewController {
         let videoLoader = makeVideoLoaderWithCacheFallback()
-        let videosVC = VideosViewController(loader: videoLoader)
-        videosVC.onVideoSelection = { [weak videosVC] video in
-            let playerVC = VideoPlayerViewController(video: video)
-            videosVC?.present(playerVC, animated: true)
-        }
+        let videosVC = VideosViewController(
+            loader: videoLoader,
+            onVideoSelection: { [weak self] video in
+                guard let rootVC = self?.window?.rootViewController as? UINavigationController else { return }
+                let playerVC = VideoPlayerViewController(video: video)
+                rootVC.topViewController?.present(playerVC, animated: true)
+            }
+        )
 
         return UINavigationController(rootViewController: videosVC)
     }

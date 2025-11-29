@@ -77,9 +77,9 @@ class VideosViewControllerTests: XCTestCase {
     func test_videoSelection_notifiesDelegate() async {
         let video0 = makeVideo(title: "a title")
         let video1 = makeVideo(title: "another title")
-        let (sut, loader) = makeSUT()
         var selectedVideos = [Video]()
-        sut.onVideoSelection = { selectedVideos.append($0) }
+        let loader = LoaderSpy()
+        let sut = VideosViewController(loader: loader, onVideoSelection: { selectedVideos.append($0) })
 
         loader.stub = .success([video0, video1])
         sut.loadViewIfNeeded()
@@ -106,7 +106,7 @@ class VideosViewControllerTests: XCTestCase {
     private func makeSUT(file: StaticString = #filePath,
                          line: UInt = #line) -> (sut: VideosViewController, loader: LoaderSpy) {
         let loader = LoaderSpy()
-        let sut = VideosViewController(loader: loader)
+        let sut = VideosViewController(loader: loader, onVideoSelection: nil)
         trackForMemoryLeaks(loader, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, loader)

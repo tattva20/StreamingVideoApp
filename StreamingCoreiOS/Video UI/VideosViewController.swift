@@ -1,17 +1,24 @@
 import UIKit
 import StreamingCore
 
+@MainActor
 public final class VideosViewController: UIViewController {
-    private let loader: VideoLoader
+    private let adapter: LoadResourcePresentationAdapter<[Video], VideosViewAdapter>
     private let listViewController = ListViewController()
-    public var onVideoSelection: ((Video) -> Void)?
 
     public var tableView: UITableView? {
         return listViewController.tableView
     }
 
-    public init(loader: VideoLoader) {
-        self.loader = loader
+    public init(loader: VideoLoader, onVideoSelection: ((Video) -> Void)?) {
+        let viewAdapter = VideosViewAdapter(
+            controller: listViewController,
+            videoSelectionHandler: onVideoSelection
+        )
+        self.adapter = LoadResourcePresentationAdapter(
+            loader: loader.load,
+            presenter: viewAdapter
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -24,6 +31,13 @@ public final class VideosViewController: UIViewController {
 
         title = "Videos"
 
+        setupListViewController()
+        listViewController.tableView?.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
+
+        adapter.loadResource()
+    }
+
+    private func setupListViewController() {
         addChild(listViewController)
         view.addSubview(listViewController.view)
         listViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -34,22 +48,5 @@ public final class VideosViewController: UIViewController {
             listViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         listViewController.didMove(toParent: self)
-
-        listViewController.tableView?.register(VideoCell.self, forCellReuseIdentifier: "VideoCell")
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                let videos = try await self.loader.load()
-                let cellControllers = videos.map { video in
-                    VideoCellController(video: video, selection: { [weak self] selectedVideo in
-                        self?.onVideoSelection?(selectedVideo)
-                    })
-                }
-                self.listViewController.display(cellControllers)
-            } catch {
-                // Handle error silently for now
-            }
-        }
     }
 }
