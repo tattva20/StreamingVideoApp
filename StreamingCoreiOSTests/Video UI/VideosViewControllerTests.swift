@@ -1,0 +1,32 @@
+import XCTest
+import StreamingCore
+import StreamingCoreiOS
+
+@MainActor
+class VideosViewControllerTests: XCTestCase {
+
+    func test_init_doesNotLoadVideos() {
+        let (_, loader) = makeSUT()
+
+        XCTAssertEqual(loader.loadCallCount, 0)
+    }
+
+    // MARK: - Helpers
+
+    private func makeSUT(file: StaticString = #filePath,
+                         line: UInt = #line) -> (sut: VideosViewController, loader: LoaderSpy) {
+        let loader = LoaderSpy()
+        let sut = VideosViewController(loader: loader)
+        trackForMemoryLeaks(loader, file: file, line: line)
+        trackForMemoryLeaks(sut, file: file, line: line)
+        return (sut, loader)
+    }
+
+    private class LoaderSpy: VideoLoader {
+        private(set) var loadCallCount = 0
+
+        func load(completion: @escaping (Result<[Video], Error>) -> Void) {
+            loadCallCount += 1
+        }
+    }
+}
