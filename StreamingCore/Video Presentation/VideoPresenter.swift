@@ -6,4 +6,8 @@ public final class VideoPresenter {
     public init(view: VideoView) {
         self.view = view
     }
+
+    public func didStartLoading() {
+        view.display(isLoading: true)
+    }
 }

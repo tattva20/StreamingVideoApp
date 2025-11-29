@@ -10,6 +10,14 @@ class VideoPresenterTests: XCTestCase {
         XCTAssertTrue(view.messages.isEmpty)
     }
 
+    func test_didStartLoading_displaysLoadingState() {
+        let (sut, view) = makeSUT()
+
+        sut.didStartLoading()
+
+        XCTAssertEqual(view.messages, [.display(isLoading: true)])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(file: StaticString = #filePath,
