@@ -25,10 +25,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
+        configureAudioSession()
+
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = makeRootViewController()
         self.window = window
         window.makeKeyAndVisible()
+    }
+
+    private func configureAudioSession() {
+        let audioSessionConfigurator = AVAudioSessionAdapter()
+        try? audioSessionConfigurator.configureForPlayback()
     }
 
     private func makeRootViewController() -> UIViewController {
