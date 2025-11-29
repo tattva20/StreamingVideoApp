@@ -24,6 +24,10 @@ public final class LocalVideoLoader {
         }
         return []
     }
+
+    public func save(_ videos: [Video]) throws {
+        try store.deleteCachedVideos()
+    }
 }
 
 final class VideoCachePolicy {

@@ -10,6 +10,15 @@ class CacheVideoUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [])
     }
 
+    func test_save_requestsCacheDeletion() {
+        let videos = [uniqueVideo(), uniqueVideo()]
+        let (sut, store) = makeSUT()
+
+        try? sut.save(videos)
+
+        XCTAssertEqual(store.receivedMessages, [.deleteCachedVideos])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
