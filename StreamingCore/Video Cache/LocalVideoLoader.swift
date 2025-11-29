@@ -10,7 +10,18 @@ public final class LocalVideoLoader {
     }
 
     public func load() throws -> [Video] {
-        _ = try store.retrieve()
+        if let cache = try store.retrieve() {
+            return cache.videos.map { localVideo in
+                Video(
+                    id: localVideo.id,
+                    title: localVideo.title,
+                    description: localVideo.description,
+                    url: localVideo.url,
+                    thumbnailURL: localVideo.thumbnailURL,
+                    duration: localVideo.duration
+                )
+            }
+        }
         return []
     }
 }
