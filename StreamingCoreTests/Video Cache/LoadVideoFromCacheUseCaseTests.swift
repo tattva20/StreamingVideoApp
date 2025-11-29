@@ -18,6 +18,15 @@ class LoadVideoFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.retrieve])
     }
 
+    func test_load_failsOnRetrievalError() {
+        let (sut, store) = makeSUT()
+        let retrievalError = anyNSError()
+
+        expect(sut, toCompleteWith: .failure(retrievalError), when: {
+            store.completeRetrieval(with: retrievalError)
+        })
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
@@ -28,5 +37,27 @@ class LoadVideoFromCacheUseCaseTests: XCTestCase {
         trackForMemoryLeaks(store, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, store)
+    }
+
+    private func expect(_ sut: LocalVideoLoader,
+                       toCompleteWith expectedResult: Result<[Video], Error>,
+                       when action: () -> Void,
+                       file: StaticString = #filePath,
+                       line: UInt = #line) {
+        action()
+
+        let receivedResult = Result { try sut.load() }
+
+        switch (receivedResult, expectedResult) {
+        case let (.success(receivedVideos), .success(expectedVideos)):
+            XCTAssertEqual(receivedVideos, expectedVideos, file: file, line: line)
+
+        case let (.failure(receivedError as NSError), .failure(expectedError as NSError)):
+            XCTAssertEqual(receivedError, expectedError, file: file, line: line)
+
+        default:
+            XCTFail("Expected result \(expectedResult), got \(receivedResult) instead",
+                    file: file, line: line)
+        }
     }
 }
