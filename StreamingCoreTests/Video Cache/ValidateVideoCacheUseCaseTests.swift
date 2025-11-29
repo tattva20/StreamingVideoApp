@@ -52,6 +52,18 @@ class ValidateVideoCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.retrieve, .deleteCachedVideos])
     }
 
+    func test_validateCache_deletesExpiredCache() {
+        let videos = uniqueVideoList()
+        let fixedCurrentDate = Date()
+        let expiredTimestamp = fixedCurrentDate.minusVideoCacheMaxAge().adding(seconds: -1)
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+
+        try? sut.validateCache()
+        store.completeRetrieval(with: videos.local, timestamp: expiredTimestamp)
+
+        XCTAssertEqual(store.receivedMessages, [.retrieve, .deleteCachedVideos])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(currentDate: @escaping () -> Date = Date.init,
