@@ -10,6 +10,15 @@ class RemoteVideoLoaderTests: XCTestCase {
         XCTAssertTrue(client.requestedURLs.isEmpty)
     }
 
+    func test_load_requestsDataFromURL() {
+        let url = URL(string: "https://a-given-url.com")!
+        let (sut, client) = makeSUT(url: url)
+
+        sut.load { _ in }
+
+        XCTAssertEqual(client.requestedURLs, [url])
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(url: URL = anyURL(),
