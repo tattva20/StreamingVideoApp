@@ -13,6 +13,7 @@ public final class VideoCellController: CellController {
     public func view(in tableView: UITableView) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "VideoCell") as! VideoCell
         cell.titleLabel.text = video.title
+        cell.descriptionLabel.text = video.description
         return cell
     }
 
