@@ -11,23 +11,19 @@ class VideosViewControllerTests: XCTestCase {
         XCTAssertEqual(loader.loadCallCount, 0)
     }
 
-    func test_viewDidLoad_loadsVideos() async {
+    func test_viewDidLoad_loadsVideos() {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
-
-        await Task.yield()
 
         XCTAssertEqual(loader.loadCallCount, 1)
     }
 
-    func test_viewDidLoad_loadsVideosOnlyOnce() async {
+    func test_viewDidLoad_loadsVideosOnlyOnce() {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
         sut.loadViewIfNeeded()
-
-        await Task.yield()
 
         XCTAssertEqual(loader.loadCallCount, 1)
     }
@@ -51,108 +47,92 @@ class VideosViewControllerTests: XCTestCase {
         trackForMemoryLeaks(sut)
     }
 
-    func test_loadActions_requestVideosFromLoader() async {
+    func test_loadActions_requestVideosFromLoader() {
         let (sut, loader) = makeSUT()
         XCTAssertEqual(loader.loadCallCount, 0, "Expected no loading requests before view is loaded")
 
         sut.loadViewIfNeeded()
-        await Task.yield()
         XCTAssertEqual(loader.loadCallCount, 1, "Expected a loading request once view is loaded")
 
+        loader.completeLoading(at: 0)
         sut.simulateUserInitiatedReload()
-        await Task.yield()
         XCTAssertEqual(loader.loadCallCount, 2, "Expected another loading request once user initiates a reload")
 
+        loader.completeLoading(at: 1)
         sut.simulateUserInitiatedReload()
-        await Task.yield()
         XCTAssertEqual(loader.loadCallCount, 3, "Expected yet another loading request once user initiates another reload")
     }
 
-    func test_loadingIndicator_isVisibleWhileLoadingVideos() async {
+    func test_loadingIndicator_isVisibleWhileLoadingVideos() {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
-        await Task.yield()
         XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once view is loaded")
 
         loader.completeLoading(at: 0)
-        await Task.yield()
         XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once loading completes successfully")
 
         sut.simulateUserInitiatedReload()
-        await Task.yield()
         XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once user initiates a reload")
 
         loader.completeLoadingWithError(at: 1)
-        await Task.yield()
         XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once user initiated loading completes with error")
     }
 
-    func test_loadCompletion_rendersSuccessfullyLoadedVideos() async {
+    func test_loadCompletion_rendersSuccessfullyLoadedVideos() {
         let video0 = makeVideo(title: "a title", description: "a description")
         let video1 = makeVideo(title: "another title", description: "another description")
 
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
-        await Task.yield()
         assertThat(sut, isRendering: [])
 
         loader.completeLoading(with: [video0], at: 0)
-        await Task.yield()
         assertThat(sut, isRendering: [video0])
 
         sut.simulateUserInitiatedReload()
-        await Task.yield()
         loader.completeLoading(with: [video0, video1], at: 1)
-        await Task.yield()
         assertThat(sut, isRendering: [video0, video1])
     }
 
-    func test_loadCompletion_doesNotAlterCurrentRenderingStateOnError() async {
+    func test_loadCompletion_doesNotAlterCurrentRenderingStateOnError() {
         let video0 = makeVideo()
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
-        await Task.yield()
         loader.completeLoading(with: [video0], at: 0)
-        await Task.yield()
         assertThat(sut, isRendering: [video0])
 
         sut.simulateUserInitiatedReload()
-        await Task.yield()
         loader.completeLoadingWithError(at: 1)
-        await Task.yield()
         assertThat(sut, isRendering: [video0])
     }
 
-    func test_loadCompletion_dispatchesFromBackgroundToMainThread() async {
+    func test_loadCompletion_dispatchesFromBackgroundToMainThread() {
         let (sut, loader) = makeSUT()
         sut.loadViewIfNeeded()
 
-        await Task.yield()
-
-        await Task.detached(priority: .background) {
+        let exp = expectation(description: "Wait for background queue")
+        DispatchQueue.global().async {
             loader.completeLoading(at: 0)
-        }.value
+            exp.fulfill()
+        }
 
-        await Task.yield()
-        XCTAssertTrue(sut.isShowingLoadingIndicator == false)
+        wait(for: [exp], timeout: 1.0)
+        XCTAssertFalse(sut.isShowingLoadingIndicator)
     }
 
-    func test_loadCompletion_rendersErrorMessageOnErrorUntilNextReload() async {
+    func test_loadCompletion_rendersErrorMessageOnErrorUntilNextReload() {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
-        await Task.yield()
         XCTAssertEqual(sut.errorMessage, nil)
 
         loader.completeLoadingWithError(at: 0)
-        await Task.yield()
         XCTAssertEqual(sut.errorMessage, loadError)
 
         sut.simulateUserInitiatedReload()
-        await Task.yield()
         XCTAssertEqual(sut.errorMessage, nil)
     }
 
@@ -212,28 +192,56 @@ class VideosViewControllerTests: XCTestCase {
 
     private class LoaderSpy: VideoLoader {
         private struct LoadError: Error {}
+        private struct NoResponse: Error {}
+
+        private(set) var requests = [(
+            stream: AsyncThrowingStream<[Video], Error>,
+            continuation: AsyncThrowingStream<[Video], Error>.Continuation,
+            result: AsyncResult?
+        )]()
 
         var loadCallCount: Int {
             return requests.count
         }
 
-        private var requests = [(Result<[Video], Error>) -> Void]()
-
         func load() async throws -> [Video] {
-            return try await withCheckedThrowingContinuation { continuation in
-                requests.append { result in
-                    continuation.resume(with: result)
+            let (stream, continuation) = AsyncThrowingStream<[Video], Error>.makeStream()
+            let index = requests.count
+            requests.append((stream, continuation, nil))
+
+            do {
+                for try await result in stream {
+                    try Task.checkCancellation()
+                    requests[index].result = .success
+                    return result
                 }
+
+                try Task.checkCancellation()
+                throw NoResponse()
+            } catch {
+                requests[index].result = Task.isCancelled ? .cancelled : .failure
+                throw error
             }
         }
 
         func completeLoading(with videos: [Video] = [], at index: Int = 0) {
-            requests[index](.success(videos))
+            requests[index].continuation.yield(videos)
+            requests[index].continuation.finish()
+
+            while requests[index].result == nil { RunLoop.current.run(until: Date()) }
         }
 
         func completeLoadingWithError(at index: Int = 0) {
-            requests[index](.failure(LoadError()))
+            requests[index].continuation.finish(throwing: LoadError())
+
+            while requests[index].result == nil { RunLoop.current.run(until: Date()) }
         }
+    }
+
+    private enum AsyncResult {
+        case success
+        case failure
+        case cancelled
     }
 }
 
