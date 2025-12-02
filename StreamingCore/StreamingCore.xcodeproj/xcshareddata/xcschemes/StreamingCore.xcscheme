@@ -38,16 +38,6 @@
                ReferencedContainer = "container:StreamingCore.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6E7F87A02EDE3A6B007B5AF8"
-               BuildableName = "StreamingVideoAppTests.xctest"
-               BlueprintName = "StreamingVideoAppTests"
-               ReferencedContainer = "container:../StreamingVideoApp/StreamingVideoApp.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
