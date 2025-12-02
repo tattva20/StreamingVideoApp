@@ -54,7 +54,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		rootViewController: VideosUIComposer.videosComposedWith(
 			videoLoader: makeRemoteVideoLoaderWithLocalFallback,
 			imageLoader: loadLocalImageWithRemoteFallback,
-			selection: showComments))
+			selection: showVideoPlayer))
 
 	convenience init(httpClient: HTTPClient, store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable) {
 		self.init()
@@ -84,9 +84,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		}
 	}
 
-	private func showComments(for video: Video) {
-		// Placeholder for future comments feature
-		// In Essential Feed, this navigates to comments. We'll keep the structure but no-op for now
+	private func showVideoPlayer(for video: Video) {
+		let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(video: video)
+		navigationController.pushViewController(videoPlayerController, animated: true)
 	}
 
 	private func makeRemoteVideoLoaderWithLocalFallback() -> AnyPublisher<Paginated<Video>, Error> {

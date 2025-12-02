@@ -28,20 +28,6 @@
 			remoteGlobalIDString = 6E7F878A2EDE3A6A007B5AF8;
 			remoteInfo = StreamingVideoApp;
 		};
-		6E7F87C52EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ECF5BCB2EDB4200004A0835;
-			remoteInfo = StreamingCore;
-		};
-		6E7F87C72EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ECF5BEA2EDB4252004A0835;
-			remoteInfo = StreamingCoreiOS;
-		};
 		6E7F87C82EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
@@ -55,34 +41,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 6ECF5BE92EDB4252004A0835;
 			remoteInfo = StreamingCoreiOS;
-		};
-		6E7F87CA2EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ECF5BD62EDB4200004A0835;
-			remoteInfo = StreamingCoreTests;
-		};
-		6E7F87CB2EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ECF5BF42EDB4252004A0835;
-			remoteInfo = StreamingCoreiOSTests;
-		};
-		6E7F87CC2EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ECF5C492EDB4330004A0835;
-			remoteInfo = StreamingCoreCacheIntegrationTests;
-		};
-		6E7F87CD2EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ECF5C572EDB4372004A0835;
-			remoteInfo = StreamingCoreAPIEndToEndTests;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -202,12 +160,6 @@
 		6E7F87D02EDE3A6B007B5AF8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6E7F87D12EDE3A6B007B5AF8 /* StreamingCore.framework */,
-				6E7F87D22EDE3A6B007B5AF8 /* StreamingCoreTests.xctest */,
-				6E7F87D32EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */,
-				6E7F87D42EDE3A6B007B5AF8 /* StreamingCoreiOSTests.xctest */,
-				6E7F87D52EDE3A6B007B5AF8 /* StreamingCoreCacheIntegrationTests.xctest */,
-				6E7F87D62EDE3A6B007B5AF8 /* StreamingCoreAPIEndToEndTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -335,51 +287,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		6E7F87D12EDE3A6B007B5AF8 /* StreamingCore.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = StreamingCore.framework;
-			remoteRef = 6E7F87C52EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		6E7F87D22EDE3A6B007B5AF8 /* StreamingCoreTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = StreamingCoreTests.xctest;
-			remoteRef = 6E7F87CA2EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		6E7F87D32EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = StreamingCoreiOS.framework;
-			remoteRef = 6E7F87C72EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		6E7F87D42EDE3A6B007B5AF8 /* StreamingCoreiOSTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = StreamingCoreiOSTests.xctest;
-			remoteRef = 6E7F87CB2EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		6E7F87D52EDE3A6B007B5AF8 /* StreamingCoreCacheIntegrationTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = StreamingCoreCacheIntegrationTests.xctest;
-			remoteRef = 6E7F87CC2EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		6E7F87D62EDE3A6B007B5AF8 /* StreamingCoreAPIEndToEndTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = StreamingCoreAPIEndToEndTests.xctest;
-			remoteRef = 6E7F87CD2EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		6E7F87892EDE3A6A007B5AF8 /* Resources */ = {
