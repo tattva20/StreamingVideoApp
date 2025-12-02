@@ -125,8 +125,8 @@ class VideoAcceptanceTests: XCTestCase {
     private func makeVideosData() -> Data {
         return try! JSONSerialization.data(withJSONObject: [
             "videos": [
-                ["id": "00000000-0000-0000-0000-000000000000", "title": "Video 0", "description": "Description 0", "url": "http://video.com/video-0.mp4", "thumbnail_url": "http://video.com/thumb-0.jpg", "duration": 120.0],
-                ["id": "00000000-0000-0000-0000-000000000001", "title": "Video 1", "description": "Description 1", "url": "http://video.com/video-1.mp4", "thumbnail_url": "http://video.com/thumb-1.jpg", "duration": 180.0]
+                ["id": "00000000-0000-0000-0000-000000000000", "title": "Video 0", "description": "Description 0", "url": "https://video.com/video-0.mp4", "thumbnail_url": "https://video.com/thumb-0.jpg", "duration": 120.0],
+                ["id": "00000000-0000-0000-0000-000000000001", "title": "Video 1", "description": "Description 1", "url": "https://video.com/video-1.mp4", "thumbnail_url": "https://video.com/thumb-1.jpg", "duration": 180.0]
             ]
         ])
     }
