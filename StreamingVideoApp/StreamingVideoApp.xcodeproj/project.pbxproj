@@ -21,27 +21,6 @@
 			remoteGlobalIDString = 6E7F878A2EDE3A6A007B5AF8;
 			remoteInfo = StreamingVideoApp;
 		};
-		6E7F87AC2EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87832EDE3A6A007B5AF8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 6E7F878A2EDE3A6A007B5AF8;
-			remoteInfo = StreamingVideoApp;
-		};
-		6E7F87C82EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 6ECF5BCA2EDB4200004A0835;
-			remoteInfo = StreamingCore;
-		};
-		6E7F87C92EDE3A6B007B5AF8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 6ECF5BE92EDB4252004A0835;
-			remoteInfo = StreamingCoreiOS;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -62,10 +41,8 @@
 /* Begin PBXFileReference section */
 		6E7F878B2EDE3A6A007B5AF8 /* StreamingVideoApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StreamingVideoApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7F87A12EDE3A6B007B5AF8 /* StreamingVideoAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamingVideoAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		6E7F87AB2EDE3A6B007B5AF8 /* StreamingVideoAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamingVideoAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = StreamingCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = StreamingCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = StreamingCore.xcodeproj; path = ../StreamingCore/StreamingCore.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -92,11 +69,6 @@
 			path = StreamingVideoAppTests;
 			sourceTree = "<group>";
 		};
-		6E7F87AE2EDE3A6B007B5AF8 /* StreamingVideoAppUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = StreamingVideoAppUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,23 +88,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6E7F87A82EDE3A6B007B5AF8 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		6E7F87822EDE3A6A007B5AF8 = {
 			isa = PBXGroup;
 			children = (
-				6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */,
 				6E7F878D2EDE3A6A007B5AF8 /* StreamingVideoApp */,
 				6E7F87A42EDE3A6B007B5AF8 /* StreamingVideoAppTests */,
-				6E7F87AE2EDE3A6B007B5AF8 /* StreamingVideoAppUITests */,
 				6E7F878C2EDE3A6A007B5AF8 /* Products */,
 				6E7F87CF2EDE3A6B007B5AF8 /* Frameworks */,
 			);
@@ -143,7 +106,6 @@
 			children = (
 				6E7F878B2EDE3A6A007B5AF8 /* StreamingVideoApp.app */,
 				6E7F87A12EDE3A6B007B5AF8 /* StreamingVideoAppTests.xctest */,
-				6E7F87AB2EDE3A6B007B5AF8 /* StreamingVideoAppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -155,13 +117,6 @@
 				6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		6E7F87D02EDE3A6B007B5AF8 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -179,8 +134,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				6E7F87D72EDE3A6B007B5AF8 /* PBXTargetDependency */,
-				6E7F87D82EDE3A6B007B5AF8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				6E7F878D2EDE3A6A007B5AF8 /* StreamingVideoApp */,
@@ -215,29 +168,6 @@
 			productReference = 6E7F87A12EDE3A6B007B5AF8 /* StreamingVideoAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		6E7F87AA2EDE3A6B007B5AF8 /* StreamingVideoAppUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 6E7F87BC2EDE3A6B007B5AF8 /* Build configuration list for PBXNativeTarget "StreamingVideoAppUITests" */;
-			buildPhases = (
-				6E7F87A72EDE3A6B007B5AF8 /* Sources */,
-				6E7F87A82EDE3A6B007B5AF8 /* Frameworks */,
-				6E7F87A92EDE3A6B007B5AF8 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				6E7F87AD2EDE3A6B007B5AF8 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				6E7F87AE2EDE3A6B007B5AF8 /* StreamingVideoAppUITests */,
-			);
-			name = StreamingVideoAppUITests;
-			packageProductDependencies = (
-			);
-			productName = StreamingVideoAppUITests;
-			productReference = 6E7F87AB2EDE3A6B007B5AF8 /* StreamingVideoAppUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -255,10 +185,6 @@
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = 6E7F878A2EDE3A6A007B5AF8;
 					};
-					6E7F87AA2EDE3A6B007B5AF8 = {
-						CreatedOnToolsVersion = 26.1.1;
-						TestTargetID = 6E7F878A2EDE3A6A007B5AF8;
-					};
 				};
 			};
 			buildConfigurationList = 6E7F87862EDE3A6A007B5AF8 /* Build configuration list for PBXProject "StreamingVideoApp" */;
@@ -273,17 +199,10 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6E7F878C2EDE3A6A007B5AF8 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 6E7F87D02EDE3A6B007B5AF8 /* Products */;
-					ProjectRef = 6E7F87C62EDE3A6B007B5AF8 /* StreamingCore.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				6E7F878A2EDE3A6A007B5AF8 /* StreamingVideoApp */,
 				6E7F87A02EDE3A6B007B5AF8 /* StreamingVideoAppTests */,
-				6E7F87AA2EDE3A6B007B5AF8 /* StreamingVideoAppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -297,13 +216,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6E7F879F2EDE3A6B007B5AF8 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		6E7F87A92EDE3A6B007B5AF8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -327,13 +239,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6E7F87A72EDE3A6B007B5AF8 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -341,21 +246,6 @@
 			isa = PBXTargetDependency;
 			target = 6E7F878A2EDE3A6A007B5AF8 /* StreamingVideoApp */;
 			targetProxy = 6E7F87A22EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-		};
-		6E7F87AD2EDE3A6B007B5AF8 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 6E7F878A2EDE3A6A007B5AF8 /* StreamingVideoApp */;
-			targetProxy = 6E7F87AC2EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-		};
-		6E7F87D72EDE3A6B007B5AF8 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = StreamingCore;
-			targetProxy = 6E7F87C82EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
-		};
-		6E7F87D82EDE3A6B007B5AF8 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = StreamingCoreiOS;
-			targetProxy = 6E7F87C92EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -589,46 +479,6 @@
 			};
 			name = Release;
 		};
-		6E7F87BD2EDE3A6B007B5AF8 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2WC8M782W7;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.octavio.rojas.StreamingVideoAppUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = StreamingVideoApp;
-			};
-			name = Debug;
-		};
-		6E7F87BE2EDE3A6B007B5AF8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2WC8M782W7;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.octavio.rojas.StreamingVideoAppUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = StreamingVideoApp;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -655,15 +505,6 @@
 			buildConfigurations = (
 				6E7F87BA2EDE3A6B007B5AF8 /* Debug */,
 				6E7F87BB2EDE3A6B007B5AF8 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		6E7F87BC2EDE3A6B007B5AF8 /* Build configuration list for PBXNativeTarget "StreamingVideoAppUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				6E7F87BD2EDE3A6B007B5AF8 /* Debug */,
-				6E7F87BE2EDE3A6B007B5AF8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

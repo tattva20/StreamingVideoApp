@@ -13,6 +13,25 @@ import StreamingCoreiOS
 @MainActor
 class VideoAcceptanceTests: XCTestCase {
 
+	func test_onVideoSelection_navigatesToVideoPlayer() throws {
+		let video = try launch(httpClient: .online(response), store: .empty)
+
+		video.simulateTapOnVideo(at: 0)
+
+		let nav = video.navigationController
+		XCTAssertTrue(nav?.topViewController is VideoPlayerViewController)
+	}
+
+	func test_onVideoSelection_displaysVideoPlayerWithCorrectTitle() throws {
+		let video = try launch(httpClient: .online(response), store: .empty)
+
+		video.simulateTapOnVideo(at: 0)
+
+		let nav = video.navigationController
+		let videoPlayer = nav?.topViewController as? VideoPlayerViewController
+		XCTAssertEqual(videoPlayer?.title, "Video 0")
+	}
+
     func test_onLaunch_displaysRemoteVideosWhenCustomerHasConnectivity() throws {
         let video = try launch(httpClient: .online(response), store: .empty)
 

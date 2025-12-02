@@ -162,6 +162,57 @@ class VideoPlayerViewControllerTests: XCTestCase {
 		XCTAssertTrue(sut.areControlsVisible)
 	}
 
+	func test_viewDidLoad_loadsVideoURL() {
+		let url = URL(string: "https://a-video-url.com")!
+		let (sut, player) = makeSUT(viewModel: makeViewModel(videoURL: url))
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertEqual(player.loadedURLs, [url])
+	}
+
+	func test_playbackControls_haveFullAlphaInitially() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertEqual(sut.playButton.alpha, 1.0)
+		XCTAssertEqual(sut.seekForwardButton.alpha, 1.0)
+		XCTAssertEqual(sut.seekBackwardButton.alpha, 1.0)
+		XCTAssertEqual(sut.progressSlider.alpha, 1.0)
+		XCTAssertEqual(sut.currentTimeLabel.alpha, 1.0)
+		XCTAssertEqual(sut.durationLabel.alpha, 1.0)
+	}
+
+	func test_hideControls_setsPlaybackControlsAlphaToZero() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+		sut.simulateTapOnPlayerView()
+
+		XCTAssertEqual(sut.playButton.alpha, 0.0)
+		XCTAssertEqual(sut.seekForwardButton.alpha, 0.0)
+		XCTAssertEqual(sut.seekBackwardButton.alpha, 0.0)
+		XCTAssertEqual(sut.progressSlider.alpha, 0.0)
+		XCTAssertEqual(sut.currentTimeLabel.alpha, 0.0)
+		XCTAssertEqual(sut.durationLabel.alpha, 0.0)
+	}
+
+	func test_showControls_restoresPlaybackControlsAlpha() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+		sut.simulateTapOnPlayerView()
+		sut.simulateTapOnPlayerView()
+
+		XCTAssertEqual(sut.playButton.alpha, 1.0)
+		XCTAssertEqual(sut.seekForwardButton.alpha, 1.0)
+		XCTAssertEqual(sut.seekBackwardButton.alpha, 1.0)
+		XCTAssertEqual(sut.progressSlider.alpha, 1.0)
+		XCTAssertEqual(sut.currentTimeLabel.alpha, 1.0)
+		XCTAssertEqual(sut.durationLabel.alpha, 1.0)
+	}
+
 	// MARK: - Helpers
 
 	private func makeSUT(

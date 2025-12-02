@@ -109,7 +109,11 @@ public final class VideoPlayerViewController: UIViewController {
 	}()
 
 	public private(set) var isFullscreen: Bool = false
-	public private(set) var areControlsVisible: Bool = true
+	public var areControlsVisible: Bool {
+		controlsVisibilityController?.areControlsVisible ?? true
+	}
+	private var controlsVisibilityController: ControlsVisibilityController?
+	private var hideControlsTimer: Timer?
 
 	private lazy var controlsOverlay: UIView = {
 		let view = UIView()
@@ -137,9 +141,37 @@ public final class VideoPlayerViewController: UIViewController {
 
 	public override func viewDidLoad() {
 		super.viewDidLoad()
+		updateEdgesForExtendedLayout()
 		setupUI()
 		configurePlayer()
 		setupTapGesture()
+		setupControlsVisibilityController()
+	}
+
+	public override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		controlsVisibilityController?.scheduleHide()
+	}
+
+	public override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		hideControlsTimer?.invalidate()
+	}
+
+	private func setupControlsVisibilityController() {
+		controlsVisibilityController = ControlsVisibilityController(hideDelay: 5.0, delegate: self)
+	}
+
+	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+		super.viewWillTransition(to: size, with: coordinator)
+		coordinator.animate { [weak self] _ in
+			self?.updateEdgesForExtendedLayout()
+		}
+	}
+
+	private func updateEdgesForExtendedLayout() {
+		let isLandscape = view.bounds.width > view.bounds.height
+		edgesForExtendedLayout = isLandscape ? .all : []
 	}
 
 	private func setupTapGesture() {
@@ -224,6 +256,7 @@ public final class VideoPlayerViewController: UIViewController {
 	}
 
 	@objc private func playButtonTapped() {
+		controlsVisibilityController?.scheduleHide()
 		if player.isPlaying {
 			player.pause()
 			playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
@@ -234,14 +267,17 @@ public final class VideoPlayerViewController: UIViewController {
 	}
 
 	@objc private func seekForwardButtonTapped() {
+		controlsVisibilityController?.scheduleHide()
 		player.seekForward(by: 10)
 	}
 
 	@objc private func seekBackwardButtonTapped() {
+		controlsVisibilityController?.scheduleHide()
 		player.seekBackward(by: 10)
 	}
 
 	@objc private func progressSliderValueChanged() {
+		controlsVisibilityController?.scheduleHide()
 		let targetTime = TimeInterval(progressSlider.value) * player.duration
 		player.seek(to: targetTime)
 	}
@@ -288,44 +324,48 @@ public final class VideoPlayerViewController: UIViewController {
 	}
 
 	public func toggleControlsVisibility() {
-		areControlsVisible.toggle()
-		let alpha: CGFloat = areControlsVisible ? 1.0 : 0.0
+		controlsVisibilityController?.toggle()
+	}
 
-		UIView.animate(withDuration: 0.3) { [weak self] in
-			self?.playButton.alpha = alpha
-			self?.seekForwardButton.alpha = alpha
-			self?.seekBackwardButton.alpha = alpha
-			self?.progressSlider.alpha = alpha
-			self?.currentTimeLabel.alpha = alpha
-			self?.durationLabel.alpha = alpha
-			self?.muteButton.alpha = alpha
-			self?.volumeSlider.alpha = alpha
-			self?.playbackSpeedButton.alpha = alpha
-			self?.fullscreenButton.alpha = alpha
-		}
+	private func setPlaybackControlsAlpha(_ alpha: CGFloat) {
+		playButton.alpha = alpha
+		seekForwardButton.alpha = alpha
+		seekBackwardButton.alpha = alpha
+		progressSlider.alpha = alpha
+		currentTimeLabel.alpha = alpha
+		durationLabel.alpha = alpha
 	}
 
 	public func updateTimeDisplay() {
-		currentTimeLabel.text = formatTime(player.currentTime)
-		durationLabel.text = formatTime(player.duration)
+		currentTimeLabel.text = VideoPlayerPresenter.formatTime(player.currentTime)
+		durationLabel.text = VideoPlayerPresenter.formatTime(player.duration)
 
 		if player.duration > 0 {
 			progressSlider.value = Float(player.currentTime / player.duration)
 		}
 	}
+}
 
-	private func formatTime(_ time: TimeInterval) -> String {
-		guard time.isFinite && !time.isNaN else { return "0:00" }
-
-		let totalSeconds = Int(time)
-		let hours = totalSeconds / 3600
-		let minutes = (totalSeconds % 3600) / 60
-		let seconds = totalSeconds % 60
-
-		if hours > 0 {
-			return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-		} else {
-			return String(format: "%d:%02d", minutes, seconds)
+extension VideoPlayerViewController: ControlsVisibilityDelegate {
+	public func controlsDidShow() {
+		UIView.animate(withDuration: 0.3) { [weak self] in
+			self?.setPlaybackControlsAlpha(1.0)
 		}
+	}
+
+	public func controlsDidHide() {
+		UIView.animate(withDuration: 0.3) { [weak self] in
+			self?.setPlaybackControlsAlpha(0.0)
+		}
+	}
+
+	public func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping () -> Void) {
+		hideControlsTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+			callback()
+		}
+	}
+
+	public func cancelTimer() {
+		hideControlsTimer?.invalidate()
 	}
 }

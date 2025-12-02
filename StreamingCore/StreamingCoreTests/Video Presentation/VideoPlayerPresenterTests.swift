@@ -31,6 +31,24 @@ class VideoPlayerPresenterTests: XCTestCase {
 		XCTAssertEqual(VideoPlayerPresenter.title, localized("VIDEO_PLAYER_VIEW_TITLE"))
 	}
 
+	func test_formatTime_returnsZeroForInvalidTime() {
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(TimeInterval.nan), "0:00")
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(TimeInterval.infinity), "0:00")
+	}
+
+	func test_formatTime_returnsMinutesAndSecondsForShortDurations() {
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(0), "0:00")
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(5), "0:05")
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(65), "1:05")
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(599), "9:59")
+	}
+
+	func test_formatTime_returnsHoursMinutesSecondsForLongDurations() {
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(3600), "1:00:00")
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(3661), "1:01:01")
+		XCTAssertEqual(VideoPlayerPresenter.formatTime(7325), "2:02:05")
+	}
+
 	// MARK: - Helpers
 
 	private func makeVideo(
