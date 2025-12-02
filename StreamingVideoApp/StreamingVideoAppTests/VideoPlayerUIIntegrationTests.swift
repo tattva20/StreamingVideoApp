@@ -297,11 +297,7 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 	func test_videoPlayerView_supportsAllOrientationsExceptUpsideDown() {
 		let sut = makeSUT()
 
-		let supportedOrientations = sut.supportedInterfaceOrientations
-
-		XCTAssertTrue(supportedOrientations.contains(.portrait), "Expected portrait to be supported")
-		XCTAssertTrue(supportedOrientations.contains(.landscapeLeft), "Expected landscape left to be supported")
-		XCTAssertTrue(supportedOrientations.contains(.landscapeRight), "Expected landscape right to be supported")
+		XCTAssertEqual(sut.supportedInterfaceOrientations, .allButUpsideDown, "Expected explicit support for all orientations except upside down")
 	}
 
 	// MARK: - Helpers

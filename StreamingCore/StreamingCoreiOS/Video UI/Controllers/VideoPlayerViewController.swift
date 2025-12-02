@@ -197,6 +197,10 @@ public final class VideoPlayerViewController: UIViewController {
 		fatalError("init(coder:) has not been implemented")
 	}
 
+	public override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+		return .allButUpsideDown
+	}
+
 	public override func viewDidLoad() {
 		super.viewDidLoad()
 		isLandscape = view.bounds.width > view.bounds.height

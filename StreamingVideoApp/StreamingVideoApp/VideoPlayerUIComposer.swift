@@ -30,8 +30,8 @@ public enum VideoPlayerUIComposer {
 			if #available(iOS 16.0, *) {
 				guard let windowScene = controller.view.window?.windowScene else { return }
 				let targetOrientation: UIInterfaceOrientationMask = isCurrentlyFullscreen ? .portrait : .landscapeRight
-				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { _ in }
 				controller.setNeedsUpdateOfSupportedInterfaceOrientations()
+				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { _ in }
 			} else {
 				if isCurrentlyFullscreen {
 					let value = UIInterfaceOrientation.portrait.rawValue
