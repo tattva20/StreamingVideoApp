@@ -30,14 +30,10 @@ public enum VideoCommentsUIComposer {
 	}
 
 	private static func makeCommentsViewController() -> ListViewController {
-		let commentsController = ListViewController()
+		let bundle = Bundle(for: ListViewController.self)
+		let storyboard = UIStoryboard(name: "VideoComments", bundle: bundle)
+		let commentsController = storyboard.instantiateInitialViewController() as! ListViewController
 		commentsController.title = VideoCommentsPresenter.title
-		commentsController.registerCellClass(VideoCommentCell.self)
-
-		let refreshControl = UIRefreshControl()
-		refreshControl.addTarget(commentsController, action: #selector(ListViewController.valueChanged), for: .valueChanged)
-		commentsController.refreshControl = refreshControl
-
 		return commentsController
 	}
 }

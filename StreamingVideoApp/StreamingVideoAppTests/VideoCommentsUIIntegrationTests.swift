@@ -105,6 +105,22 @@ class VideoCommentsUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(sut.errorMessage, nil)
 	}
 
+	func test_loadingCommentsIndicator_isVisibleWhileLoadingComments() {
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once view appears")
+
+		loader.completeLoading(at: 0)
+		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once loading completes")
+
+		sut.simulateUserInitiatedReload()
+		XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once user initiates a reload")
+
+		loader.completeLoadingWithError(at: 1)
+		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once loading completes with error")
+	}
+
 	// MARK: - Helpers
 
 	private func makeSUT(
