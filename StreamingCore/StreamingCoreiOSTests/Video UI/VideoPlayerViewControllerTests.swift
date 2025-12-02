@@ -136,17 +136,19 @@ class VideoPlayerViewControllerTests: XCTestCase {
 		XCTAssertEqual(player.playbackSpeed, 1.0, accuracy: 0.01)
 	}
 
-	func test_fullscreenButtonTap_togglesFullscreen() {
+	func test_fullscreenButtonTap_callsToggleCallback() {
 		let (sut, _) = makeSUT()
+		var toggleCallCount = 0
+		sut.onFullscreenToggle = { toggleCallCount += 1 }
 
 		sut.loadViewIfNeeded()
-		XCTAssertFalse(sut.isFullscreen)
+		XCTAssertEqual(toggleCallCount, 0)
 
 		sut.simulateFullscreenButtonTap()
-		XCTAssertTrue(sut.isFullscreen)
+		XCTAssertEqual(toggleCallCount, 1)
 
 		sut.simulateFullscreenButtonTap()
-		XCTAssertFalse(sut.isFullscreen)
+		XCTAssertEqual(toggleCallCount, 2)
 	}
 
 	func test_tapOnPlayerView_togglesControlsVisibility() {
@@ -185,7 +187,8 @@ class VideoPlayerViewControllerTests: XCTestCase {
 	}
 
 	func test_hideControls_setsPlaybackControlsAlphaToZero() {
-		let (sut, _) = makeSUT()
+		let (sut, player) = makeSUT()
+		player.isPlaying = true
 
 		sut.loadViewIfNeeded()
 		sut.simulateTapOnPlayerView()

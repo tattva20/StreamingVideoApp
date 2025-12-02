@@ -150,6 +150,7 @@ public final class VideoPlayerViewController: UIViewController {
 	private var landscapeConstraints: [NSLayoutConstraint] = []
 	private var playerViewHeightConstraint: NSLayoutConstraint?
 	private var commentsContainerConstraints: [NSLayoutConstraint] = []
+	private var bottomControlsContainerConstraints: [NSLayoutConstraint] = []
 
 	public func setCommentsController(_ controller: UIViewController) {
 		embeddedCommentsController = controller
@@ -258,6 +259,7 @@ public final class VideoPlayerViewController: UIViewController {
 			NSLayoutConstraint.deactivate(portraitConstraints)
 			NSLayoutConstraint.deactivate(fullscreenButtonPortraitConstraints)
 			NSLayoutConstraint.deactivate(commentsContainerConstraints)
+			NSLayoutConstraint.deactivate(bottomControlsContainerConstraints)
 			durationLabelPortraitConstraint?.isActive = false
 
 			NSLayoutConstraint.activate(landscapeConstraints)
@@ -276,6 +278,7 @@ public final class VideoPlayerViewController: UIViewController {
 			NSLayoutConstraint.activate(portraitConstraints)
 			NSLayoutConstraint.activate(fullscreenButtonPortraitConstraints)
 			NSLayoutConstraint.activate(commentsContainerConstraints)
+			NSLayoutConstraint.activate(bottomControlsContainerConstraints)
 			durationLabelPortraitConstraint?.isActive = true
 
 			bottomControlsContainerView.isHidden = false
@@ -312,12 +315,13 @@ public final class VideoPlayerViewController: UIViewController {
 		view.addSubview(progressSlider)
 		view.addSubview(currentTimeLabel)
 		view.addSubview(durationLabel)
-		view.addSubview(fullscreenButton)
 
 		view.addSubview(bottomControlsContainerView)
 		bottomControlsContainerView.addSubview(muteButton)
 		bottomControlsContainerView.addSubview(volumeSlider)
 		bottomControlsContainerView.addSubview(playbackSpeedButton)
+
+		view.addSubview(fullscreenButton)
 
 		landscapeTitleLabel.text = viewModel.title
 		landscapeTitleLabel.textAlignment = .center
@@ -361,6 +365,13 @@ public final class VideoPlayerViewController: UIViewController {
 			fullscreenButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
 		]
 
+		bottomControlsContainerConstraints = [
+			bottomControlsContainerView.topAnchor.constraint(equalTo: playerView.bottomAnchor, constant: 16),
+			bottomControlsContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			bottomControlsContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			bottomControlsContainerView.heightAnchor.constraint(equalToConstant: 44)
+		]
+
 		NSLayoutConstraint.activate([
 			playButton.centerXAnchor.constraint(equalTo: playerView.centerXAnchor),
 			playButton.centerYAnchor.constraint(equalTo: playerView.centerYAnchor),
@@ -386,11 +397,6 @@ public final class VideoPlayerViewController: UIViewController {
 			progressSlider.trailingAnchor.constraint(equalTo: durationLabel.leadingAnchor, constant: -8),
 			progressSlider.centerYAnchor.constraint(equalTo: currentTimeLabel.centerYAnchor),
 
-			bottomControlsContainerView.topAnchor.constraint(equalTo: playerView.bottomAnchor, constant: 16),
-			bottomControlsContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-			bottomControlsContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-			bottomControlsContainerView.heightAnchor.constraint(equalToConstant: 44),
-
 			muteButton.leadingAnchor.constraint(equalTo: bottomControlsContainerView.leadingAnchor, constant: 16),
 			muteButton.centerYAnchor.constraint(equalTo: bottomControlsContainerView.centerYAnchor),
 			muteButton.widthAnchor.constraint(equalToConstant: 44),
@@ -415,6 +421,7 @@ public final class VideoPlayerViewController: UIViewController {
 
 		NSLayoutConstraint.activate(portraitConstraints)
 		NSLayoutConstraint.activate(fullscreenButtonPortraitConstraints)
+		NSLayoutConstraint.activate(bottomControlsContainerConstraints)
 		durationLabelPortraitConstraint?.isActive = true
 	}
 

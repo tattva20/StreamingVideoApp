@@ -24,14 +24,35 @@ public enum VideoPlayerUIComposer {
 		}
 
 		controller.onFullscreenToggle = { [weak controller] in
-			guard let controller = controller else { return }
+			guard let controller = controller else {
+				print("[Fullscreen] Controller is nil")
+				return
+			}
 			let isCurrentlyFullscreen = controller.isFullscreen
+			let targetOrientation: UIInterfaceOrientationMask = isCurrentlyFullscreen ? .portrait : .landscapeRight
+
+			print("[Fullscreen] Button tapped. isFullscreen=\(isCurrentlyFullscreen), target=\(targetOrientation == .portrait ? "portrait" : "landscape")")
+
+			AppDelegate.orientationLock = targetOrientation
 
 			if #available(iOS 16.0, *) {
-				guard let windowScene = controller.view.window?.windowScene else { return }
-				let targetOrientation: UIInterfaceOrientationMask = isCurrentlyFullscreen ? .portrait : .landscapeRight
+				guard let windowScene = controller.view.window?.windowScene else {
+					print("[Fullscreen] ERROR: windowScene is nil. window=\(String(describing: controller.view.window))")
+					AppDelegate.orientationLock = .allButUpsideDown
+					return
+				}
+
+				print("[Fullscreen] Requesting geometry update...")
+
 				controller.setNeedsUpdateOfSupportedInterfaceOrientations()
-				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { _ in }
+				controller.navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+
+				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { error in
+					print("[Fullscreen] requestGeometryUpdate completed. error=\(error)")
+					DispatchQueue.main.async {
+						AppDelegate.orientationLock = .allButUpsideDown
+					}
+				}
 			} else {
 				if isCurrentlyFullscreen {
 					let value = UIInterfaceOrientation.portrait.rawValue
@@ -41,6 +62,7 @@ public enum VideoPlayerUIComposer {
 					UIDevice.current.setValue(value, forKey: "orientation")
 				}
 				UIViewController.attemptRotationToDeviceOrientation()
+				AppDelegate.orientationLock = .allButUpsideDown
 			}
 		}
 
