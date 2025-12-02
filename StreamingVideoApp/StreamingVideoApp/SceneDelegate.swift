@@ -10,9 +10,12 @@ import UIKit
 import CoreData
 import Combine
 import StreamingCore
+import StreamingCoreiOS
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	var window: UIWindow?
+
+	private var videoPlayerFactory: ((Video) -> VideoPlayer)?
 
 	private lazy var scheduler: AnyDispatchQueueScheduler = {
 		if let store = store as? CoreDataVideoStore {
@@ -56,10 +59,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 			imageLoader: loadLocalImageWithRemoteFallback,
 			selection: showVideoPlayer))
 
-	convenience init(httpClient: HTTPClient, store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable) {
+	convenience init(
+		httpClient: HTTPClient,
+		store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable,
+		videoPlayerFactory: ((Video) -> VideoPlayer)? = nil
+	) {
 		self.init()
 		self.httpClient = httpClient
 		self.store = store
+		self.videoPlayerFactory = videoPlayerFactory
 	}
 
 	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -94,8 +102,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 					.eraseToAnyPublisher()
 			})
 
+		let player = videoPlayerFactory?(video)
 		let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(
 			video: video,
+			player: player,
 			commentsController: commentsController)
 		navigationController.pushViewController(videoPlayerController, animated: true)
 	}
