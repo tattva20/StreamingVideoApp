@@ -51,4 +51,8 @@ public final class ControlsVisibilityController {
 			self?.hide()
 		}
 	}
+
+	public func cancelTimer() {
+		delegate?.cancelTimer()
+	}
 }
