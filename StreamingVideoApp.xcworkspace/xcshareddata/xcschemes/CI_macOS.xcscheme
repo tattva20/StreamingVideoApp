@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCore"
+               BlueprintIdentifier = "6ECF5BCA2EDB4200004A0835"
                BuildableName = "StreamingCore.framework"
                BlueprintName = "StreamingCore"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -35,7 +35,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreTests"
+               BlueprintIdentifier = "6ECF5BD52EDB4200004A0835"
                BuildableName = "StreamingCoreTests.xctest"
                BlueprintName = "StreamingCoreTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -46,7 +46,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreAPIEndToEndTests"
+               BlueprintIdentifier = "6ECF5C562EDB4372004A0835"
                BuildableName = "StreamingCoreAPIEndToEndTests.xctest"
                BlueprintName = "StreamingCoreAPIEndToEndTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -57,7 +57,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreCacheIntegrationTests"
+               BlueprintIdentifier = "6ECF5C482EDB4330004A0835"
                BuildableName = "StreamingCoreCacheIntegrationTests.xctest"
                BlueprintName = "StreamingCoreCacheIntegrationTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">

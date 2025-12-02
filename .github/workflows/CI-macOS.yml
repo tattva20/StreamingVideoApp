@@ -14,7 +14,7 @@ jobs:
   # This workflow contains a single job called "build-and-test"
   build-and-test:
     # The type of runner that the job will run on
-    runs-on: macos-14
+    runs-on: macos-15
 
     timeout-minutes: 8
 
@@ -23,11 +23,8 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v4
 
-    - name: List available Xcode versions
-      run: ls /Applications | grep Xcode
-
     - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_16.1.app || sudo xcode-select -switch /Applications/Xcode_16.0.app || sudo xcode-select -switch /Applications/Xcode.app
+      run: sudo xcode-select -switch /Applications/Xcode_26.1.1.app || sudo xcode-select -switch /Applications/Xcode_26.0.1.app || sudo xcode-select -switch /Applications/Xcode_26.0.app
 
     - name: Xcode version
       run: /usr/bin/xcodebuild -version

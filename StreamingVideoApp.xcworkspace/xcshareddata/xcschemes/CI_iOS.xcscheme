@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCore"
+               BlueprintIdentifier = "6ECF5BCA2EDB4200004A0835"
                BuildableName = "StreamingCore.framework"
                BlueprintName = "StreamingCore"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -29,7 +29,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreiOS"
+               BlueprintIdentifier = "6ECF5BE92EDB4252004A0835"
                BuildableName = "StreamingCoreiOS.framework"
                BlueprintName = "StreamingCoreiOS"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -43,7 +43,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingVideoApp"
+               BlueprintIdentifier = "6E7F878A2EDE3A6A007B5AF8"
                BuildableName = "StreamingVideoApp.app"
                BlueprintName = "StreamingVideoApp"
                ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
@@ -63,7 +63,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreTests"
+               BlueprintIdentifier = "6ECF5BD52EDB4200004A0835"
                BuildableName = "StreamingCoreTests.xctest"
                BlueprintName = "StreamingCoreTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -74,7 +74,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreiOSTests"
+               BlueprintIdentifier = "6ECF5BF32EDB4252004A0835"
                BuildableName = "StreamingCoreiOSTests.xctest"
                BlueprintName = "StreamingCoreiOSTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -85,7 +85,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreAPIEndToEndTests"
+               BlueprintIdentifier = "6ECF5C562EDB4372004A0835"
                BuildableName = "StreamingCoreAPIEndToEndTests.xctest"
                BlueprintName = "StreamingCoreAPIEndToEndTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -96,7 +96,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingCoreCacheIntegrationTests"
+               BlueprintIdentifier = "6ECF5C482EDB4330004A0835"
                BuildableName = "StreamingCoreCacheIntegrationTests.xctest"
                BlueprintName = "StreamingCoreCacheIntegrationTests"
                ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
@@ -107,7 +107,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "StreamingVideoAppTests"
+               BlueprintIdentifier = "6E7F87A02EDE3A6B007B5AF8"
                BuildableName = "StreamingVideoAppTests.xctest"
                BlueprintName = "StreamingVideoAppTests"
                ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
@@ -129,7 +129,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "StreamingVideoApp"
+            BlueprintIdentifier = "6E7F878A2EDE3A6A007B5AF8"
             BuildableName = "StreamingVideoApp.app"
             BlueprintName = "StreamingVideoApp"
             ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
@@ -146,7 +146,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "StreamingVideoApp"
+            BlueprintIdentifier = "6E7F878A2EDE3A6A007B5AF8"
             BuildableName = "StreamingVideoApp.app"
             BlueprintName = "StreamingVideoApp"
             ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
