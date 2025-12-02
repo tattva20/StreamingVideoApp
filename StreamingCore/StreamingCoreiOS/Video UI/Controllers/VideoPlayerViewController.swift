@@ -149,6 +149,7 @@ public final class VideoPlayerViewController: UIViewController {
 	private var portraitConstraints: [NSLayoutConstraint] = []
 	private var landscapeConstraints: [NSLayoutConstraint] = []
 	private var playerViewHeightConstraint: NSLayoutConstraint?
+	private var commentsContainerConstraints: [NSLayoutConstraint] = []
 
 	public func setCommentsController(_ controller: UIViewController) {
 		embeddedCommentsController = controller
@@ -172,17 +173,20 @@ public final class VideoPlayerViewController: UIViewController {
 		containerView.addSubview(controller.view)
 		controller.didMove(toParent: self)
 
-		NSLayoutConstraint.activate([
+		commentsContainerConstraints = [
 			containerView.topAnchor.constraint(equalTo: bottomControlsContainerView.bottomAnchor, constant: 16),
 			containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
 			containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 			containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-
 			controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
 			controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
 			controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
 			controller.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-		])
+		]
+
+		if !isLandscape {
+			NSLayoutConstraint.activate(commentsContainerConstraints)
+		}
 
 		updateLayoutForOrientation(isLandscape: isLandscape)
 	}
@@ -253,6 +257,7 @@ public final class VideoPlayerViewController: UIViewController {
 		if isLandscape {
 			NSLayoutConstraint.deactivate(portraitConstraints)
 			NSLayoutConstraint.deactivate(fullscreenButtonPortraitConstraints)
+			NSLayoutConstraint.deactivate(commentsContainerConstraints)
 			durationLabelPortraitConstraint?.isActive = false
 
 			NSLayoutConstraint.activate(landscapeConstraints)
@@ -270,6 +275,7 @@ public final class VideoPlayerViewController: UIViewController {
 
 			NSLayoutConstraint.activate(portraitConstraints)
 			NSLayoutConstraint.activate(fullscreenButtonPortraitConstraints)
+			NSLayoutConstraint.activate(commentsContainerConstraints)
 			durationLabelPortraitConstraint?.isActive = true
 
 			bottomControlsContainerView.isHidden = false
