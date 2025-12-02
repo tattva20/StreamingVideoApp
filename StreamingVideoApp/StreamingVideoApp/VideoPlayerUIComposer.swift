@@ -12,10 +12,14 @@ public enum VideoPlayerUIComposer {
 	public static func videoPlayerComposedWith(
 		video: Video,
 		player: VideoPlayer? = nil,
-		commentsController: UIViewController? = nil
+		commentsController: UIViewController? = nil,
+		analyticsLogger: PlaybackAnalyticsLogger? = nil
 	) -> VideoPlayerViewController {
 		let viewModel = VideoPlayerPresenter.map(video)
-		let videoPlayer = player ?? AVPlayerVideoPlayer()
+		let basePlayer = player ?? AVPlayerVideoPlayer()
+		let videoPlayer: VideoPlayer = analyticsLogger.map {
+			AnalyticsVideoPlayerDecorator(decoratee: basePlayer, analyticsLogger: $0)
+		} ?? basePlayer
 		let controller = VideoPlayerViewController(viewModel: viewModel, player: videoPlayer)
 
 		if let commentsController = commentsController {

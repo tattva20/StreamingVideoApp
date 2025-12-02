@@ -16,6 +16,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 	private var videoPlayerFactory: ((Video) -> VideoPlayer)?
 
+	private lazy var analyticsStore: AnalyticsStore = {
+		InMemoryAnalyticsStore()
+	}()
+
+	private lazy var analyticsLogger: PlaybackAnalyticsLogger = {
+		PlaybackAnalyticsService(store: analyticsStore)
+	}()
+
 	private lazy var scheduler: AnyDispatchQueueScheduler = {
 		if let store = store as? CoreDataVideoStore {
 			return .scheduler(for: store)
@@ -105,7 +113,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(
 			video: video,
 			player: player,
-			commentsController: commentsController)
+			commentsController: commentsController,
+			analyticsLogger: analyticsLogger)
 		navigationController.pushViewController(videoPlayerController, animated: true)
 	}
 
