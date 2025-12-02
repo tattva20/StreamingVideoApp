@@ -244,6 +244,56 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		XCTAssertGreaterThan(fullscreenX, durationMaxX, "Expected fullscreen button to be positioned after duration label")
 	}
 
+	func test_videoPlayerView_isFullscreenIsFalseInPortrait() {
+		let sut = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertFalse(sut.isFullscreen, "Expected isFullscreen to be false in portrait")
+	}
+
+	func test_videoPlayerView_isFullscreenIsTrueInLandscape() {
+		let sut = makeSUT()
+
+		sut.simulateLandscapeOrientation()
+
+		XCTAssertTrue(sut.isFullscreen, "Expected isFullscreen to be true in landscape")
+	}
+
+	func test_videoPlayerView_fullscreenButtonShowsExpandIconInPortrait() {
+		let sut = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		let expectedImage = UIImage(systemName: "arrow.up.left.and.arrow.down.right")
+		XCTAssertEqual(sut.fullscreenButton.image(for: .normal), expectedImage, "Expected expand icon in portrait")
+	}
+
+	func test_videoPlayerView_fullscreenButtonShowsCollapseIconInLandscape() {
+		let sut = makeSUT()
+
+		sut.simulateLandscapeOrientation()
+
+		let expectedImage = UIImage(systemName: "arrow.down.right.and.arrow.up.left")
+		XCTAssertEqual(sut.fullscreenButton.image(for: .normal), expectedImage, "Expected collapse icon in landscape")
+	}
+
+	func test_videoPlayerView_fullscreenButtonIconUpdatesOnOrientationChange() {
+		let sut = makeSUT()
+		sut.loadViewIfNeeded()
+
+		let expandIcon = UIImage(systemName: "arrow.up.left.and.arrow.down.right")
+		let collapseIcon = UIImage(systemName: "arrow.down.right.and.arrow.up.left")
+
+		XCTAssertEqual(sut.fullscreenButton.image(for: .normal), expandIcon, "Precondition: should show expand icon")
+
+		sut.simulateLandscapeOrientation()
+		XCTAssertEqual(sut.fullscreenButton.image(for: .normal), collapseIcon, "Expected collapse icon after landscape")
+
+		sut.simulatePortraitOrientation()
+		XCTAssertEqual(sut.fullscreenButton.image(for: .normal), expandIcon, "Expected expand icon after portrait")
+	}
+
 	// MARK: - Helpers
 
 	private func makeSUT(

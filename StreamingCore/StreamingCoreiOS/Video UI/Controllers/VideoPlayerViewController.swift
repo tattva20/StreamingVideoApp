@@ -242,7 +242,9 @@ public final class VideoPlayerViewController: UIViewController {
 
 	public func updateLayoutForOrientation(isLandscape: Bool) {
 		self.isLandscape = isLandscape
+		self.isFullscreen = isLandscape
 		updateEdgesForExtendedLayout()
+		updateFullscreenButtonIcon()
 
 		if isLandscape {
 			NSLayoutConstraint.deactivate(portraitConstraints)
