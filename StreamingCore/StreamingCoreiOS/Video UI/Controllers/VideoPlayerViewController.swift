@@ -99,6 +99,25 @@ public final class VideoPlayerViewController: UIViewController {
 		return button
 	}()
 
+	public private(set) lazy var fullscreenButton: UIButton = {
+		let button = UIButton(type: .system)
+		button.setImage(UIImage(systemName: "arrow.up.left.and.arrow.down.right"), for: .normal)
+		button.tintColor = .white
+		button.addTarget(self, action: #selector(fullscreenButtonTapped), for: .touchUpInside)
+		button.translatesAutoresizingMaskIntoConstraints = false
+		return button
+	}()
+
+	public private(set) var isFullscreen: Bool = false
+	public private(set) var areControlsVisible: Bool = true
+
+	private lazy var controlsOverlay: UIView = {
+		let view = UIView()
+		view.backgroundColor = .clear
+		view.translatesAutoresizingMaskIntoConstraints = false
+		return view
+	}()
+
 	public private(set) lazy var playerView: PlayerView = {
 		let view = PlayerView()
 		view.backgroundColor = .black
@@ -120,6 +139,17 @@ public final class VideoPlayerViewController: UIViewController {
 		super.viewDidLoad()
 		setupUI()
 		configurePlayer()
+		setupTapGesture()
+	}
+
+	private func setupTapGesture() {
+		let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+		playerView.addGestureRecognizer(tapGesture)
+		playerView.isUserInteractionEnabled = true
+	}
+
+	@objc private func handleTap() {
+		toggleControlsVisibility()
 	}
 
 	private func setupUI() {
@@ -136,6 +166,7 @@ public final class VideoPlayerViewController: UIViewController {
 		view.addSubview(muteButton)
 		view.addSubview(volumeSlider)
 		view.addSubview(playbackSpeedButton)
+		view.addSubview(fullscreenButton)
 
 		NSLayoutConstraint.activate([
 			playerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -178,8 +209,13 @@ public final class VideoPlayerViewController: UIViewController {
 			volumeSlider.widthAnchor.constraint(equalToConstant: 120),
 
 			playbackSpeedButton.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor),
-			playbackSpeedButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-			playbackSpeedButton.widthAnchor.constraint(equalToConstant: 50)
+			playbackSpeedButton.trailingAnchor.constraint(equalTo: fullscreenButton.leadingAnchor, constant: -16),
+			playbackSpeedButton.widthAnchor.constraint(equalToConstant: 50),
+
+			fullscreenButton.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor),
+			fullscreenButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+			fullscreenButton.widthAnchor.constraint(equalToConstant: 44),
+			fullscreenButton.heightAnchor.constraint(equalToConstant: 44)
 		])
 	}
 
@@ -239,6 +275,34 @@ public final class VideoPlayerViewController: UIViewController {
 		let speed = player.playbackSpeed
 		let title = speed == 1.0 ? "1x" : String(format: "%.2gx", speed)
 		playbackSpeedButton.setTitle(title, for: .normal)
+	}
+
+	@objc private func fullscreenButtonTapped() {
+		isFullscreen.toggle()
+		updateFullscreenButtonIcon()
+	}
+
+	private func updateFullscreenButtonIcon() {
+		let iconName = isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
+		fullscreenButton.setImage(UIImage(systemName: iconName), for: .normal)
+	}
+
+	public func toggleControlsVisibility() {
+		areControlsVisible.toggle()
+		let alpha: CGFloat = areControlsVisible ? 1.0 : 0.0
+
+		UIView.animate(withDuration: 0.3) { [weak self] in
+			self?.playButton.alpha = alpha
+			self?.seekForwardButton.alpha = alpha
+			self?.seekBackwardButton.alpha = alpha
+			self?.progressSlider.alpha = alpha
+			self?.currentTimeLabel.alpha = alpha
+			self?.durationLabel.alpha = alpha
+			self?.muteButton.alpha = alpha
+			self?.volumeSlider.alpha = alpha
+			self?.playbackSpeedButton.alpha = alpha
+			self?.fullscreenButton.alpha = alpha
+		}
 	}
 
 	public func updateTimeDisplay() {

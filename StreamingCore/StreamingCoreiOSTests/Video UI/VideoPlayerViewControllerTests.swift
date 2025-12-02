@@ -136,6 +136,32 @@ class VideoPlayerViewControllerTests: XCTestCase {
 		XCTAssertEqual(player.playbackSpeed, 1.0, accuracy: 0.01)
 	}
 
+	func test_fullscreenButtonTap_togglesFullscreen() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+		XCTAssertFalse(sut.isFullscreen)
+
+		sut.simulateFullscreenButtonTap()
+		XCTAssertTrue(sut.isFullscreen)
+
+		sut.simulateFullscreenButtonTap()
+		XCTAssertFalse(sut.isFullscreen)
+	}
+
+	func test_tapOnPlayerView_togglesControlsVisibility() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+		XCTAssertTrue(sut.areControlsVisible)
+
+		sut.simulateTapOnPlayerView()
+		XCTAssertFalse(sut.areControlsVisible)
+
+		sut.simulateTapOnPlayerView()
+		XCTAssertTrue(sut.areControlsVisible)
+	}
+
 	// MARK: - Helpers
 
 	private func makeSUT(
@@ -252,6 +278,14 @@ private extension VideoPlayerViewController {
 
 	func simulatePlaybackSpeedButtonTap() {
 		playbackSpeedButton.simulate(event: .touchUpInside)
+	}
+
+	func simulateFullscreenButtonTap() {
+		fullscreenButton.simulate(event: .touchUpInside)
+	}
+
+	func simulateTapOnPlayerView() {
+		toggleControlsVisibility()
 	}
 }
 
