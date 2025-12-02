@@ -88,7 +88,9 @@ class VideoAcceptanceTests: XCTestCase {
 
     private func launch(
         httpClient: HTTPClientStub = .offline,
-        store: CoreDataVideoStore
+        store: CoreDataVideoStore,
+		file: StaticString = #filePath,
+		line: UInt = #line
     ) throws -> ListViewController {
         let sut = SceneDelegate(
 			httpClient: httpClient,
@@ -100,11 +102,19 @@ class VideoAcceptanceTests: XCTestCase {
         sut.window?.frame = CGRect(x: 0, y: 0, width: 390, height: 1)
         sut.configureWindow()
 
+		trackForMemoryLeaks(sut, file: file, line: line)
+
         let nav = sut.window?.rootViewController as? UINavigationController
         let vc = nav?.topViewController as! ListViewController
         vc.simulateAppearance()
         return vc
     }
+
+	private func trackForMemoryLeaks(_ instance: AnyObject, file: StaticString = #filePath, line: UInt = #line) {
+		addTeardownBlock { [weak instance] in
+			XCTAssertNil(instance, "Instance should have been deallocated. Potential memory leak.", file: file, line: line)
+		}
+	}
 
     private func enterBackground(with store: CoreDataVideoStore) {
         let sut = SceneDelegate(httpClient: HTTPClientStub.offline, store: store)
