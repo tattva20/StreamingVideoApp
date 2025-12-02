@@ -48,7 +48,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		LocalVideoLoader(store: store, currentDate: Date.init)
 	}()
 
-	private lazy var baseURL = URL(string: "https://streaming-videos-in0yxht3f-financieraufc-5358s-projects.vercel.app")!
+	private lazy var baseURL = URL(string: "https://streaming-videos-c6camc99n-financieraufc-5358s-projects.vercel.app")!
 
 	private lazy var navigationController = UINavigationController(
 		rootViewController: VideosUIComposer.videosComposedWith(
@@ -85,7 +85,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	}
 
 	private func showVideoPlayer(for video: Video) {
-		let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(video: video)
+		let commentsController = VideoCommentsUIComposer.commentsComposedWith(
+			commentsLoader: { [httpClient, baseURL] in
+				let url = VideoCommentsEndpoint.get(video.id).url(baseURL: baseURL)
+				return httpClient
+					.getPublisher(url: url)
+					.tryMap(VideoCommentsMapper.map)
+					.eraseToAnyPublisher()
+			})
+
+		let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(
+			video: video,
+			commentsController: commentsController)
 		navigationController.pushViewController(videoPlayerController, animated: true)
 	}
 

@@ -32,6 +32,16 @@ class VideoAcceptanceTests: XCTestCase {
 		XCTAssertEqual(videoPlayer?.title, "Video 0")
 	}
 
+	func test_onVideoSelection_displaysCommentsSection() throws {
+		let video = try launch(httpClient: .online(response), store: .empty)
+
+		video.simulateTapOnVideo(at: 0)
+
+		let nav = video.navigationController
+		let videoPlayer = nav?.topViewController as? VideoPlayerViewController
+		XCTAssertNotNil(videoPlayer?.embeddedCommentsController, "Expected comments controller to be embedded in video player")
+	}
+
     func test_onLaunch_displaysRemoteVideosWhenCustomerHasConnectivity() throws {
         let video = try launch(httpClient: .online(response), store: .empty)
 

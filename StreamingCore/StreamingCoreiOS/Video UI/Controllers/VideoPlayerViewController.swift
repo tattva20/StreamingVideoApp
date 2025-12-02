@@ -129,6 +129,50 @@ public final class VideoPlayerViewController: UIViewController {
 		return view
 	}()
 
+	private var commentsContainerView: UIView?
+	public private(set) var embeddedCommentsController: UIViewController?
+
+	public func setCommentsController(_ controller: UIViewController) {
+		embeddedCommentsController = controller
+		if isViewLoaded {
+			embedCommentsController(controller)
+		}
+	}
+
+	private func embedCommentsController(_ controller: UIViewController) {
+		guard commentsContainerView == nil else { return }
+
+		let containerView = UIView()
+		containerView.translatesAutoresizingMaskIntoConstraints = false
+		containerView.backgroundColor = .systemBackground
+		view.addSubview(containerView)
+		commentsContainerView = containerView
+
+		addChild(controller)
+		controller.view.translatesAutoresizingMaskIntoConstraints = false
+		containerView.addSubview(controller.view)
+		controller.didMove(toParent: self)
+
+		NSLayoutConstraint.activate([
+			containerView.topAnchor.constraint(equalTo: muteButton.bottomAnchor, constant: 16),
+			containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+			controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
+			controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+			controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+			controller.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+		])
+
+		updateCommentsVisibility()
+	}
+
+	private func updateCommentsVisibility() {
+		let isLandscape = view.bounds.width > view.bounds.height
+		commentsContainerView?.isHidden = isLandscape
+	}
+
 	public init(viewModel: VideoPlayerViewModel, player: VideoPlayer) {
 		self.viewModel = viewModel
 		self.player = player
@@ -146,6 +190,10 @@ public final class VideoPlayerViewController: UIViewController {
 		configurePlayer()
 		setupTapGesture()
 		setupControlsVisibilityController()
+
+		if let commentsController = embeddedCommentsController {
+			embedCommentsController(commentsController)
+		}
 	}
 
 	public override func viewDidAppear(_ animated: Bool) {
@@ -166,6 +214,7 @@ public final class VideoPlayerViewController: UIViewController {
 		super.viewWillTransition(to: size, with: coordinator)
 		coordinator.animate { [weak self] _ in
 			self?.updateEdgesForExtendedLayout()
+			self?.updateCommentsVisibility()
 		}
 	}
 
