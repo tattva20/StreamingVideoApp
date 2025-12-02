@@ -1,0 +1,321 @@
+import XCTest
+import StreamingCore
+import StreamingCoreiOS
+import StreamingVideoApp
+import Combine
+
+@MainActor
+class VideosUIIntegrationTests: XCTestCase {
+
+	func test_videoView_hasTitle() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertEqual(sut.title, VideosPresenter.title)
+	}
+
+	func test_videoSelection_notifiesHandler() {
+		let video0 = makeVideo()
+		let video1 = makeVideo()
+		var selectedVideos = [Video]()
+		let (sut, loader) = makeSUT(selection: { selectedVideos.append($0) })
+
+		sut.simulateAppearance()
+		loader.completeLoading(with: [video0, video1], at: 0)
+
+		sut.simulateTapOnVideoView(at: 0)
+		XCTAssertEqual(selectedVideos, [video0])
+
+		sut.simulateTapOnVideoView(at: 1)
+		XCTAssertEqual(selectedVideos, [video0, video1])
+	}
+
+	func test_loadVideoActions_requestVideosFromLoader() {
+		let (sut, loader) = makeSUT()
+		XCTAssertEqual(loader.loadCallCount, 0, "Expected no loading requests before view appears")
+
+		sut.simulateAppearance()
+		XCTAssertEqual(loader.loadCallCount, 1, "Expected a loading request once view appears")
+
+		loader.completeLoading(at: 0)
+		sut.simulateUserInitiatedReload()
+		XCTAssertEqual(loader.loadCallCount, 2, "Expected another loading request once user initiates a reload")
+
+		loader.completeLoading(at: 1)
+		sut.simulateUserInitiatedReload()
+		XCTAssertEqual(loader.loadCallCount, 3, "Expected yet another loading request once user initiates another reload")
+	}
+
+	func test_loadVideoActions_runsAutomaticallyOnlyOnFirstAppearance() {
+		let (sut, loader) = makeSUT()
+		XCTAssertEqual(loader.loadCallCount, 0, "Expected no loading requests before view appears")
+
+		sut.simulateAppearance()
+		XCTAssertEqual(loader.loadCallCount, 1, "Expected a loading request once view appears")
+
+		sut.simulateAppearance()
+		XCTAssertEqual(loader.loadCallCount, 1, "Expected no loading request the second time view appears")
+	}
+
+	func test_loadingVideoIndicator_isVisibleWhileLoadingVideos() {
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once view appears")
+
+		loader.completeLoading(at: 0)
+		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once loading completes successfully")
+
+		sut.simulateUserInitiatedReload()
+		XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once user initiates a reload")
+
+		loader.completeLoadingWithError(at: 1)
+		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once user initiated loading completes with error")
+	}
+
+	func test_loadVideoCompletion_rendersSuccessfullyLoadedVideos() {
+		let video0 = makeVideo(title: "a title", description: "a description")
+		let video1 = makeVideo(title: "another title", description: "another description")
+		let video2 = makeVideo(title: "yet another title", description: "yet another description")
+		let video3 = makeVideo(title: "and another title", description: "and another description")
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		assertThat(sut, isRendering: [])
+
+		loader.completeLoading(with: [video0], at: 0)
+		assertThat(sut, isRendering: [video0])
+
+		sut.simulateUserInitiatedReload()
+		loader.completeLoading(with: [video0, video1, video2, video3], at: 1)
+		assertThat(sut, isRendering: [video0, video1, video2, video3])
+	}
+
+	func test_loadVideoCompletion_rendersSuccessfullyLoadedEmptyVideosAfterNonEmptyVideos() {
+		let video = makeVideo()
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		loader.completeLoading(with: [video], at: 0)
+		assertThat(sut, isRendering: [video])
+
+		sut.simulateUserInitiatedReload()
+		loader.completeLoading(with: [], at: 1)
+		assertThat(sut, isRendering: [])
+	}
+
+	func test_loadVideoCompletion_doesNotAlterCurrentRenderingStateOnError() {
+		let video0 = makeVideo()
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		loader.completeLoading(with: [video0], at: 0)
+		assertThat(sut, isRendering: [video0])
+
+		sut.simulateUserInitiatedReload()
+		loader.completeLoadingWithError(at: 1)
+		assertThat(sut, isRendering: [video0])
+	}
+
+	func test_loadVideoCompletion_rendersErrorMessageOnErrorUntilNextReload() {
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertEqual(sut.errorMessage, nil)
+
+		loader.completeLoadingWithError(at: 0)
+		XCTAssertEqual(sut.errorMessage, loadError)
+
+		sut.simulateUserInitiatedReload()
+		XCTAssertEqual(sut.errorMessage, nil)
+	}
+
+	func test_tapOnErrorView_hidesErrorMessage() {
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertEqual(sut.errorMessage, nil)
+
+		loader.completeLoadingWithError(at: 0)
+		XCTAssertEqual(sut.errorMessage, loadError)
+
+		sut.simulateTapOnErrorMessage()
+		XCTAssertEqual(sut.errorMessage, nil)
+	}
+
+	func test_loadMoreActions_requestMoreFromLoader() {
+		let (sut, loader) = makeSUT()
+		sut.simulateAppearance()
+		loader.completeLoading(with: [makeVideo()])
+
+		XCTAssertEqual(loader.loadMoreCallCount, 0, "Expected no requests before until load more action")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 1, "Expected load more request")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 1, "Expected no request while loading more")
+
+		loader.completeLoadMore(lastPage: false, at: 0)
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 2, "Expected request after load more completed with more pages")
+
+		loader.completeLoadMoreWithError(at: 1)
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected request after load more failure")
+
+		loader.completeLoadMore(lastPage: true, at: 2)
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected no request after loading all pages")
+	}
+
+	func test_loadingMoreIndicator_isVisibleWhileLoadingMore() {
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator when more pages not available")
+
+		loader.completeLoading(with: [makeVideo()], at: 0)
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator once loading completes successfully")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on load more action")
+
+		loader.completeLoadMore(with: [makeVideo()], at: 0)
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with success")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on second load more action")
+
+		loader.completeLoadMoreWithError(at: 1)
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with error")
+	}
+
+	func test_loadMoreCompletion_rendersErrorMessageOnError() {
+		let (sut, loader) = makeSUT()
+		sut.simulateAppearance()
+		loader.completeLoading()
+
+		sut.simulateLoadMoreAction()
+		XCTAssertNil(sut.loadMoreErrorMessage, "Expected no error message on load more action")
+
+		loader.completeLoadMoreWithError(at: 0)
+		XCTAssertEqual(sut.loadMoreErrorMessage, loadError, "Expected error message after load more failure")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertNil(sut.loadMoreErrorMessage, "Expected no error message on retry action")
+	}
+
+	func test_tapOnLoadMoreErrorView_loadsMore() {
+		let (sut, loader) = makeSUT()
+		sut.simulateAppearance()
+		loader.completeLoading()
+
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 1)
+
+		sut.simulateTapOnLoadMoreError()
+		XCTAssertEqual(loader.loadMoreCallCount, 1)
+
+		loader.completeLoadMoreWithError()
+		sut.simulateTapOnLoadMoreError()
+		XCTAssertEqual(loader.loadMoreCallCount, 2)
+	}
+
+	func test_videoImageView_loadsImageURLWhenVisible() {
+		let video0 = makeVideo(url: URL(string: "http://url-0.com")!)
+		let video1 = makeVideo(url: URL(string: "http://url-1.com")!)
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertEqual(loader.loadedImageURLs, [], "Expected no image URL requests until views become visible")
+
+		loader.completeLoading(with: [video0, video1])
+		sut.simulateVideoViewVisible(at: 0)
+		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL], "Expected first image URL request once first view becomes visible")
+
+		sut.simulateVideoViewVisible(at: 1)
+		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL, video1.thumbnailURL], "Expected second image URL request once second view also becomes visible")
+	}
+
+	// MARK: - Helpers
+
+	private func makeSUT(
+		selection: @MainActor @escaping (Video) -> Void = { _ in },
+		file: StaticString = #filePath,
+		line: UInt = #line
+	) -> (sut: ListViewController, loader: LoaderSpy) {
+		let loader = LoaderSpy()
+
+		let sut = VideosUIComposer.videosComposedWith(
+			videoLoader: loader.loadPublisher,
+			imageLoader: loader.loadImageData,
+			selection: selection
+		)
+		trackForMemoryLeaks(loader, file: file, line: line)
+		trackForMemoryLeaks(sut, file: file, line: line)
+
+		addTeardownBlock { [weak loader] in
+			try await loader?.cancelPendingRequests()
+		}
+
+		return (sut, loader)
+	}
+
+	private func assertThat(_ sut: ListViewController, isRendering videos: [Video], file: StaticString = #filePath, line: UInt = #line) {
+		sut.view.enforceLayoutCycle()
+
+		guard sut.numberOfRenderedVideoViews() == videos.count else {
+			return XCTFail("Expected \(videos.count) videos, got \(sut.numberOfRenderedVideoViews()) instead.", file: file, line: line)
+		}
+
+		videos.enumerated().forEach { index, video in
+			assertThat(sut, hasViewConfiguredFor: video, at: index, file: file, line: line)
+		}
+	}
+
+	private func assertThat(_ sut: ListViewController, hasViewConfiguredFor video: Video, at index: Int, file: StaticString = #filePath, line: UInt = #line) {
+		let view = sut.videoView(at: index)
+
+		guard let cell = view as? VideoCell else {
+			return XCTFail("Expected \(VideoCell.self) instance, got \(String(describing: view)) instead", file: file, line: line)
+		}
+
+		XCTAssertEqual(cell.titleText, video.title, "Expected title text to be \(String(describing: video.title)) for video view at index (\(index))", file: file, line: line)
+		XCTAssertEqual(cell.descriptionText, video.description, "Expected description text to be \(String(describing: video.description)) for video view at index (\(index))", file: file, line: line)
+	}
+
+	private func makeVideo(
+		title: String = "any title",
+		description: String = "any description",
+		url: URL = URL(string: "http://any-url.com")!
+	) -> Video {
+		return Video(
+			id: UUID(),
+			title: title,
+			description: description,
+			url: url,
+			thumbnailURL: URL(string: "http://any-url.com/thumbnail.jpg")!,
+			duration: 120
+		)
+	}
+
+	private var loadError: String {
+		LoadResourcePresenter<Any, DummyView>.loadError
+	}
+
+	private class DummyView: ResourceView {
+		func display(_ viewModel: Any) {}
+	}
+}
+
+private extension VideoCell {
+	var titleText: String? {
+		return titleLabel.text
+	}
+
+	var descriptionText: String? {
+		return descriptionLabel.text
+	}
+}
