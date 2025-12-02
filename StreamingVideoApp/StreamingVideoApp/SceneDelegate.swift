@@ -48,7 +48,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		LocalVideoLoader(store: store, currentDate: Date.init)
 	}()
 
-	private lazy var baseURL = URL(string: "https://streaming-videos-ejci3r0dw-financieraufc-5358s-projects.vercel.app")!
+	private lazy var baseURL = URL(string: "https://streaming-videos-in0yxht3f-financieraufc-5358s-projects.vercel.app")!
 
 	private lazy var navigationController = UINavigationController(
 		rootViewController: VideosUIComposer.videosComposedWith(
