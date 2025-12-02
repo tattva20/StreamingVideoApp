@@ -25,18 +25,23 @@ public enum VideoPlayerUIComposer {
 
 		controller.onFullscreenToggle = { [weak controller] in
 			guard let controller = controller else { return }
-			let currentOrientation = UIDevice.current.orientation
-			let isCurrentlyLandscape = currentOrientation.isLandscape
+			let isCurrentlyFullscreen = controller.isFullscreen
 
-			if isCurrentlyLandscape {
-				let value = UIInterfaceOrientation.portrait.rawValue
-				UIDevice.current.setValue(value, forKey: "orientation")
+			if #available(iOS 16.0, *) {
+				guard let windowScene = controller.view.window?.windowScene else { return }
+				let targetOrientation: UIInterfaceOrientationMask = isCurrentlyFullscreen ? .portrait : .landscapeRight
+				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { _ in }
+				controller.setNeedsUpdateOfSupportedInterfaceOrientations()
 			} else {
-				let value = UIInterfaceOrientation.landscapeRight.rawValue
-				UIDevice.current.setValue(value, forKey: "orientation")
+				if isCurrentlyFullscreen {
+					let value = UIInterfaceOrientation.portrait.rawValue
+					UIDevice.current.setValue(value, forKey: "orientation")
+				} else {
+					let value = UIInterfaceOrientation.landscapeRight.rawValue
+					UIDevice.current.setValue(value, forKey: "orientation")
+				}
+				UIViewController.attemptRotationToDeviceOrientation()
 			}
-
-			UIViewController.attemptRotationToDeviceOrientation()
 		}
 
 		controller.loadViewIfNeeded()
