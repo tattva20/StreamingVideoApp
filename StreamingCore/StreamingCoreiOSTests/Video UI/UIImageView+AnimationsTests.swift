@@ -1,3 +1,9 @@
+//
+//  UIImageView+AnimationsTests.swift
+//  StreamingCoreiOSTests
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import XCTest
 @testable import StreamingCoreiOS
 

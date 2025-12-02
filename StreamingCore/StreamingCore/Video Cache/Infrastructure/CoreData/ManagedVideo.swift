@@ -1,3 +1,9 @@
+//
+//  ManagedVideo.swift
+//  StreamingCore
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import CoreData
 import Foundation
 

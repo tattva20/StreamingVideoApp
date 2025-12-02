@@ -2,7 +2,8 @@
 //  VideoCommentCell.swift
 //  StreamingCoreiOS
 //
-
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import UIKit
 
 public final class VideoCommentCell: UITableViewCell {

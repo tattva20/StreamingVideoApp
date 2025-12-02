@@ -1,3 +1,9 @@
+//
+//  XCTestCase+Snapshot.swift
+//  StreamingCoreiOSTests
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import XCTest
 
 extension XCTestCase {

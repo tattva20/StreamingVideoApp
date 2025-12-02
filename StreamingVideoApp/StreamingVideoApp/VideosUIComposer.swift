@@ -1,10 +1,9 @@
 //
 //  VideosUIComposer.swift
-//  StreamingCoreiOS
+//  StreamingVideoApp
 //
-//  Created by Octavio Rojas on 30/11/25.
+//  Copyright by Octavio Rojas all rights reserved.
 //
-
 import UIKit
 import Combine
 import StreamingCore

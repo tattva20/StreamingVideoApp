@@ -1,7 +1,9 @@
 //
-// Copyright © Essential Developer. All rights reserved.
+//  VideoViewModel.swift
+//  StreamingCore
 //
-
+//  Copyright by Octavio Rojas all rights reserved.
+//
 public struct VideoViewModel {
 	public let title: String?
 	public let description: String?

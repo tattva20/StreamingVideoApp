@@ -1,8 +1,9 @@
 //
 //  VideoCommentsUIIntegrationTests.swift
-//  StreamingVideoAppTests
+//  StreamingVideoApp
 //
-
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import XCTest
 import StreamingCore
 import StreamingCoreiOS

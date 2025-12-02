@@ -1,7 +1,9 @@
 //
-// Copyright © Essential Developer. All rights reserved.
+//  LoadMoreCellController.swift
+//  StreamingCoreiOS
 //
-
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import UIKit
 import StreamingCore
 

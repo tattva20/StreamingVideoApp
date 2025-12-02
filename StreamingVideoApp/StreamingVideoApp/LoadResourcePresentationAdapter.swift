@@ -1,3 +1,9 @@
+//
+//  LoadResourcePresentationAdapter.swift
+//  StreamingVideoApp
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import Combine
 import StreamingCore
 import StreamingCoreiOS

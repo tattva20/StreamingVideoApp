@@ -1,3 +1,9 @@
+//
+//  SharedTestHelpers.swift
+//  StreamingCoreTests
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import Foundation
 
 func anyNSError() -> NSError {

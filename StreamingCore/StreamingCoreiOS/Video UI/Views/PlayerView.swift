@@ -2,9 +2,8 @@
 //  PlayerView.swift
 //  StreamingCoreiOS
 //
-//  Created by Octavio Rojas on 02/12/25.
+//  Copyright by Octavio Rojas all rights reserved.
 //
-
 import UIKit
 import AVFoundation
 

@@ -1,3 +1,9 @@
+//
+//  SceneDelegateTests.swift
+//  StreamingVideoApp
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import XCTest
 import StreamingCoreiOS
 @testable import StreamingVideoApp

@@ -2,9 +2,8 @@
 //  LoadMoreCellTests.swift
 //  StreamingCoreiOSTests
 //
-//  Created by Octavio Rojas on 30/11/25.
+//  Copyright by Octavio Rojas all rights reserved.
 //
-
 import XCTest
 import StreamingCoreiOS
 

@@ -1,3 +1,9 @@
+//
+//  ResourceErrorViewModel.swift
+//  StreamingCore
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 public struct ResourceErrorViewModel {
 	public let message: String?
 

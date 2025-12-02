@@ -1,3 +1,9 @@
+//
+//  VideoCacheTestHelpers.swift
+//  StreamingCoreTests
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import Foundation
 import StreamingCore
 

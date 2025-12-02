@@ -1,7 +1,9 @@
 //
-// Copyright © Essential Developer. All rights reserved.
+//  LoadMoreCell.swift
+//  StreamingCoreiOS
 //
-
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import UIKit
 
 public class LoadMoreCell: UITableViewCell {

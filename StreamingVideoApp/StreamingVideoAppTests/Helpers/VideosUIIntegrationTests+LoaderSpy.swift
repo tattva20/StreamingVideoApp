@@ -1,3 +1,9 @@
+//
+//  VideosUIIntegrationTests+LoaderSpy.swift
+//  StreamingVideoApp
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import Foundation
 import StreamingCore
 import StreamingCoreiOS

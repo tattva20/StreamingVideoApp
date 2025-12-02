@@ -1,3 +1,9 @@
+//
+//  WeakRefVirtualProxy.swift
+//  StreamingVideoApp
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import UIKit
 import StreamingCore
 

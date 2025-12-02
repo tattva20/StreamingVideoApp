@@ -2,9 +2,8 @@
 //  VideoPlayerPresenter.swift
 //  StreamingCore
 //
-//  Created by Octavio Rojas on 02/12/25.
+//  Copyright by Octavio Rojas all rights reserved.
 //
-
 import Foundation
 
 public final class VideoPlayerPresenter {

@@ -2,9 +2,8 @@
 //  SceneDelegate.swift
 //  StreamingVideoApp
 //
-//  Created by Octavio Rojas on 29/11/25.
+//  Copyright by Octavio Rojas all rights reserved.
 //
-
 import os
 import UIKit
 import CoreData

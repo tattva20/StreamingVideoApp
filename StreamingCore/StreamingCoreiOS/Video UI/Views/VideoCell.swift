@@ -1,7 +1,9 @@
 //
-// Copyright © Essential Developer. All rights reserved.
+//  VideoCell.swift
+//  StreamingCoreiOS
 //
-
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import UIKit
 
 public final class VideoCell: UITableViewCell {

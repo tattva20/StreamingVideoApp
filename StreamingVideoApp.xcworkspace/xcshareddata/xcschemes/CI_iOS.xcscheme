@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "1600"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingCore"
+               BuildableName = "StreamingCore.framework"
+               BlueprintName = "StreamingCore"
+               ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingCoreiOS"
+               BuildableName = "StreamingCoreiOS.framework"
+               BlueprintName = "StreamingCoreiOS"
+               ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingVideoApp"
+               BuildableName = "StreamingVideoApp.app"
+               BlueprintName = "StreamingVideoApp"
+               ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingCoreTests"
+               BuildableName = "StreamingCoreTests.xctest"
+               BlueprintName = "StreamingCoreTests"
+               ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingCoreiOSTests"
+               BuildableName = "StreamingCoreiOSTests.xctest"
+               BlueprintName = "StreamingCoreiOSTests"
+               ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingCoreAPIEndToEndTests"
+               BuildableName = "StreamingCoreAPIEndToEndTests.xctest"
+               BlueprintName = "StreamingCoreAPIEndToEndTests"
+               ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingCoreCacheIntegrationTests"
+               BuildableName = "StreamingCoreCacheIntegrationTests.xctest"
+               BlueprintName = "StreamingCoreCacheIntegrationTests"
+               ReferencedContainer = "container:StreamingCore/StreamingCore.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "StreamingVideoAppTests"
+               BuildableName = "StreamingVideoAppTests.xctest"
+               BlueprintName = "StreamingVideoAppTests"
+               ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "StreamingVideoApp"
+            BuildableName = "StreamingVideoApp.app"
+            BlueprintName = "StreamingVideoApp"
+            ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "StreamingVideoApp"
+            BuildableName = "StreamingVideoApp.app"
+            BlueprintName = "StreamingVideoApp"
+            ReferencedContainer = "container:StreamingVideoApp/StreamingVideoApp.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>

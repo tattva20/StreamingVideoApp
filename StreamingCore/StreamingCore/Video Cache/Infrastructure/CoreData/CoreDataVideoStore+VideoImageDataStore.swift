@@ -1,3 +1,9 @@
+//
+//  CoreDataVideoStore+VideoImageDataStore.swift
+//  StreamingCore
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import Foundation
 import CoreData
 

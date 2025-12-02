@@ -1,3 +1,9 @@
+//
+//  XCTestCase+MemoryLeakTracking.swift
+//  StreamingVideoApp
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import XCTest
 
 extension XCTestCase {

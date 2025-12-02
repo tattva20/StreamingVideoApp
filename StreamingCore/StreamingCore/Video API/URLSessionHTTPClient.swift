@@ -1,3 +1,9 @@
+//
+//  URLSessionHTTPClient.swift
+//  StreamingCore
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import Foundation
 
 public final class URLSessionHTTPClient: HTTPClient {

@@ -2,9 +2,8 @@
 //  HTTPURLResponse+StatusCode.swift
 //  StreamingCore
 //
-//  Created by Claude on 30/11/25.
+//  Copyright by Octavio Rojas all rights reserved.
 //
-
 import Foundation
 
 extension HTTPURLResponse {

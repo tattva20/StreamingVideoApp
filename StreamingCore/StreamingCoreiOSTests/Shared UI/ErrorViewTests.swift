@@ -1,3 +1,9 @@
+//
+//  ErrorViewTests.swift
+//  StreamingCoreiOSTests
+//
+//  Copyright by Octavio Rojas all rights reserved.
+//
 import XCTest
 import StreamingCoreiOS
 
