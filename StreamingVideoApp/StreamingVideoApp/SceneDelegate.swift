@@ -24,6 +24,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		PlaybackAnalyticsService(store: analyticsStore)
 	}()
 
+	private lazy var structuredLogger: any StreamingCore.Logger = {
+		LoggingConfiguration.makeLogger()
+	}()
+
 	private lazy var scheduler: AnyDispatchQueueScheduler = {
 		if let store = store as? CoreDataVideoStore {
 			return .scheduler(for: store)
@@ -124,7 +128,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 			video: video,
 			player: player,
 			commentsController: commentsController,
-			analyticsLogger: analyticsLogger)
+			analyticsLogger: analyticsLogger,
+			structuredLogger: structuredLogger)
 		navigationController.pushViewController(videoPlayerController, animated: true)
 	}
 

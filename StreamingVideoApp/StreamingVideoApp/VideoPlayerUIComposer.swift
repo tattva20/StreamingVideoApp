@@ -13,13 +13,24 @@ public enum VideoPlayerUIComposer {
 		video: Video,
 		player: VideoPlayer? = nil,
 		commentsController: UIViewController? = nil,
-		analyticsLogger: PlaybackAnalyticsLogger? = nil
+		analyticsLogger: PlaybackAnalyticsLogger? = nil,
+		structuredLogger: (any StreamingCore.Logger)? = nil
 	) -> VideoPlayerViewController {
 		let viewModel = VideoPlayerPresenter.map(video)
 		let basePlayer = player ?? AVPlayerVideoPlayer()
-		let videoPlayer: VideoPlayer = analyticsLogger.map {
-			AnalyticsVideoPlayerDecorator(decoratee: basePlayer, analyticsLogger: $0)
-		} ?? basePlayer
+
+		// Decorator chain: base player -> logging -> analytics
+		var videoPlayer: VideoPlayer = basePlayer
+
+		// Add structured logging decorator if provided
+		if let logger = structuredLogger {
+			videoPlayer = LoggingVideoPlayerDecorator(decoratee: videoPlayer, logger: logger)
+		}
+
+		// Add analytics decorator if provided
+		if let analytics = analyticsLogger {
+			videoPlayer = AnalyticsVideoPlayerDecorator(decoratee: videoPlayer, analyticsLogger: analytics)
+		}
 		let controller = VideoPlayerViewController(viewModel: viewModel, player: videoPlayer)
 
 		if let commentsController = commentsController {
