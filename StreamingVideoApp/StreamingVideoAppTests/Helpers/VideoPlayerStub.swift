@@ -7,7 +7,8 @@
 import Foundation
 import StreamingCore
 
-class VideoPlayerStub: VideoPlayer {
+@MainActor
+final class VideoPlayerStub: VideoPlayer {
 	var isPlaying: Bool = false
 	var currentTime: TimeInterval = 0
 	var duration: TimeInterval = 0

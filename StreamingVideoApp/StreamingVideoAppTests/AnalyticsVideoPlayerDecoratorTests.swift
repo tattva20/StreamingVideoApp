@@ -20,7 +20,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         decoratee.isPlaying = true
 
         XCTAssertTrue(sut.isPlaying)
-        await Task.yield()
     }
 
     func test_currentTime_delegatesToDecoratee() async {
@@ -29,7 +28,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         decoratee.currentTime = 42.5
 
         XCTAssertEqual(sut.currentTime, 42.5)
-        await Task.yield()
     }
 
     func test_duration_delegatesToDecoratee() async {
@@ -38,7 +36,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         decoratee.duration = 120.0
 
         XCTAssertEqual(sut.duration, 120.0)
-        await Task.yield()
     }
 
     func test_volume_delegatesToDecoratee() async {
@@ -47,7 +44,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         decoratee.volume = 0.75
 
         XCTAssertEqual(sut.volume, 0.75)
-        await Task.yield()
     }
 
     func test_isMuted_delegatesToDecoratee() async {
@@ -56,7 +52,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         decoratee.isMuted = true
 
         XCTAssertTrue(sut.isMuted)
-        await Task.yield()
     }
 
     func test_playbackSpeed_delegatesToDecoratee() async {
@@ -65,7 +60,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         decoratee.playbackSpeed = 1.5
 
         XCTAssertEqual(sut.playbackSpeed, 1.5)
-        await Task.yield()
     }
 
     func test_load_delegatesToDecoratee() async {
@@ -76,7 +70,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.load(url: url)
 
         XCTAssertEqual(decoratee.loadedURL, url)
-        await Task.yield()
     }
 
     func test_play_delegatesToDecoratee() async {
@@ -86,7 +79,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.play()
 
         XCTAssertTrue(decoratee.isPlaying)
-        await Task.yield()
     }
 
     func test_pause_delegatesToDecoratee() async {
@@ -97,7 +89,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.pause()
 
         XCTAssertFalse(decoratee.isPlaying)
-        await Task.yield()
     }
 
     func test_seekForward_delegatesToDecoratee() async {
@@ -108,7 +99,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.seekForward(by: 15.0)
 
         XCTAssertEqual(decoratee.seekForwardAmount, 15.0)
-        await Task.yield()
     }
 
     func test_seekBackward_delegatesToDecoratee() async {
@@ -119,7 +109,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.seekBackward(by: 10.0)
 
         XCTAssertEqual(decoratee.seekBackwardAmount, 10.0)
-        await Task.yield()
     }
 
     func test_seek_delegatesToDecoratee() async {
@@ -129,7 +118,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.seek(to: 50.0)
 
         XCTAssertEqual(decoratee.seekToTime, 50.0)
-        await Task.yield()
     }
 
     func test_setVolume_delegatesToDecoratee() async {
@@ -139,7 +127,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.setVolume(0.8)
 
         XCTAssertEqual(decoratee.volume, 0.8)
-        await Task.yield()
     }
 
     func test_toggleMute_delegatesToDecoratee() async {
@@ -150,7 +137,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.toggleMute()
 
         XCTAssertTrue(decoratee.isMuted)
-        await Task.yield()
     }
 
     func test_setPlaybackSpeed_delegatesToDecoratee() async {
@@ -160,7 +146,6 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         sut.setPlaybackSpeed(2.0)
 
         XCTAssertEqual(decoratee.playbackSpeed, 2.0)
-        await Task.yield()
     }
 
     // MARK: - Analytics Logging Tests
@@ -173,8 +158,9 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(logger.loggedEvents.count, 1)
-        XCTAssertEqual(logger.loggedEvents.first?.type, .play)
+        let events = await logger.loggedEvents
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events.first?.type, .play)
     }
 
     func test_pause_logsPauseEvent() async {
@@ -187,8 +173,9 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(logger.loggedEvents.count, 1)
-        XCTAssertEqual(logger.loggedEvents.first?.type, .pause)
+        let events = await logger.loggedEvents
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events.first?.type, .pause)
     }
 
     func test_seek_logsSeekEvent() async {
@@ -201,8 +188,9 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(logger.loggedEvents.count, 1)
-        if case let .seek(from, to) = logger.loggedEvents.first?.type {
+        let events = await logger.loggedEvents
+        XCTAssertEqual(events.count, 1)
+        if case let .seek(from, to) = events.first?.type {
             XCTAssertEqual(from, 10.0)
             XCTAssertEqual(to, 50.0)
         } else {
@@ -220,8 +208,9 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(logger.loggedEvents.count, 1)
-        if case let .speedChanged(from, to) = logger.loggedEvents.first?.type {
+        let events = await logger.loggedEvents
+        XCTAssertEqual(events.count, 1)
+        if case let .speedChanged(from, to) = events.first?.type {
             XCTAssertEqual(from, 1.0)
             XCTAssertEqual(to, 2.0)
         } else {
@@ -239,8 +228,9 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(logger.loggedEvents.count, 1)
-        if case let .volumeChanged(from, to) = logger.loggedEvents.first?.type {
+        let events = await logger.loggedEvents
+        XCTAssertEqual(events.count, 1)
+        if case let .volumeChanged(from, to) = events.first?.type {
             XCTAssertEqual(from, 0.5)
             XCTAssertEqual(to, 1.0)
         } else {
@@ -258,8 +248,9 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(logger.loggedEvents.count, 1)
-        if case let .muteToggled(isMuted) = logger.loggedEvents.first?.type {
+        let events = await logger.loggedEvents
+        XCTAssertEqual(events.count, 1)
+        if case let .muteToggled(isMuted) = events.first?.type {
             XCTAssertTrue(isMuted)
         } else {
             XCTFail("Expected muteToggled event")
@@ -269,24 +260,27 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeSUT(
-        decoratee: VideoPlayerSpy = VideoPlayerSpy(),
-        logger: PlaybackAnalyticsLoggerSpy = PlaybackAnalyticsLoggerSpy()
+        decoratee: VideoPlayerSpy? = nil,
+        logger: PlaybackAnalyticsLoggerSpy? = nil
     ) -> AnalyticsVideoPlayerDecorator {
-        AnalyticsVideoPlayerDecorator(decoratee: decoratee, analyticsLogger: logger)
+        AnalyticsVideoPlayerDecorator(
+            decoratee: decoratee ?? VideoPlayerSpy(),
+            analyticsLogger: logger ?? PlaybackAnalyticsLoggerSpy()
+        )
     }
 
-    private class VideoPlayerSpy: VideoPlayer {
+    @MainActor
+    private final class VideoPlayerSpy: VideoPlayer {
         var isPlaying: Bool = false
         var currentTime: TimeInterval = 0
         var duration: TimeInterval = 0
         var volume: Float = 1.0
         var isMuted: Bool = false
         var playbackSpeed: Float = 1.0
-
-        var loadedURL: URL?
-        var seekForwardAmount: TimeInterval?
-        var seekBackwardAmount: TimeInterval?
-        var seekToTime: TimeInterval?
+        private(set) var loadedURL: URL?
+        private(set) var seekForwardAmount: TimeInterval?
+        private(set) var seekBackwardAmount: TimeInterval?
+        private(set) var seekToTime: TimeInterval?
 
         func load(url: URL) {
             loadedURL = url
@@ -328,12 +322,11 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         }
     }
 
-    private final class PlaybackAnalyticsLoggerSpy: PlaybackAnalyticsLogger, @unchecked Sendable {
-        private let lock = NSLock()
+    private actor PlaybackAnalyticsLoggerSpy: PlaybackAnalyticsLogger {
         private var _loggedEvents: [(type: PlaybackEventType, position: TimeInterval)] = []
 
         var loggedEvents: [(type: PlaybackEventType, position: TimeInterval)] {
-            lock.withLock { _loggedEvents }
+            _loggedEvents
         }
 
         func startSession(videoID: UUID, videoTitle: String, deviceInfo: DeviceInfo, appVersion: String) async -> PlaybackSession {
@@ -349,9 +342,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
         }
 
         func log(_ event: PlaybackEventType, position: TimeInterval) async {
-            lock.withLock {
-                _loggedEvents.append((event, position))
-            }
+            _loggedEvents.append((event, position))
         }
 
         func endSession(watchedDuration: TimeInterval, completed: Bool) async {}

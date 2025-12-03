@@ -86,6 +86,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	}
 
 	private func configureAudioSession() {
+		// Skip audio session configuration during tests to avoid simulator-only malloc crash
+		// See: https://stackoverflow.com/questions/78182592/a-fix-for-addinstanceforfactory-no-factory-registered-for-id-cfuuid-0x60000
+		guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+
 		let audioSessionConfigurator = AVAudioSessionAdapter()
 		try? audioSessionConfigurator.configureForPlayback()
 	}

@@ -16,6 +16,8 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		super.tearDown()
 		// Reset orientation lock to default after each test to prevent test pollution
 		AppDelegate.orientationLock = .allButUpsideDown
+		// Allow pending cleanup to complete before next test
+		RunLoop.current.run(until: Date())
 	}
 
 	func test_videoPlayerView_hasTitle() {
@@ -159,9 +161,8 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 
 		sut.simulateLandscapeOrientation()
 
-		XCTAssertNotNil(sut.landscapeTitleLabel, "Expected landscape title label to exist")
-		XCTAssertEqual(sut.landscapeTitleLabel?.text, "Test Title", "Expected title label to show video title")
-		XCTAssertFalse(sut.landscapeTitleLabel?.isHidden ?? true, "Expected title label to be visible in landscape")
+		XCTAssertEqual(sut.landscapeTitleLabel.text, "Test Title", "Expected title label to show video title")
+		XCTAssertFalse(sut.landscapeTitleLabel.isHidden, "Expected title label to be visible in landscape")
 	}
 
 	func test_videoPlayerView_titleLabelHasLowAlphaWhiteInLandscape() {
@@ -169,7 +170,7 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 
 		sut.simulateLandscapeOrientation()
 
-		XCTAssertEqual(sut.landscapeTitleLabel?.textColor, UIColor.white.withAlphaComponent(0.7), "Expected title label to have low alpha white color")
+		XCTAssertEqual(sut.landscapeTitleLabel.textColor, UIColor.white.withAlphaComponent(0.7), "Expected title label to have low alpha white color")
 	}
 
 	func test_videoPlayerView_titleLabelAutoHidesWithControlsInLandscape() {
@@ -178,11 +179,11 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		let sut = makeSUT(player: player)
 
 		sut.simulateLandscapeOrientation()
-		XCTAssertEqual(sut.landscapeTitleLabel?.alpha, 1.0, "Precondition: title should be visible initially")
+		XCTAssertEqual(sut.landscapeTitleLabel.alpha, 1.0, "Precondition: title should be visible initially")
 
 		sut.simulateControlsAutoHide()
 
-		XCTAssertEqual(sut.landscapeTitleLabel?.alpha, 0.0, "Expected title label to auto-hide with controls")
+		XCTAssertEqual(sut.landscapeTitleLabel.alpha, 0.0, "Expected title label to auto-hide with controls")
 	}
 
 	func test_videoPlayerView_titleLabelShowsWithControlsWhenPaused() {
@@ -192,12 +193,12 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 
 		sut.simulateLandscapeOrientation()
 		sut.simulateControlsAutoHide()
-		XCTAssertEqual(sut.landscapeTitleLabel?.alpha, 0.0, "Precondition: title should be hidden")
+		XCTAssertEqual(sut.landscapeTitleLabel.alpha, 0.0, "Precondition: title should be hidden")
 
 		player.isPlaying = false
 		sut.simulatePauseTriggered()
 
-		XCTAssertEqual(sut.landscapeTitleLabel?.alpha, 1.0, "Expected title label to show with controls when paused")
+		XCTAssertEqual(sut.landscapeTitleLabel.alpha, 1.0, "Expected title label to show with controls when paused")
 	}
 
 	func test_videoPlayerView_hidesTitleLabelInPortrait() {
@@ -205,7 +206,7 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 
 		sut.loadViewIfNeeded()
 
-		XCTAssertTrue(sut.landscapeTitleLabel?.isHidden ?? true, "Expected landscape title label to be hidden in portrait")
+		XCTAssertTrue(sut.landscapeTitleLabel.isHidden, "Expected landscape title label to be hidden in portrait")
 	}
 
 	func test_videoPlayerView_hidesNavigationBarInLandscape() {
@@ -238,7 +239,7 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		sut.simulateLandscapeOrientation()
 		sut.view.layoutIfNeeded()
 
-		let titleCenterX = sut.landscapeTitleLabel?.center.x ?? 0
+		let titleCenterX = sut.landscapeTitleLabel.center.x
 		let viewCenterX = sut.view.bounds.width / 2
 		XCTAssertEqual(titleCenterX, viewCenterX, accuracy: 1.0, "Expected title label to be centered horizontally")
 	}
@@ -712,14 +713,14 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		)
 	}
 
-	private class VideoPlayerSpy: VideoPlayer {
+	@MainActor
+	private final class VideoPlayerSpy: VideoPlayer {
 		var isPlaying: Bool = false
 		var currentTime: TimeInterval = 0
 		var duration: TimeInterval = 100
 		var volume: Float = 1.0
 		var isMuted: Bool = false
 		var playbackSpeed: Float = 1.0
-
 		private(set) var loadedURLs: [URL] = []
 		private(set) var playCallCount = 0
 		private(set) var pauseCallCount = 0
@@ -741,9 +742,9 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		func seekForward(by seconds: TimeInterval) {}
 		func seekBackward(by seconds: TimeInterval) {}
 		func seek(to time: TimeInterval) {}
-		func setVolume(_ volume: Float) {}
-		func toggleMute() {}
-		func setPlaybackSpeed(_ speed: Float) {}
+		func setVolume(_ volume: Float) { self.volume = volume }
+		func toggleMute() { isMuted.toggle() }
+		func setPlaybackSpeed(_ speed: Float) { self.playbackSpeed = speed }
 	}
 }
 
@@ -801,7 +802,4 @@ extension VideoPlayerViewController {
 		playerView.frame.height >= view.bounds.height * 0.9
 	}
 
-	var landscapeTitleLabel: UILabel? {
-		view.subviews.compactMap { $0 as? UILabel }.first { $0.tag == 997 }
-	}
 }

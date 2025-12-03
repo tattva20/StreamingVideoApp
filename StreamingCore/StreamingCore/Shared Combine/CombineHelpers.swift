@@ -246,3 +246,16 @@ public extension PassthroughSubject where Failure == Never {
     }
 }
 
+public extension Publisher where Failure == Never {
+    func toAsyncStream() -> AsyncStream<Output> {
+        AsyncStream { continuation in
+            let cancellable = self.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+}
+
