@@ -137,7 +137,7 @@ public final class VideoPlayerViewController: UIViewController {
 	public var onPlaybackPaused: (() -> Void)?
 	public var onFullscreenToggle: (() -> Void)?
 	public var onPipToggle: (() -> Void)?
-	public var pipController: PictureInPictureController?
+	public var pipController: PictureInPictureControlling?
 
 	public private(set) lazy var playerView: PlayerView = {
 		let view = PlayerView()

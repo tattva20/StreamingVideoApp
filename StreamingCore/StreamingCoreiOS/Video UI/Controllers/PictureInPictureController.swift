@@ -7,7 +7,7 @@
 
 import AVKit
 
-public final class PictureInPictureController: NSObject {
+public final class PictureInPictureController: NSObject, PictureInPictureControlling {
 	private var pipController: AVPictureInPictureController?
 	private weak var playerView: PlayerView?
 
