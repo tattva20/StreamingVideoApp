@@ -107,6 +107,15 @@ public final class VideoPlayerViewController: UIViewController {
 		return button
 	}()
 
+	public private(set) lazy var pipButton: UIButton = {
+		let button = UIButton(type: .system)
+		button.setImage(UIImage(systemName: "pip.enter"), for: .normal)
+		button.tintColor = .white
+		button.addTarget(self, action: #selector(pipButtonTapped), for: .touchUpInside)
+		button.translatesAutoresizingMaskIntoConstraints = false
+		return button
+	}()
+
 	public private(set) lazy var landscapeTitleLabel: UILabel = {
 		let label = UILabel()
 		label.textColor = UIColor.white.withAlphaComponent(0.7)
@@ -127,6 +136,8 @@ public final class VideoPlayerViewController: UIViewController {
 
 	public var onPlaybackPaused: (() -> Void)?
 	public var onFullscreenToggle: (() -> Void)?
+	public var onPipToggle: (() -> Void)?
+	public var pipController: PictureInPictureController?
 
 	public private(set) lazy var playerView: PlayerView = {
 		let view = PlayerView()
@@ -257,28 +268,56 @@ public final class VideoPlayerViewController: UIViewController {
 		if isLandscape {
 			NSLayoutConstraint.deactivate(portraitConstraints)
 			NSLayoutConstraint.deactivate(fullscreenButtonPortraitConstraints)
+			NSLayoutConstraint.deactivate(pipButtonPortraitConstraints)
+			NSLayoutConstraint.deactivate(playbackSpeedButtonPortraitConstraints)
 			NSLayoutConstraint.deactivate(commentsContainerConstraints)
 			NSLayoutConstraint.deactivate(bottomControlsContainerConstraints)
 			durationLabelPortraitConstraint?.isActive = false
+			currentTimeLabelBottomPortraitConstraint?.isActive = false
+			durationLabelBottomPortraitConstraint?.isActive = false
+			currentTimeLabelLeadingPortraitConstraint?.isActive = false
 
 			NSLayoutConstraint.activate(landscapeConstraints)
 			NSLayoutConstraint.activate(fullscreenButtonLandscapeConstraints)
+			NSLayoutConstraint.activate(pipButtonLandscapeConstraints)
+			NSLayoutConstraint.activate(playbackSpeedButtonLandscapeConstraints)
 			durationLabelLandscapeConstraint?.isActive = true
+			currentTimeLabelBottomLandscapeConstraint?.isActive = true
+			durationLabelBottomLandscapeConstraint?.isActive = true
+			currentTimeLabelLeadingLandscapeConstraint?.isActive = true
 
 			bottomControlsContainerView.isHidden = true
 			commentsContainer?.isHidden = true
 			landscapeTitleLabel.isHidden = false
 			navigationController?.setNavigationBarHidden(true, animated: true)
+
+			// When transitioning to landscape with controls hidden, hide all controls
+			// This handles the case where portrait auto-hide left bottom controls visible
+			// but in landscape ALL controls should be hidden together
+			if !areControlsVisible {
+				setAllControlsAlpha(0.0)
+				setLandscapeControlsInteraction(enabled: false)
+			}
 		} else {
 			NSLayoutConstraint.deactivate(landscapeConstraints)
 			NSLayoutConstraint.deactivate(fullscreenButtonLandscapeConstraints)
+			NSLayoutConstraint.deactivate(pipButtonLandscapeConstraints)
+			NSLayoutConstraint.deactivate(playbackSpeedButtonLandscapeConstraints)
 			durationLabelLandscapeConstraint?.isActive = false
+			currentTimeLabelBottomLandscapeConstraint?.isActive = false
+			durationLabelBottomLandscapeConstraint?.isActive = false
+			currentTimeLabelLeadingLandscapeConstraint?.isActive = false
 
 			NSLayoutConstraint.activate(portraitConstraints)
 			NSLayoutConstraint.activate(fullscreenButtonPortraitConstraints)
+			NSLayoutConstraint.activate(pipButtonPortraitConstraints)
+			NSLayoutConstraint.activate(playbackSpeedButtonPortraitConstraints)
 			NSLayoutConstraint.activate(commentsContainerConstraints)
 			NSLayoutConstraint.activate(bottomControlsContainerConstraints)
 			durationLabelPortraitConstraint?.isActive = true
+			currentTimeLabelBottomPortraitConstraint?.isActive = true
+			durationLabelBottomPortraitConstraint?.isActive = true
+			currentTimeLabelLeadingPortraitConstraint?.isActive = true
 
 			bottomControlsContainerView.isHidden = false
 			commentsContainer?.isHidden = false
@@ -287,6 +326,24 @@ public final class VideoPlayerViewController: UIViewController {
 		}
 
 		view.layoutIfNeeded()
+
+		// Restore bottom controls visibility and interaction when returning to portrait
+		// This must happen after layoutIfNeeded to override any pending animations
+		if !isLandscape {
+			playbackSpeedButton.layer.removeAllAnimations()
+			pipButton.layer.removeAllAnimations()
+			fullscreenButton.layer.removeAllAnimations()
+			playbackSpeedButton.alpha = 1.0
+			pipButton.alpha = 1.0
+			fullscreenButton.alpha = 1.0
+			setLandscapeControlsInteraction(enabled: true)
+		}
+	}
+
+	private func setLandscapeControlsInteraction(enabled: Bool) {
+		playbackSpeedButton.isUserInteractionEnabled = enabled
+		pipButton.isUserInteractionEnabled = enabled
+		fullscreenButton.isUserInteractionEnabled = enabled
 	}
 
 	private func updateEdgesForExtendedLayout() {
@@ -318,8 +375,9 @@ public final class VideoPlayerViewController: UIViewController {
 		view.addSubview(bottomControlsContainerView)
 		bottomControlsContainerView.addSubview(muteButton)
 		bottomControlsContainerView.addSubview(volumeSlider)
-		bottomControlsContainerView.addSubview(playbackSpeedButton)
 
+		view.addSubview(playbackSpeedButton)
+		view.addSubview(pipButton)
 		view.addSubview(fullscreenButton)
 
 		landscapeTitleLabel.text = viewModel.title
@@ -331,8 +389,18 @@ public final class VideoPlayerViewController: UIViewController {
 
 	private var fullscreenButtonPortraitConstraints: [NSLayoutConstraint] = []
 	private var fullscreenButtonLandscapeConstraints: [NSLayoutConstraint] = []
+	private var pipButtonPortraitConstraints: [NSLayoutConstraint] = []
+	private var pipButtonLandscapeConstraints: [NSLayoutConstraint] = []
 	private var durationLabelPortraitConstraint: NSLayoutConstraint?
 	private var durationLabelLandscapeConstraint: NSLayoutConstraint?
+	private var currentTimeLabelBottomPortraitConstraint: NSLayoutConstraint?
+	private var currentTimeLabelBottomLandscapeConstraint: NSLayoutConstraint?
+	private var durationLabelBottomPortraitConstraint: NSLayoutConstraint?
+	private var durationLabelBottomLandscapeConstraint: NSLayoutConstraint?
+	private var currentTimeLabelLeadingPortraitConstraint: NSLayoutConstraint?
+	private var currentTimeLabelLeadingLandscapeConstraint: NSLayoutConstraint?
+	private var playbackSpeedButtonPortraitConstraints: [NSLayoutConstraint] = []
+	private var playbackSpeedButtonLandscapeConstraints: [NSLayoutConstraint] = []
 
 	private func setupConstraints() {
 		let playerViewAspectRatio = playerView.heightAnchor.constraint(equalTo: playerView.widthAnchor, multiplier: 9.0/16.0)
@@ -352,7 +420,27 @@ public final class VideoPlayerViewController: UIViewController {
 		]
 
 		durationLabelPortraitConstraint = durationLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
-		durationLabelLandscapeConstraint = durationLabel.trailingAnchor.constraint(equalTo: fullscreenButton.leadingAnchor, constant: -8)
+		// In landscape: durationLabel → speedButton → pipButton → fullscreenButton
+		durationLabelLandscapeConstraint = durationLabel.trailingAnchor.constraint(equalTo: playbackSpeedButton.leadingAnchor, constant: -8)
+
+		currentTimeLabelBottomPortraitConstraint = currentTimeLabel.bottomAnchor.constraint(equalTo: playerView.bottomAnchor, constant: -16)
+		currentTimeLabelBottomLandscapeConstraint = currentTimeLabel.bottomAnchor.constraint(equalTo: playerView.bottomAnchor, constant: -64)
+		durationLabelBottomPortraitConstraint = durationLabel.bottomAnchor.constraint(equalTo: playerView.bottomAnchor, constant: -16)
+		durationLabelBottomLandscapeConstraint = durationLabel.bottomAnchor.constraint(equalTo: playerView.bottomAnchor, constant: -64)
+
+		// In portrait, currentTimeLabel starts at view.leading; in landscape, use safe area with extra padding
+		currentTimeLabelLeadingPortraitConstraint = currentTimeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16)
+		currentTimeLabelLeadingLandscapeConstraint = currentTimeLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24)
+
+		pipButtonPortraitConstraints = [
+			pipButton.centerYAnchor.constraint(equalTo: bottomControlsContainerView.centerYAnchor),
+			pipButton.trailingAnchor.constraint(equalTo: fullscreenButton.leadingAnchor, constant: -8)
+		]
+
+		pipButtonLandscapeConstraints = [
+			pipButton.centerYAnchor.constraint(equalTo: durationLabel.centerYAnchor),
+			pipButton.trailingAnchor.constraint(equalTo: fullscreenButton.leadingAnchor, constant: -8)
+		]
 
 		fullscreenButtonPortraitConstraints = [
 			fullscreenButton.centerYAnchor.constraint(equalTo: bottomControlsContainerView.centerYAnchor),
@@ -362,6 +450,17 @@ public final class VideoPlayerViewController: UIViewController {
 		fullscreenButtonLandscapeConstraints = [
 			fullscreenButton.centerYAnchor.constraint(equalTo: durationLabel.centerYAnchor),
 			fullscreenButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
+		]
+
+		playbackSpeedButtonPortraitConstraints = [
+			playbackSpeedButton.centerYAnchor.constraint(equalTo: bottomControlsContainerView.centerYAnchor),
+			playbackSpeedButton.trailingAnchor.constraint(equalTo: pipButton.leadingAnchor, constant: -8)
+		]
+
+		// In landscape: speedButton is between durationLabel and pipButton
+		playbackSpeedButtonLandscapeConstraints = [
+			playbackSpeedButton.centerYAnchor.constraint(equalTo: durationLabel.centerYAnchor),
+			playbackSpeedButton.trailingAnchor.constraint(equalTo: pipButton.leadingAnchor, constant: -8)
 		]
 
 		bottomControlsContainerConstraints = [
@@ -387,11 +486,6 @@ public final class VideoPlayerViewController: UIViewController {
 			seekForwardButton.widthAnchor.constraint(equalToConstant: 44),
 			seekForwardButton.heightAnchor.constraint(equalToConstant: 44),
 
-			currentTimeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-			currentTimeLabel.bottomAnchor.constraint(equalTo: playerView.bottomAnchor, constant: -16),
-
-			durationLabel.bottomAnchor.constraint(equalTo: playerView.bottomAnchor, constant: -16),
-
 			progressSlider.leadingAnchor.constraint(equalTo: currentTimeLabel.trailingAnchor, constant: 8),
 			progressSlider.trailingAnchor.constraint(equalTo: durationLabel.leadingAnchor, constant: -8),
 			progressSlider.centerYAnchor.constraint(equalTo: currentTimeLabel.centerYAnchor),
@@ -405,9 +499,10 @@ public final class VideoPlayerViewController: UIViewController {
 			volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: 8),
 			volumeSlider.widthAnchor.constraint(equalToConstant: 100),
 
-			playbackSpeedButton.centerYAnchor.constraint(equalTo: bottomControlsContainerView.centerYAnchor),
-			playbackSpeedButton.trailingAnchor.constraint(equalTo: bottomControlsContainerView.trailingAnchor, constant: -70),
 			playbackSpeedButton.widthAnchor.constraint(equalToConstant: 50),
+
+			pipButton.widthAnchor.constraint(equalToConstant: 44),
+			pipButton.heightAnchor.constraint(equalToConstant: 44),
 
 			fullscreenButton.widthAnchor.constraint(equalToConstant: 44),
 			fullscreenButton.heightAnchor.constraint(equalToConstant: 44),
@@ -420,8 +515,13 @@ public final class VideoPlayerViewController: UIViewController {
 
 		NSLayoutConstraint.activate(portraitConstraints)
 		NSLayoutConstraint.activate(fullscreenButtonPortraitConstraints)
+		NSLayoutConstraint.activate(pipButtonPortraitConstraints)
+		NSLayoutConstraint.activate(playbackSpeedButtonPortraitConstraints)
 		NSLayoutConstraint.activate(bottomControlsContainerConstraints)
 		durationLabelPortraitConstraint?.isActive = true
+		currentTimeLabelBottomPortraitConstraint?.isActive = true
+		durationLabelBottomPortraitConstraint?.isActive = true
+		currentTimeLabelLeadingPortraitConstraint?.isActive = true
 	}
 
 	private func configurePlayer() {
@@ -499,6 +599,10 @@ public final class VideoPlayerViewController: UIViewController {
 		onFullscreenToggle?()
 	}
 
+	@objc private func pipButtonTapped() {
+		onPipToggle?()
+	}
+
 	private func updateFullscreenButtonIcon() {
 		let iconName = isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
 		fullscreenButton.setImage(UIImage(systemName: iconName), for: .normal)
@@ -522,17 +626,31 @@ public final class VideoPlayerViewController: UIViewController {
 	}
 
 	private func setAllControlsAlpha(_ alpha: CGFloat) {
+		// Overlay controls - always auto-hide in both orientations
 		playButton.alpha = alpha
 		seekForwardButton.alpha = alpha
 		seekBackwardButton.alpha = alpha
 		progressSlider.alpha = alpha
 		currentTimeLabel.alpha = alpha
 		durationLabel.alpha = alpha
-		muteButton.alpha = alpha
-		volumeSlider.alpha = alpha
-		playbackSpeedButton.alpha = alpha
-		fullscreenButton.alpha = alpha
-		landscapeTitleLabel.alpha = alpha
+
+		if isLandscape {
+			// In landscape, ALL controls auto-hide together
+			muteButton.alpha = alpha
+			volumeSlider.alpha = alpha
+			playbackSpeedButton.alpha = alpha
+			pipButton.alpha = alpha
+			fullscreenButton.alpha = alpha
+			landscapeTitleLabel.alpha = alpha
+		} else if alpha == 1.0 {
+			// In portrait, ALWAYS restore bottom controls when showing
+			// This fixes bug where controls stay hidden after landscape->portrait rotation
+			playbackSpeedButton.alpha = 1.0
+			pipButton.alpha = 1.0
+			fullscreenButton.alpha = 1.0
+		}
+		// Note: In portrait when hiding (alpha == 0), we don't touch bottom controls
+		// They should always remain visible in portrait mode
 	}
 
 	public func updateTimeDisplay() {
@@ -547,6 +665,9 @@ public final class VideoPlayerViewController: UIViewController {
 
 extension VideoPlayerViewController: ControlsVisibilityDelegate {
 	public func controlsDidShow() {
+		if isLandscape {
+			setLandscapeControlsInteraction(enabled: true)
+		}
 		UIView.animate(withDuration: 0.3) { [weak self] in
 			self?.setAllControlsAlpha(1.0)
 		}
@@ -555,6 +676,9 @@ extension VideoPlayerViewController: ControlsVisibilityDelegate {
 	public func controlsDidHide() {
 		guard player.isPlaying else {
 			return
+		}
+		if isLandscape {
+			setLandscapeControlsInteraction(enabled: false)
 		}
 		UIView.animate(withDuration: 0.3) { [weak self] in
 			self?.setAllControlsAlpha(0.0)

@@ -80,8 +80,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
 		guard let scene = (scene as? UIWindowScene) else { return }
 
+		configureAudioSession()
 		window = UIWindow(windowScene: scene)
 		configureWindow()
+	}
+
+	private func configureAudioSession() {
+		let audioSessionConfigurator = AVAudioSessionAdapter()
+		try? audioSessionConfigurator.configureForPlayback()
 	}
 
 	func configureWindow() {

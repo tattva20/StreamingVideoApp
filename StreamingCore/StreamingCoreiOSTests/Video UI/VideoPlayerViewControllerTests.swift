@@ -185,6 +185,88 @@ class VideoPlayerViewControllerTests: XCTestCase {
 		XCTAssertEqual(sut.durationLabel.alpha, 1.0)
 	}
 
+	func test_viewDidLoad_displaysPipButton() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertNotNil(sut.pipButton)
+		XCTAssertNotNil(sut.pipButton.superview)
+	}
+
+	func test_pipButton_hasCorrectIcon() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		let expectedImage = UIImage(systemName: "pip.enter")
+		XCTAssertEqual(sut.pipButton.image(for: .normal), expectedImage)
+	}
+
+	func test_pipButton_hasWhiteTintColor() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertEqual(sut.pipButton.tintColor, .white)
+	}
+
+	func test_pipButton_hasFullAlphaInitially() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertEqual(sut.pipButton.alpha, 1.0)
+	}
+
+	func test_hideControls_inPortrait_keepsPipButtonVisible() {
+		let (sut, player) = makeSUT()
+		player.isPlaying = true
+
+		sut.loadViewIfNeeded()
+		sut.simulateTapOnPlayerView()
+
+		// In portrait mode, bottom controls (pip, speed, fullscreen) remain visible
+		XCTAssertEqual(sut.pipButton.alpha, 1.0)
+	}
+
+	func test_hideControls_inLandscape_setsPipButtonAlphaToZero() {
+		let (sut, player) = makeSUT()
+		player.isPlaying = true
+
+		sut.loadViewIfNeeded()
+		sut.simulateLandscapeOrientation()
+		sut.simulateTapOnPlayerView()
+
+		// In landscape mode, ALL controls hide together including pip button
+		XCTAssertEqual(sut.pipButton.alpha, 0.0)
+	}
+
+	func test_showControls_restoresPipButtonAlpha() {
+		let (sut, _) = makeSUT()
+
+		sut.loadViewIfNeeded()
+		sut.simulateTapOnPlayerView()
+		sut.simulateTapOnPlayerView()
+
+		XCTAssertEqual(sut.pipButton.alpha, 1.0)
+	}
+
+	func test_pipButtonTap_callsToggleCallback() {
+		let (sut, _) = makeSUT()
+		var toggleCallCount = 0
+		sut.onPipToggle = { toggleCallCount += 1 }
+
+		sut.loadViewIfNeeded()
+		XCTAssertEqual(toggleCallCount, 0)
+
+		sut.simulatePipButtonTap()
+		XCTAssertEqual(toggleCallCount, 1)
+
+		sut.simulatePipButtonTap()
+		XCTAssertEqual(toggleCallCount, 2)
+	}
+
 	func test_hideControls_setsPlaybackControlsAlphaToZero() {
 		let (sut, player) = makeSUT()
 		player.isPlaying = true
@@ -337,8 +419,16 @@ private extension VideoPlayerViewController {
 		fullscreenButton.simulate(event: .touchUpInside)
 	}
 
+	func simulatePipButtonTap() {
+		pipButton.simulate(event: .touchUpInside)
+	}
+
 	func simulateTapOnPlayerView() {
 		toggleControlsVisibility()
+	}
+
+	func simulateLandscapeOrientation() {
+		updateLayoutForOrientation(isLandscape: true)
 	}
 }
 

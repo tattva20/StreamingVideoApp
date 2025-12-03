@@ -12,6 +12,12 @@ import StreamingCoreiOS
 @MainActor
 class VideoPlayerUIIntegrationTests: XCTestCase {
 
+	override func tearDown() {
+		super.tearDown()
+		// Reset orientation lock to default after each test to prevent test pollution
+		AppDelegate.orientationLock = .allButUpsideDown
+	}
+
 	func test_videoPlayerView_hasTitle() {
 		let video = makeVideo(title: "a title")
 
@@ -57,18 +63,44 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		XCTAssertTrue(player.isPlaying, "Expected video to auto-play when view appears")
 	}
 
-	func test_videoPlayerView_allControlsHideWhenAutoHideTriggersWhilePlaying() {
+	func test_videoPlayerView_overlayControlsHideWhenAutoHideTriggersWhilePlayingInPortrait() {
 		let player = VideoPlayerSpy()
 		player.isPlaying = true
 		let sut = makeSUT(player: player)
 
 		sut.simulateControlsAutoHide()
 
+		// Overlay controls should hide in portrait
 		XCTAssertEqual(sut.playButton.alpha, 0.0, "Expected play button to hide")
-		XCTAssertEqual(sut.muteButton.alpha, 0.0, "Expected mute button to hide")
-		XCTAssertEqual(sut.volumeSlider.alpha, 0.0, "Expected volume slider to hide")
-		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Expected playback speed button to hide")
-		XCTAssertEqual(sut.fullscreenButton.alpha, 0.0, "Expected fullscreen button to hide")
+		XCTAssertEqual(sut.seekForwardButton.alpha, 0.0, "Expected seek forward button to hide")
+		XCTAssertEqual(sut.seekBackwardButton.alpha, 0.0, "Expected seek backward button to hide")
+		XCTAssertEqual(sut.progressSlider.alpha, 0.0, "Expected progress slider to hide")
+		XCTAssertEqual(sut.currentTimeLabel.alpha, 0.0, "Expected current time label to hide")
+		XCTAssertEqual(sut.durationLabel.alpha, 0.0, "Expected duration label to hide")
+
+		// Bottom controls should NOT hide in portrait
+		XCTAssertEqual(sut.muteButton.alpha, 1.0, "Expected mute button to remain visible in portrait")
+		XCTAssertEqual(sut.volumeSlider.alpha, 1.0, "Expected volume slider to remain visible in portrait")
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 1.0, "Expected playback speed button to remain visible in portrait")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 1.0, "Expected fullscreen button to remain visible in portrait")
+		XCTAssertEqual(sut.pipButton.alpha, 1.0, "Expected pip button to remain visible in portrait")
+	}
+
+	func test_videoPlayerView_allControlsHideWhenAutoHideTriggersWhilePlayingInLandscape() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+
+		// All controls should hide in landscape
+		XCTAssertEqual(sut.playButton.alpha, 0.0, "Expected play button to hide")
+		XCTAssertEqual(sut.muteButton.alpha, 0.0, "Expected mute button to hide in landscape")
+		XCTAssertEqual(sut.volumeSlider.alpha, 0.0, "Expected volume slider to hide in landscape")
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Expected playback speed button to hide in landscape")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 0.0, "Expected fullscreen button to hide in landscape")
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Expected pip button to hide in landscape")
 	}
 
 	func test_videoPlayerView_controlsRemainVisibleWhenPaused() {
@@ -297,6 +329,357 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		let sut = makeSUT()
 
 		XCTAssertEqual(sut.supportedInterfaceOrientations, .allButUpsideDown, "Expected explicit support for all orientations except upside down")
+	}
+
+	func test_videoPlayerView_pipButtonVisibleInLandscape() {
+		let sut = makeSUT()
+
+		sut.simulateLandscapeOrientation()
+
+		XCTAssertEqual(sut.pipButton.alpha, 1.0, "Expected pip button to be visible in landscape")
+		XCTAssertFalse(sut.pipButton.isHidden, "Expected pip button to not be hidden in landscape")
+	}
+
+	func test_videoPlayerView_pipButtonIsPositionedBetweenDurationAndFullscreenInLandscape() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+
+		sut.simulateLandscapeOrientation()
+		sut.view.layoutIfNeeded()
+
+		let pipButtonX = sut.pipButton.frame.minX
+		let durationMaxX = sut.durationLabel.frame.maxX
+		let fullscreenMinX = sut.fullscreenButton.frame.minX
+		XCTAssertGreaterThan(pipButtonX, durationMaxX, "Expected pip button to be positioned after duration label")
+		XCTAssertLessThan(sut.pipButton.frame.maxX, fullscreenMinX, "Expected pip button to be positioned before fullscreen button")
+	}
+
+	func test_videoPlayerView_pipButtonAutoHidesWithControlsInLandscape() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		sut.simulateLandscapeOrientation()
+		XCTAssertEqual(sut.pipButton.alpha, 1.0, "Precondition: pip button should be visible initially")
+
+		sut.simulateControlsAutoHide()
+
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Expected pip button to auto-hide with controls in landscape")
+	}
+
+	func test_videoPlayerView_pipButtonShowsWithControlsWhenPausedInLandscape() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Precondition: pip button should be hidden")
+
+		player.isPlaying = false
+		sut.simulatePauseTriggered()
+
+		XCTAssertEqual(sut.pipButton.alpha, 1.0, "Expected pip button to show with controls when paused")
+	}
+
+	func test_videoPlayerView_landscapeControlsArePositioned64PointsFromBottom() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+
+		sut.simulateLandscapeOrientation()
+		sut.view.layoutIfNeeded()
+
+		let expectedBottomOffset: CGFloat = 64
+		let playerViewBottom = sut.playerView.frame.maxY
+		let controlsBottomY = sut.currentTimeLabel.frame.maxY
+
+		XCTAssertEqual(playerViewBottom - controlsBottomY, expectedBottomOffset, accuracy: 1.0, "Expected controls to be 64 points from the bottom of the player view in landscape")
+	}
+
+	func test_videoPlayerView_landscapeSliderIsPositioned64PointsFromBottom() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+
+		sut.simulateLandscapeOrientation()
+		sut.view.layoutIfNeeded()
+
+		let expectedBottomOffset: CGFloat = 64
+		let playerViewBottom = sut.playerView.frame.maxY
+		let sliderCenterY = sut.progressSlider.center.y
+		let currentTimeCenterY = sut.currentTimeLabel.center.y
+
+		XCTAssertEqual(sliderCenterY, currentTimeCenterY, accuracy: 1.0, "Expected slider to be vertically aligned with time labels")
+		XCTAssertLessThan(sut.progressSlider.frame.maxY, playerViewBottom - 48, "Expected slider to be at least 48 points from the bottom")
+	}
+
+	func test_videoPlayerView_portraitControlsRemainAt16PointsFromBottom() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 400, height: 800)
+
+		sut.loadViewIfNeeded()
+		sut.view.layoutIfNeeded()
+
+		let expectedBottomOffset: CGFloat = 16
+		let playerViewBottom = sut.playerView.frame.maxY
+		let controlsBottomY = sut.currentTimeLabel.frame.maxY
+
+		XCTAssertEqual(playerViewBottom - controlsBottomY, expectedBottomOffset, accuracy: 1.0, "Expected controls to remain 16 points from the bottom of the player view in portrait")
+	}
+
+	func test_videoPlayerView_speedButtonIsVisibleInPortrait() {
+		let sut = makeSUT()
+
+		sut.loadViewIfNeeded()
+
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 1.0, "Expected speed button to be visible in portrait")
+		XCTAssertFalse(sut.playbackSpeedButton.isHidden, "Expected speed button to not be hidden in portrait")
+	}
+
+	func test_videoPlayerView_speedButtonIsVisibleInLandscape() {
+		let sut = makeSUT()
+
+		sut.simulateLandscapeOrientation()
+
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 1.0, "Expected speed button to be visible in landscape")
+		XCTAssertFalse(sut.playbackSpeedButton.isHidden, "Expected speed button to not be hidden in landscape")
+	}
+
+	func test_videoPlayerView_speedButtonIsPositionedBetweenSliderAndPipInLandscape() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+
+		sut.simulateLandscapeOrientation()
+		sut.view.layoutIfNeeded()
+
+		let speedButtonMinX = sut.playbackSpeedButton.frame.minX
+		let speedButtonMaxX = sut.playbackSpeedButton.frame.maxX
+		let durationMaxX = sut.durationLabel.frame.maxX
+		let pipMinX = sut.pipButton.frame.minX
+		XCTAssertGreaterThan(speedButtonMinX, durationMaxX, "Expected speed button to be positioned after duration label in landscape")
+		XCTAssertLessThan(speedButtonMaxX, pipMinX, "Expected speed button to be positioned before pip button in landscape")
+	}
+
+	func test_videoPlayerView_sliderHasReasonableWidthInPortrait() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 400, height: 800)
+
+		sut.loadViewIfNeeded()
+		sut.view.layoutIfNeeded()
+
+		let sliderWidth = sut.progressSlider.frame.width
+		let viewWidth = sut.view.frame.width
+		let minExpectedWidth = viewWidth * 0.5 // Slider should be at least 50% of view width in portrait
+		XCTAssertGreaterThan(sliderWidth, minExpectedWidth, "Expected slider to have reasonable width in portrait (got \(sliderWidth), expected at least \(minExpectedWidth))")
+	}
+
+	func test_videoPlayerView_sliderHasReasonableWidthInLandscape() {
+		let sut = makeSUT()
+		sut.view.frame = CGRect(x: 0, y: 0, width: 800, height: 400)
+
+		sut.simulateLandscapeOrientation()
+		sut.view.layoutIfNeeded()
+
+		let sliderWidth = sut.progressSlider.frame.width
+		let viewWidth = sut.view.frame.width
+		let minExpectedWidth = viewWidth * 0.4 // Slider should be at least 40% of view width in landscape (accounting for more controls)
+		XCTAssertGreaterThan(sliderWidth, minExpectedWidth, "Expected slider to have reasonable width in landscape (got \(sliderWidth), expected at least \(minExpectedWidth))")
+	}
+
+	func test_videoPlayerView_speedButtonRemainsVisibleAfterLandscapeToPortraitTransition() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Go to landscape and trigger auto-hide (which hides speed button)
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Precondition: speed button should be hidden in landscape after auto-hide")
+
+		// Return to portrait - speed button should be restored
+		sut.simulatePortraitOrientation()
+		sut.simulatePauseTriggered()
+
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 1.0, "Expected speed button to be restored after returning to portrait")
+	}
+
+	// MARK: - Orientation Tests
+
+	// IMPORTANT: The fullscreen toggle should NEVER modify AppDelegate.orientationLock.
+	// Using orientation locks causes iOS to cache the restricted orientation mask,
+	// which blocks physical rotation even after the lock is reset.
+	// The correct approach is to use requestGeometryUpdate WITHOUT any orientation locking.
+	// Reference: commits 5473c40 and 4705375 show the original working implementation.
+
+	func test_fullscreenToggle_neverModifiesOrientationLock() {
+		let sut = makeSUT()
+		sut.loadViewIfNeeded()
+
+		// Verify orientation lock starts at default
+		XCTAssertEqual(AppDelegate.orientationLock, .allButUpsideDown, "Precondition: orientation lock should be at default")
+
+		// Trigger fullscreen toggle
+		sut.onFullscreenToggle?()
+
+		// Orientation lock should NEVER be modified - not even temporarily
+		// This is critical: using orientation locks causes iOS to cache restrictions
+		XCTAssertEqual(AppDelegate.orientationLock, .allButUpsideDown, "Expected orientation lock to NEVER be modified during fullscreen toggle")
+	}
+
+	func test_fullscreenToggle_fromPortraitToLandscape_doesNotLockOrientation() {
+		let sut = makeSUT()
+		sut.loadViewIfNeeded()
+
+		// Start in portrait (isFullscreen = false)
+		XCTAssertFalse(sut.isFullscreen, "Precondition: should start in portrait")
+
+		// Toggle to landscape
+		sut.onFullscreenToggle?()
+
+		// Orientation lock should remain at default - physical rotation should still work
+		XCTAssertEqual(AppDelegate.orientationLock, .allButUpsideDown, "Expected orientation lock to remain at default after toggling to landscape")
+	}
+
+	func test_fullscreenToggle_fromLandscapeToPortrait_doesNotLockOrientation() {
+		let sut = makeSUT()
+		sut.loadViewIfNeeded()
+		sut.simulateLandscapeOrientation()
+
+		// Start in landscape (isFullscreen = true)
+		XCTAssertTrue(sut.isFullscreen, "Precondition: should be in landscape/fullscreen")
+
+		// Toggle back to portrait
+		sut.onFullscreenToggle?()
+
+		// Orientation lock should remain at default - physical rotation should still work
+		XCTAssertEqual(AppDelegate.orientationLock, .allButUpsideDown, "Expected orientation lock to remain at default after toggling to portrait")
+	}
+
+	// MARK: - Fullscreen Button Controls Visibility Tests
+
+	func test_fullscreenButtonTap_inLandscapeWithHiddenControls_keepsControlsHiddenUntilOrientationChanges() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Go to landscape and trigger auto-hide
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+
+		// Verify controls are hidden
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Precondition: speed button should be hidden")
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Precondition: pip button should be hidden")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 0.0, "Precondition: fullscreen button should be hidden")
+
+		// Tap fullscreen button (while hidden) - should NOT make controls visible in landscape
+		sut.fullscreenButton.simulateTap()
+
+		// Controls should remain hidden in landscape (until orientation actually changes)
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Expected speed button to remain hidden after fullscreen tap in landscape")
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Expected pip button to remain hidden after fullscreen tap in landscape")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 0.0, "Expected fullscreen button to remain hidden after fullscreen tap in landscape")
+	}
+
+	func test_fullscreenButtonTap_inLandscapeWithHiddenControls_controlsBecomeVisibleAfterPortraitTransition() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Go to landscape and trigger auto-hide
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+
+		// Tap fullscreen button and then simulate the resulting portrait orientation
+		sut.fullscreenButton.simulateTap()
+		sut.simulatePortraitOrientation()
+
+		// After transition to portrait, controls should be visible (portrait always shows bottom controls)
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 1.0, "Expected speed button to be visible in portrait")
+		XCTAssertEqual(sut.pipButton.alpha, 1.0, "Expected pip button to be visible in portrait")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 1.0, "Expected fullscreen button to be visible in portrait")
+	}
+
+	func test_fullscreenButtonTap_inLandscapeWithHiddenControls_doesNotToggleControlsVisibility() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Go to landscape and trigger auto-hide
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+
+		// Verify controls are hidden
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Precondition: speed button should be hidden")
+
+		// Tap fullscreen button - this should NOT toggle controls visibility
+		// The tap should only trigger the fullscreen action, not show controls
+		sut.fullscreenButton.simulateTap()
+
+		// Also simulate what happens if toggleControlsVisibility was incorrectly called
+		// This represents the bug where tapping fullscreen also triggers toggle
+		// sut.toggleControlsVisibility() // <-- This would be the bug
+
+		// Controls should still be hidden (toggle was NOT called)
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Expected speed button to remain hidden - fullscreen tap should not toggle controls")
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Expected pip button to remain hidden - fullscreen tap should not toggle controls")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 0.0, "Expected fullscreen button to remain hidden - fullscreen tap should not toggle controls")
+	}
+
+	func test_landscapeControlsHidden_shouldNotBeInteractive() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Go to landscape and trigger auto-hide
+		sut.simulateLandscapeOrientation()
+		sut.simulateControlsAutoHide()
+
+		// When controls are hidden in landscape, buttons should not be interactive
+		// This prevents accidental taps on invisible buttons
+		XCTAssertFalse(sut.fullscreenButton.isUserInteractionEnabled, "Expected fullscreen button to not be interactive when hidden")
+		XCTAssertFalse(sut.pipButton.isUserInteractionEnabled, "Expected pip button to not be interactive when hidden")
+		XCTAssertFalse(sut.playbackSpeedButton.isUserInteractionEnabled, "Expected speed button to not be interactive when hidden")
+	}
+
+	func test_landscapeControlsVisible_shouldBeInteractive() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Go to landscape (controls are visible initially)
+		sut.simulateLandscapeOrientation()
+
+		// When controls are visible, buttons should be interactive
+		XCTAssertTrue(sut.fullscreenButton.isUserInteractionEnabled, "Expected fullscreen button to be interactive when visible")
+		XCTAssertTrue(sut.pipButton.isUserInteractionEnabled, "Expected pip button to be interactive when visible")
+		XCTAssertTrue(sut.playbackSpeedButton.isUserInteractionEnabled, "Expected speed button to be interactive when visible")
+	}
+
+	func test_portraitAutoHide_thenFullscreenTap_hidesButtonsInLandscape() {
+		let player = VideoPlayerSpy()
+		player.isPlaying = true
+		let sut = makeSUT(player: player)
+
+		// Start in portrait
+		sut.loadViewIfNeeded()
+
+		// Trigger auto-hide in portrait (bottom controls stay visible, overlay hides)
+		sut.simulateControlsAutoHide()
+
+		// In portrait after auto-hide, bottom controls should still be visible
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 1.0, "Precondition: speed button visible in portrait after auto-hide")
+		XCTAssertEqual(sut.pipButton.alpha, 1.0, "Precondition: pip button visible in portrait after auto-hide")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 1.0, "Precondition: fullscreen button visible in portrait after auto-hide")
+
+		// Now tap fullscreen to go to landscape
+		sut.fullscreenButton.simulateTap()
+		sut.simulateLandscapeOrientation()
+
+		// BUG: The buttons that were visible in portrait should be HIDDEN in landscape
+		// because in landscape, all controls auto-hide together (and they should start hidden
+		// since the player is playing and auto-hide was already triggered)
+		XCTAssertEqual(sut.playbackSpeedButton.alpha, 0.0, "Expected speed button to be hidden in landscape after transition from portrait with auto-hide")
+		XCTAssertEqual(sut.pipButton.alpha, 0.0, "Expected pip button to be hidden in landscape after transition from portrait with auto-hide")
+		XCTAssertEqual(sut.fullscreenButton.alpha, 0.0, "Expected fullscreen button to be hidden in landscape after transition from portrait with auto-hide")
 	}
 
 	// MARK: - Helpers

@@ -26,36 +26,22 @@ public enum VideoPlayerUIComposer {
 			controller.setCommentsController(commentsController)
 		}
 
+		// IMPORTANT: Do NOT use AppDelegate.orientationLock here!
+		// Using orientation locks causes iOS to cache the restricted orientation mask,
+		// which blocks physical rotation even after the lock is reset.
+		// The correct approach is to use requestGeometryUpdate WITHOUT any orientation locking.
+		// The view controller's supportedInterfaceOrientations (.allButUpsideDown) handles
+		// what orientations are allowed - we just request the specific one we want.
+		// Reference: commits 5473c40 and 4705375 show the original working implementation.
 		controller.onFullscreenToggle = { [weak controller] in
-			guard let controller = controller else {
-				print("[Fullscreen] Controller is nil")
-				return
-			}
+			guard let controller = controller else { return }
 			let isCurrentlyFullscreen = controller.isFullscreen
-			let targetOrientation: UIInterfaceOrientationMask = isCurrentlyFullscreen ? .portrait : .landscapeRight
-
-			print("[Fullscreen] Button tapped. isFullscreen=\(isCurrentlyFullscreen), target=\(targetOrientation == .portrait ? "portrait" : "landscape")")
-
-			AppDelegate.orientationLock = targetOrientation
 
 			if #available(iOS 16.0, *) {
-				guard let windowScene = controller.view.window?.windowScene else {
-					print("[Fullscreen] ERROR: windowScene is nil. window=\(String(describing: controller.view.window))")
-					AppDelegate.orientationLock = .allButUpsideDown
-					return
-				}
-
-				print("[Fullscreen] Requesting geometry update...")
-
+				guard let windowScene = controller.view.window?.windowScene else { return }
+				let targetOrientation: UIInterfaceOrientationMask = isCurrentlyFullscreen ? .portrait : .landscapeRight
 				controller.setNeedsUpdateOfSupportedInterfaceOrientations()
-				controller.navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
-
-				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { error in
-					print("[Fullscreen] requestGeometryUpdate completed. error=\(error)")
-					DispatchQueue.main.async {
-						AppDelegate.orientationLock = .allButUpsideDown
-					}
-				}
+				windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: targetOrientation)) { _ in }
 			} else {
 				if isCurrentlyFullscreen {
 					let value = UIInterfaceOrientation.portrait.rawValue
@@ -65,13 +51,20 @@ public enum VideoPlayerUIComposer {
 					UIDevice.current.setValue(value, forKey: "orientation")
 				}
 				UIViewController.attemptRotationToDeviceOrientation()
-				AppDelegate.orientationLock = .allButUpsideDown
 			}
 		}
 
 		controller.loadViewIfNeeded()
-		if let avPlayer = videoPlayer as? AVPlayerVideoPlayer {
+		if let avPlayer = basePlayer as? AVPlayerVideoPlayer {
 			avPlayer.attach(to: controller.playerView)
+		}
+
+		let pipController = PictureInPictureController()
+		pipController.setup(with: controller.playerView)
+		controller.pipController = pipController
+
+		controller.onPipToggle = { [weak controller] in
+			controller?.pipController?.togglePictureInPicture()
 		}
 
 		return controller
