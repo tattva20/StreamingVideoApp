@@ -218,3 +218,31 @@ public extension Publisher where Output == Data {
     }
 }
 
+// MARK: - Subject to AsyncStream Bridge (Swift 6.2 pattern)
+
+public extension CurrentValueSubject where Failure == Never {
+    func toAsyncStream() -> AsyncStream<Output> {
+        AsyncStream { continuation in
+            let cancellable = self.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+}
+
+public extension PassthroughSubject where Failure == Never {
+    func toAsyncStream() -> AsyncStream<Output> {
+        AsyncStream { continuation in
+            let cancellable = self.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+}
+
