@@ -360,6 +360,7 @@ This project was developed following TDD principles from the ground up:
 - [Essential Feed Case Study](https://github.com/essentialdevelopercom/essential-feed-case-study) - Architectural inspiration
 - [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin
 - [TDD By Example](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530) - Kent Beck
+- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID) - Object-Oriented Design
 
 ---
 

@@ -8,8 +8,13 @@
 import Foundation
 import Combine
 
-/// Protocol for performance monitoring with Combine publishers
-/// Following Essential Feed's publisher-based patterns
+/// A protocol for performance monitoring with Combine publishers.
+///
+/// `PerformanceMonitor` tracks playback performance metrics and emits alerts
+/// when quality thresholds are exceeded, enabling adaptive quality management.
+///
+/// ## Thread Safety
+/// Requires `@MainActor` isolation for safe state management.
 @MainActor
 public protocol PerformanceMonitor: AnyObject {
 	/// Publisher that emits real-time performance snapshots
@@ -23,7 +28,7 @@ public protocol PerformanceMonitor: AnyObject {
 	func recordEvent(_ event: PerformanceEvent)
 }
 
-/// Extension providing default Combine helpers (Essential Feed pattern)
+/// Extension providing default Combine helpers for convenience.
 public extension PerformanceMonitor {
 	/// Convenience publisher that dispatches on main thread
 	var mainThreadMetricsPublisher: AnyPublisher<PerformanceSnapshot, Never> {

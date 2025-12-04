@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 /// Thread-safe @MainActor class implementation of resource cleanup coordination.
-/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+/// Uses @MainActor isolation for thread-safety.
 @MainActor
 public final class ResourceCleanupCoordinator {
 	private var cleaners: [ResourceCleaner]
@@ -65,7 +65,7 @@ public final class ResourceCleanupCoordinator {
 						}
 
 					case .normal:
-						break // No cleanup needed
+						break
 					}
 				}
 			}

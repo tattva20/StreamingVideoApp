@@ -8,8 +8,12 @@
 import Foundation
 
 /// A protocol for logging structured log entries.
-/// Following Essential Feed patterns - sync protocol with internal async handling.
-/// This allows @MainActor class implementations and cleaner test assertions.
+///
+/// `Logger` provides a synchronous interface with internal async handling,
+/// enabling `@MainActor` class implementations and cleaner test assertions.
+///
+/// ## Thread Safety
+/// Requires `Sendable` conformance for safe cross-actor use.
 public protocol Logger: Sendable {
 	/// The minimum log level this logger will process.
 	/// Entries below this level should be ignored.
