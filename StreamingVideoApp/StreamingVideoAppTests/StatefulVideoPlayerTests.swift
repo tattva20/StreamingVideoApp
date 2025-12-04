@@ -193,6 +193,8 @@ final class StatefulVideoPlayerTests: XCTestCase {
 //	}
 
 	// MARK: - Properties Forwarding
+	// COMMENTED: All StatefulVideoPlayer tests cause flaky SIGABRT crashes when run with full test suite
+	// due to DefaultPlaybackStateMachine nonisolated(unsafe) Combine subjects
 
 //	func test_currentTime_forwardsToDecoratee() {
 //		let (sut, spy) = makeSUT()

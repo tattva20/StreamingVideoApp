@@ -19,122 +19,122 @@ final class LoggingVideoPlayerDecoratorTests: XCTestCase {
 
 	// MARK: - Property Forwarding
 
-//	func test_isPlaying_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		spy.stubbedIsPlaying = true
-//
-//		XCTAssertTrue(sut.isPlaying)
-//	}
-//
-//	func test_currentTime_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		spy.stubbedCurrentTime = 42.0
-//
-//		XCTAssertEqual(sut.currentTime, 42.0)
-//	}
-//
-//	func test_duration_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		spy.stubbedDuration = 120.0
-//
-//		XCTAssertEqual(sut.duration, 120.0)
-//	}
-//
-//	func test_volume_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		spy.stubbedVolume = 0.5
-//
-//		XCTAssertEqual(sut.volume, 0.5)
-//	}
-//
-//	func test_isMuted_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		spy.stubbedIsMuted = true
-//
-//		XCTAssertTrue(sut.isMuted)
-//	}
-//
-//	func test_playbackSpeed_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		spy.stubbedPlaybackSpeed = 2.0
-//
-//		XCTAssertEqual(sut.playbackSpeed, 2.0)
-//	}
+	func test_isPlaying_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		spy.stubbedIsPlaying = true
+
+		XCTAssertTrue(sut.isPlaying)
+	}
+
+	func test_currentTime_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		spy.stubbedCurrentTime = 42.0
+
+		XCTAssertEqual(sut.currentTime, 42.0)
+	}
+
+	func test_duration_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		spy.stubbedDuration = 120.0
+
+		XCTAssertEqual(sut.duration, 120.0)
+	}
+
+	func test_volume_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		spy.stubbedVolume = 0.5
+
+		XCTAssertEqual(sut.volume, 0.5)
+	}
+
+	func test_isMuted_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		spy.stubbedIsMuted = true
+
+		XCTAssertTrue(sut.isMuted)
+	}
+
+	func test_playbackSpeed_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		spy.stubbedPlaybackSpeed = 2.0
+
+		XCTAssertEqual(sut.playbackSpeed, 2.0)
+	}
 
 	// MARK: - Method Forwarding
 
-//	func test_load_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//		let url = anyURL()
-//
-//		sut.load(url: url)
-//
-//		XCTAssertEqual(spy.loadedURLs, [url])
-//	}
-//
-//	func test_play_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.play()
-//
-//		XCTAssertEqual(spy.playCallCount, 1)
-//	}
-//
-//	func test_pause_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.pause()
-//
-//		XCTAssertEqual(spy.pauseCallCount, 1)
-//	}
-//
-//	func test_seekForward_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.seekForward(by: 10)
-//
-//		XCTAssertEqual(spy.seekForwardSeconds, [10])
-//	}
-//
-//	func test_seekBackward_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.seekBackward(by: 15)
-//
-//		XCTAssertEqual(spy.seekBackwardSeconds, [15])
-//	}
-//
-//	func test_seek_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.seek(to: 30.0)
-//
-//		XCTAssertEqual(spy.seekTimes, [30.0])
-//	}
-//
-//	func test_setVolume_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.setVolume(0.7)
-//
-//		XCTAssertEqual(spy.setVolumeValues, [0.7])
-//	}
-//
-//	func test_toggleMute_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.toggleMute()
-//
-//		XCTAssertEqual(spy.toggleMuteCallCount, 1)
-//	}
-//
-//	func test_setPlaybackSpeed_forwardsToDecoratee() {
-//		let (sut, spy, _) = makeSUT()
-//
-//		sut.setPlaybackSpeed(1.5)
-//
-//		XCTAssertEqual(spy.setPlaybackSpeedValues, [1.5])
-//	}
+	func test_load_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+		let url = anyURL()
+
+		sut.load(url: url)
+
+		XCTAssertEqual(spy.loadedURLs, [url])
+	}
+
+	func test_play_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.play()
+
+		XCTAssertEqual(spy.playCallCount, 1)
+	}
+
+	func test_pause_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.pause()
+
+		XCTAssertEqual(spy.pauseCallCount, 1)
+	}
+
+	func test_seekForward_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.seekForward(by: 10)
+
+		XCTAssertEqual(spy.seekForwardSeconds, [10])
+	}
+
+	func test_seekBackward_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.seekBackward(by: 15)
+
+		XCTAssertEqual(spy.seekBackwardSeconds, [15])
+	}
+
+	func test_seek_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.seek(to: 30.0)
+
+		XCTAssertEqual(spy.seekTimes, [30.0])
+	}
+
+	func test_setVolume_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.setVolume(0.7)
+
+		XCTAssertEqual(spy.setVolumeValues, [0.7])
+	}
+
+	func test_toggleMute_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.toggleMute()
+
+		XCTAssertEqual(spy.toggleMuteCallCount, 1)
+	}
+
+	func test_setPlaybackSpeed_forwardsToDecoratee() {
+		let (sut, spy, _) = makeSUT()
+
+		sut.setPlaybackSpeed(1.5)
+
+		XCTAssertEqual(spy.setPlaybackSpeedValues, [1.5])
+	}
 
 	// MARK: - Logging
 

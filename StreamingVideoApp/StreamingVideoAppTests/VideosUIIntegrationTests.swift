@@ -80,49 +80,49 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once user initiated loading completes with error")
 	}
 
-//	func test_loadVideoCompletion_rendersSuccessfullyLoadedVideos() {
-//		let video0 = makeVideo(title: "a title", description: "a description")
-//		let video1 = makeVideo(title: "another title", description: "another description")
-//		let video2 = makeVideo(title: "yet another title", description: "yet another description")
-//		let video3 = makeVideo(title: "and another title", description: "and another description")
-//		let (sut, loader) = makeSUT()
-//
-//		sut.simulateAppearance()
-//		assertThat(sut, isRendering: [])
-//
-//		loader.completeLoading(with: [video0], at: 0)
-//		assertThat(sut, isRendering: [video0])
-//
-//		sut.simulateUserInitiatedReload()
-//		loader.completeLoading(with: [video0, video1, video2, video3], at: 1)
-//		assertThat(sut, isRendering: [video0, video1, video2, video3])
-//	}
+	func test_loadVideoCompletion_rendersSuccessfullyLoadedVideos() {
+		let video0 = makeVideo(title: "a title", description: "a description")
+		let video1 = makeVideo(title: "another title", description: "another description")
+		let video2 = makeVideo(title: "yet another title", description: "yet another description")
+		let video3 = makeVideo(title: "and another title", description: "and another description")
+		let (sut, loader) = makeSUT()
 
-//	func test_loadVideoCompletion_rendersSuccessfullyLoadedEmptyVideosAfterNonEmptyVideos() {
-//		let video = makeVideo()
-//		let (sut, loader) = makeSUT()
-//
-//		sut.simulateAppearance()
-//		loader.completeLoading(with: [video], at: 0)
-//		assertThat(sut, isRendering: [video])
-//
-//		sut.simulateUserInitiatedReload()
-//		loader.completeLoading(with: [], at: 1)
-//		assertThat(sut, isRendering: [])
-//	}
+		sut.simulateAppearance()
+		assertThat(sut, isRendering: [])
 
-//	func test_loadVideoCompletion_doesNotAlterCurrentRenderingStateOnError() {
-//		let video0 = makeVideo()
-//		let (sut, loader) = makeSUT()
-//
-//		sut.simulateAppearance()
-//		loader.completeLoading(with: [video0], at: 0)
-//		assertThat(sut, isRendering: [video0])
-//
-//		sut.simulateUserInitiatedReload()
-//		loader.completeLoadingWithError(at: 1)
-//		assertThat(sut, isRendering: [video0])
-//	}
+		loader.completeLoading(with: [video0], at: 0)
+		assertThat(sut, isRendering: [video0])
+
+		sut.simulateUserInitiatedReload()
+		loader.completeLoading(with: [video0, video1, video2, video3], at: 1)
+		assertThat(sut, isRendering: [video0, video1, video2, video3])
+	}
+
+	func test_loadVideoCompletion_rendersSuccessfullyLoadedEmptyVideosAfterNonEmptyVideos() {
+		let video = makeVideo()
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		loader.completeLoading(with: [video], at: 0)
+		assertThat(sut, isRendering: [video])
+
+		sut.simulateUserInitiatedReload()
+		loader.completeLoading(with: [], at: 1)
+		assertThat(sut, isRendering: [])
+	}
+
+	func test_loadVideoCompletion_doesNotAlterCurrentRenderingStateOnError() {
+		let video0 = makeVideo()
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		loader.completeLoading(with: [video0], at: 0)
+		assertThat(sut, isRendering: [video0])
+
+		sut.simulateUserInitiatedReload()
+		loader.completeLoadingWithError(at: 1)
+		assertThat(sut, isRendering: [video0])
+	}
 
 	func test_loadVideoCompletion_rendersErrorMessageOnErrorUntilNextReload() {
 		let (sut, loader) = makeSUT()

@@ -19,139 +19,139 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 
     // MARK: - Delegation Tests
 
-//    func test_isPlaying_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.isPlaying = true
-//
-//        XCTAssertTrue(sut.isPlaying)
-//    }
-//
-//    func test_currentTime_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.currentTime = 42.5
-//
-//        XCTAssertEqual(sut.currentTime, 42.5)
-//    }
-//
-//    func test_duration_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.duration = 120.0
-//
-//        XCTAssertEqual(sut.duration, 120.0)
-//    }
-//
-//    func test_volume_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.volume = 0.75
-//
-//        XCTAssertEqual(sut.volume, 0.75)
-//    }
-//
-//    func test_isMuted_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.isMuted = true
-//
-//        XCTAssertTrue(sut.isMuted)
-//    }
-//
-//    func test_playbackSpeed_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.playbackSpeed = 1.5
-//
-//        XCTAssertEqual(sut.playbackSpeed, 1.5)
-//    }
-//
-//    func test_load_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        let url = URL(string: "https://example.com/video.mp4")!
-//
-//        sut.load(url: url)
-//
-//        XCTAssertEqual(decoratee.loadedURL, url)
-//    }
-//
-//    func test_play_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//
-//        sut.play()
-//
-//        XCTAssertTrue(decoratee.isPlaying)
-//    }
-//
-//    func test_pause_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.isPlaying = true
-//
-//        sut.pause()
-//
-//        XCTAssertFalse(decoratee.isPlaying)
-//    }
-//
-//    func test_seekForward_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.currentTime = 10.0
-//
-//        sut.seekForward(by: 15.0)
-//
-//        XCTAssertEqual(decoratee.seekForwardAmount, 15.0)
-//    }
-//
-//    func test_seekBackward_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.currentTime = 30.0
-//
-//        sut.seekBackward(by: 10.0)
-//
-//        XCTAssertEqual(decoratee.seekBackwardAmount, 10.0)
-//    }
-//
-//    func test_seek_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//
-//        sut.seek(to: 50.0)
-//
-//        XCTAssertEqual(decoratee.seekToTime, 50.0)
-//    }
-//
-//    func test_setVolume_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//
-//        sut.setVolume(0.8)
-//
-//        XCTAssertEqual(decoratee.volume, 0.8)
-//    }
-//
-//    func test_toggleMute_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//        decoratee.isMuted = false
-//
-//        sut.toggleMute()
-//
-//        XCTAssertTrue(decoratee.isMuted)
-//    }
-//
-//    func test_setPlaybackSpeed_delegatesToDecoratee() async {
-//        let decoratee = VideoPlayerSpy()
-//        let sut = makeSUT(decoratee: decoratee)
-//
-//        sut.setPlaybackSpeed(2.0)
-//
-//        XCTAssertEqual(decoratee.playbackSpeed, 2.0)
-//    }
+    func test_isPlaying_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.isPlaying = true
+
+        XCTAssertTrue(sut.isPlaying)
+    }
+
+    func test_currentTime_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.currentTime = 42.5
+
+        XCTAssertEqual(sut.currentTime, 42.5)
+    }
+
+    func test_duration_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.duration = 120.0
+
+        XCTAssertEqual(sut.duration, 120.0)
+    }
+
+    func test_volume_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.volume = 0.75
+
+        XCTAssertEqual(sut.volume, 0.75)
+    }
+
+    func test_isMuted_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.isMuted = true
+
+        XCTAssertTrue(sut.isMuted)
+    }
+
+    func test_playbackSpeed_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.playbackSpeed = 1.5
+
+        XCTAssertEqual(sut.playbackSpeed, 1.5)
+    }
+
+    func test_load_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        let url = URL(string: "https://example.com/video.mp4")!
+
+        sut.load(url: url)
+
+        XCTAssertEqual(decoratee.loadedURL, url)
+    }
+
+    func test_play_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+
+        sut.play()
+
+        XCTAssertTrue(decoratee.isPlaying)
+    }
+
+    func test_pause_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.isPlaying = true
+
+        sut.pause()
+
+        XCTAssertFalse(decoratee.isPlaying)
+    }
+
+    func test_seekForward_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.currentTime = 10.0
+
+        sut.seekForward(by: 15.0)
+
+        XCTAssertEqual(decoratee.seekForwardAmount, 15.0)
+    }
+
+    func test_seekBackward_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.currentTime = 30.0
+
+        sut.seekBackward(by: 10.0)
+
+        XCTAssertEqual(decoratee.seekBackwardAmount, 10.0)
+    }
+
+    func test_seek_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+
+        sut.seek(to: 50.0)
+
+        XCTAssertEqual(decoratee.seekToTime, 50.0)
+    }
+
+    func test_setVolume_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+
+        sut.setVolume(0.8)
+
+        XCTAssertEqual(decoratee.volume, 0.8)
+    }
+
+    func test_toggleMute_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+        decoratee.isMuted = false
+
+        sut.toggleMute()
+
+        XCTAssertTrue(decoratee.isMuted)
+    }
+
+    func test_setPlaybackSpeed_delegatesToDecoratee() {
+        let decoratee = VideoPlayerSpy()
+        let sut = makeSUT(decoratee: decoratee)
+
+        sut.setPlaybackSpeed(2.0)
+
+        XCTAssertEqual(decoratee.playbackSpeed, 2.0)
+    }
 
     // MARK: - Analytics Logging Tests
 
