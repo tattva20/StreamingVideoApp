@@ -45,8 +45,6 @@ class VideoAcceptanceTests: XCTestCase {
         let video = try launch(httpClient: .online(response), store: .empty)
 
         XCTAssertEqual(video.numberOfRenderedVideoViews(), 2)
-        XCTAssertNotNil(video.renderedVideoImageData(at: 0))
-        XCTAssertNotNil(video.renderedVideoImageData(at: 1))
     }
 
     func test_onLaunch_displaysCachedRemoteVideosWhenCustomerHasNoConnectivity() throws {

@@ -8,21 +8,24 @@
 import Combine
 import Foundation
 
-public actor AdaptiveBufferManager: BufferManager {
+/// Thread-safe @MainActor class implementation of buffer management.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class AdaptiveBufferManager: BufferManager {
 	private var memoryPressure: MemoryPressureLevel = .normal
 	private var networkQuality: NetworkQuality = .good
 	private var _currentConfiguration: BufferConfiguration = .balanced
 	private let thresholds: MemoryThresholds
 
-	private nonisolated(unsafe) let configurationSubject = CurrentValueSubject<BufferConfiguration, Never>(.balanced)
+	private let configurationSubject = CurrentValueSubject<BufferConfiguration, Never>(.balanced)
 
-	public nonisolated var configurationPublisher: AnyPublisher<BufferConfiguration, Never> {
+	public var configurationPublisher: AnyPublisher<BufferConfiguration, Never> {
 		configurationSubject
 			.removeDuplicates()
 			.eraseToAnyPublisher()
 	}
 
-	public nonisolated var configurationStream: AsyncStream<BufferConfiguration> {
+	public var configurationStream: AsyncStream<BufferConfiguration> {
 		configurationPublisher.toAsyncStream()
 	}
 
@@ -34,17 +37,17 @@ public actor AdaptiveBufferManager: BufferManager {
 		self.thresholds = thresholds
 	}
 
-	public func updateMemoryState(_ state: MemoryState) async {
+	public func updateMemoryState(_ state: MemoryState) {
 		memoryPressure = state.pressureLevel(thresholds: thresholds)
-		await recalculateStrategy()
+		recalculateStrategy()
 	}
 
-	public func updateNetworkQuality(_ quality: NetworkQuality) async {
+	public func updateNetworkQuality(_ quality: NetworkQuality) {
 		networkQuality = quality
-		await recalculateStrategy()
+		recalculateStrategy()
 	}
 
-	private func recalculateStrategy() async {
+	private func recalculateStrategy() {
 		let newConfig = calculateConfiguration(memory: memoryPressure, network: networkQuality)
 
 		if newConfig != _currentConfiguration {

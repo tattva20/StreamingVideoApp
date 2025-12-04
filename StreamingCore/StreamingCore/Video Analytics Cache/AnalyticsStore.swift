@@ -7,7 +7,8 @@
 
 import Foundation
 
-public protocol AnalyticsStore: Sendable {
+@MainActor
+public protocol AnalyticsStore: AnyObject {
     func insert(_ session: LocalPlaybackSession) async throws
     func insertEvent(_ event: LocalPlaybackEvent) async throws
     func updateSession(_ session: LocalPlaybackSession) async throws

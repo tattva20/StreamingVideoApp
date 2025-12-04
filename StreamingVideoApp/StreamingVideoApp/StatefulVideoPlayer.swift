@@ -12,10 +12,36 @@ import StreamingCore
 
 /// A video player decorator that integrates with the playback state machine.
 /// Enforces valid state transitions and exposes state via Combine publishers.
+/// Uses Essential Feed pattern: store Tasks and cancel in deinit.
 public final class StatefulVideoPlayer: VideoPlayer {
 	private let decoratee: VideoPlayer
 	private let stateMachine: DefaultPlaybackStateMachine
 	private var cancellables = Set<AnyCancellable>()
+	private var pendingTasks = Set<Task<Void, Never>>()
+	private let tasksLock = NSLock()
+
+	deinit {
+		tasksLock.lock()
+		let tasks = pendingTasks
+		tasksLock.unlock()
+		for task in tasks {
+			task.cancel()
+		}
+	}
+
+	private func addTask(_ task: Task<Void, Never>) {
+		tasksLock.lock()
+		pendingTasks.insert(task)
+		tasksLock.unlock()
+	}
+
+	private func scheduleStateMachineAction(_ work: @escaping @MainActor @Sendable () -> Void) {
+		let task = Task { @MainActor [weak self] in
+			guard self != nil else { return }
+			work()
+		}
+		addTask(task)
+	}
 
 	/// Publisher that emits the current playback state
 	public var statePublisher: AnyPublisher<PlaybackState, Never> {
@@ -69,46 +95,49 @@ public final class StatefulVideoPlayer: VideoPlayer {
 
 	public func load(url: URL) {
 		decoratee.load(url: url)
-		Task.immediate { @MainActor [weak self] in
-			guard let self else { return }
-			await self.stateMachine.send(.load(url))
+		let machine = stateMachine
+		scheduleStateMachineAction {
+			machine.send(.load(url))
 		}
 	}
 
 	public func play() {
-		Task.immediate { @MainActor [weak self] in
-			guard let self else { return }
-			if await self.stateMachine.canPerform(.play) {
-				await self.stateMachine.send(.play)
-				self.decoratee.play()
+		let machine = stateMachine
+		let player = decoratee
+		scheduleStateMachineAction {
+			if machine.canPerform(.play) {
+				machine.send(.play)
+				player.play()
 			}
 		}
 	}
 
 	public func pause() {
-		Task.immediate { @MainActor [weak self] in
-			guard let self else { return }
-			if await self.stateMachine.canPerform(.pause) {
-				await self.stateMachine.send(.pause)
-				self.decoratee.pause()
+		let machine = stateMachine
+		let player = decoratee
+		scheduleStateMachineAction {
+			if machine.canPerform(.pause) {
+				machine.send(.pause)
+				player.pause()
 			}
 		}
 	}
 
 	public func seek(to time: TimeInterval) {
-		Task.immediate { @MainActor [weak self] in
-			guard let self else { return }
-			let currentState = await self.stateMachine.currentState
+		let machine = stateMachine
+		let player = decoratee
+		scheduleStateMachineAction {
+			let currentState = machine.currentState
 			if case .playing = currentState {
-				await self.stateMachine.send(.seek(to: time))
-				self.decoratee.seek(to: time)
-				await self.stateMachine.send(.didFinishSeeking)
+				machine.send(.seek(to: time))
+				player.seek(to: time)
+				machine.send(.didFinishSeeking)
 			} else if case .paused = currentState {
-				await self.stateMachine.send(.seek(to: time))
-				self.decoratee.seek(to: time)
-				await self.stateMachine.send(.didFinishSeeking)
+				machine.send(.seek(to: time))
+				player.seek(to: time)
+				machine.send(.didFinishSeeking)
 			} else {
-				self.decoratee.seek(to: time)
+				player.seek(to: time)
 			}
 		}
 	}
@@ -135,52 +164,61 @@ public final class StatefulVideoPlayer: VideoPlayer {
 
 	/// Stops playback and returns to idle state
 	public func stop() {
-		Task.immediate { @MainActor [weak self] in
-			guard let self else { return }
-			await self.stateMachine.send(.stop)
-			self.decoratee.pause()
+		let machine = stateMachine
+		let player = decoratee
+		scheduleStateMachineAction {
+			machine.send(.stop)
+			player.pause()
 		}
 	}
 
 	// MARK: - State Machine Event Simulation (for external events)
 
 	/// Call when the player item becomes ready to play
-	public func simulateDidBecomeReady() async {
-		await stateMachine.send(.didBecomeReady)
+	@MainActor
+	public func simulateDidBecomeReady() {
+		stateMachine.send(.didBecomeReady)
 	}
 
 	/// Call when playback reaches the end
-	public func simulateDidReachEnd() async {
-		await stateMachine.send(.didReachEnd)
+	@MainActor
+	public func simulateDidReachEnd() {
+		stateMachine.send(.didReachEnd)
 	}
 
 	/// Call when buffering starts
-	public func simulateDidStartBuffering() async {
-		await stateMachine.send(.didStartBuffering)
+	@MainActor
+	public func simulateDidStartBuffering() {
+		stateMachine.send(.didStartBuffering)
 	}
 
 	/// Call when buffering ends
-	public func simulateDidFinishBuffering() async {
-		await stateMachine.send(.didFinishBuffering)
+	@MainActor
+	public func simulateDidFinishBuffering() {
+		stateMachine.send(.didFinishBuffering)
 	}
 
 	/// Call when a playback error occurs
-	public func simulateDidFail(_ error: PlaybackError) async {
-		await stateMachine.send(.didFail(error))
+	@MainActor
+	public func simulateDidFail(_ error: PlaybackError) {
+		stateMachine.send(.didFail(error))
 	}
 
 	/// Call when the app enters background
-	public func simulateDidEnterBackground() async {
-		await stateMachine.send(.didEnterBackground)
+	@MainActor
+	public func simulateDidEnterBackground() {
+		stateMachine.send(.didEnterBackground)
 	}
 
 	/// Call when audio session is interrupted
-	public func simulateAudioSessionInterrupted() async {
-		await stateMachine.send(.audioSessionInterrupted)
+	@MainActor
+	public func simulateAudioSessionInterrupted() {
+		stateMachine.send(.audioSessionInterrupted)
 	}
 
 	/// Call when audio session interruption ends
-	public func simulateAudioSessionResumed() async {
-		await stateMachine.send(.audioSessionResumed)
+	@MainActor
+	public func simulateAudioSessionResumed() {
+		stateMachine.send(.audioSessionResumed)
 	}
 }

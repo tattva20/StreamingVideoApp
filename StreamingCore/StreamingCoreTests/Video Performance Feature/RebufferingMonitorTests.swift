@@ -8,13 +8,14 @@
 import XCTest
 @testable import StreamingCore
 
+@MainActor
 final class RebufferingMonitorTests: XCTestCase {
 
 	// MARK: - Initial State Tests
 
-	func test_init_isNotBuffering() async {
+	func test_init_isNotBuffering() {
 		let sut = makeSUT()
-		let state = await sut.state
+		let state = sut.state
 
 		XCTAssertFalse(state.isBuffering)
 		XCTAssertNil(state.bufferingStartTime)
@@ -24,54 +25,54 @@ final class RebufferingMonitorTests: XCTestCase {
 
 	// MARK: - bufferingStarted Tests
 
-	func test_bufferingStarted_setsIsBufferingToTrue() async {
+	func test_bufferingStarted_setsIsBufferingToTrue() {
 		let sut = makeSUT()
 
-		await sut.bufferingStarted()
-		let state = await sut.state
+		sut.bufferingStarted()
+		let state = sut.state
 
 		XCTAssertTrue(state.isBuffering)
 		XCTAssertNotNil(state.bufferingStartTime)
 	}
 
-	func test_bufferingStarted_ignoredIfAlreadyBuffering() async {
+	func test_bufferingStarted_ignoredIfAlreadyBuffering() {
 		let (sut, currentDate) = makeSUTWithDate()
 		let firstStartTime = Date()
 		currentDate.value = firstStartTime
 
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 
 		currentDate.value = firstStartTime.addingTimeInterval(5)
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 
-		let state = await sut.state
+		let state = sut.state
 		XCTAssertEqual(state.bufferingStartTime, firstStartTime)
 	}
 
 	// MARK: - bufferingEnded Tests
 
-	func test_bufferingEnded_setsIsBufferingToFalse() async {
+	func test_bufferingEnded_setsIsBufferingToFalse() {
 		let sut = makeSUT()
 
-		await sut.bufferingStarted()
-		_ = await sut.bufferingEnded()
-		let state = await sut.state
+		sut.bufferingStarted()
+		_ = sut.bufferingEnded()
+		let state = sut.state
 
 		XCTAssertFalse(state.isBuffering)
 		XCTAssertNil(state.bufferingStartTime)
 	}
 
-	func test_bufferingEnded_returnsBufferingEvent() async throws {
+	func test_bufferingEnded_returnsBufferingEvent() throws {
 		let (sut, currentDate) = makeSUTWithDate()
 		let startTime = Date()
 		currentDate.value = startTime
 
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 
 		let endTime = startTime.addingTimeInterval(3.0)
 		currentDate.value = endTime
 
-		let event = await sut.bufferingEnded()
+		let event = sut.bufferingEnded()
 
 		let unwrappedEvent = try XCTUnwrap(event)
 		XCTAssertEqual(unwrappedEvent.startTime, startTime)
@@ -79,63 +80,63 @@ final class RebufferingMonitorTests: XCTestCase {
 		XCTAssertEqual(unwrappedEvent.duration, 3.0, accuracy: 0.001)
 	}
 
-	func test_bufferingEnded_returnsNilIfNotBuffering() async {
+	func test_bufferingEnded_returnsNilIfNotBuffering() {
 		let sut = makeSUT()
 
-		let event = await sut.bufferingEnded()
+		let event = sut.bufferingEnded()
 
 		XCTAssertNil(event)
 	}
 
-	func test_bufferingEnded_incrementsBufferingCount() async {
+	func test_bufferingEnded_incrementsBufferingCount() {
 		let sut = makeSUT()
 
-		await sut.bufferingStarted()
-		_ = await sut.bufferingEnded()
-		let state = await sut.state
+		sut.bufferingStarted()
+		_ = sut.bufferingEnded()
+		let state = sut.state
 
 		XCTAssertEqual(state.bufferingCount, 1)
 	}
 
-	func test_bufferingEnded_accumulatesTotalBufferingDuration() async {
+	func test_bufferingEnded_accumulatesTotalBufferingDuration() {
 		let (sut, currentDate) = makeSUTWithDate()
 		let startTime = Date()
 
 		// First buffering event: 2 seconds
 		currentDate.value = startTime
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 		currentDate.value = startTime.addingTimeInterval(2.0)
-		_ = await sut.bufferingEnded()
+		_ = sut.bufferingEnded()
 
 		// Second buffering event: 3 seconds
 		currentDate.value = startTime.addingTimeInterval(10.0)
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 		currentDate.value = startTime.addingTimeInterval(13.0)
-		_ = await sut.bufferingEnded()
+		_ = sut.bufferingEnded()
 
-		let state = await sut.state
+		let state = sut.state
 		XCTAssertEqual(state.totalBufferingDuration, 5.0, accuracy: 0.001)
 		XCTAssertEqual(state.bufferingCount, 2)
 	}
 
 	// MARK: - currentBufferingDuration Tests
 
-	func test_currentBufferingDuration_isNilWhenNotBuffering() async {
+	func test_currentBufferingDuration_isNilWhenNotBuffering() {
 		let sut = makeSUT()
-		let state = await sut.state
+		let state = sut.state
 
 		XCTAssertNil(state.currentBufferingDuration)
 	}
 
-	func test_currentBufferingDuration_calculatesOngoingDuration() async {
+	func test_currentBufferingDuration_calculatesOngoingDuration() {
 		let (sut, currentDate) = makeSUTWithDate()
 		let startTime = Date()
 		currentDate.value = startTime
 
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 
 		currentDate.value = startTime.addingTimeInterval(2.5)
-		let state = await sut.state
+		let state = sut.state
 
 		// Note: currentBufferingDuration uses Date() internally, so we can't test exact value
 		XCTAssertNotNil(state.currentBufferingDuration)
@@ -143,60 +144,60 @@ final class RebufferingMonitorTests: XCTestCase {
 
 	// MARK: - eventsInLastMinute Tests
 
-	func test_eventsInLastMinute_countsRecentEvents() async {
+	func test_eventsInLastMinute_countsRecentEvents() {
 		let (sut, currentDate) = makeSUTWithDate()
 		let now = Date()
 
 		// Event 30 seconds ago
 		currentDate.value = now.addingTimeInterval(-30)
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 		currentDate.value = now.addingTimeInterval(-28)
-		_ = await sut.bufferingEnded()
+		_ = sut.bufferingEnded()
 
 		// Event 45 seconds ago
 		currentDate.value = now.addingTimeInterval(-45)
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 		currentDate.value = now.addingTimeInterval(-43)
-		_ = await sut.bufferingEnded()
+		_ = sut.bufferingEnded()
 
 		currentDate.value = now
-		let count = await sut.eventsInLastMinute()
+		let count = sut.eventsInLastMinute()
 
 		XCTAssertEqual(count, 2)
 	}
 
-	func test_eventsInLastMinute_excludesOlderEvents() async {
+	func test_eventsInLastMinute_excludesOlderEvents() {
 		let (sut, currentDate) = makeSUTWithDate()
 		let now = Date()
 
 		// Old event: 90 seconds ago (should be excluded)
 		currentDate.value = now.addingTimeInterval(-90)
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 		currentDate.value = now.addingTimeInterval(-88)
-		_ = await sut.bufferingEnded()
+		_ = sut.bufferingEnded()
 
 		// Recent event: 30 seconds ago
 		currentDate.value = now.addingTimeInterval(-30)
-		await sut.bufferingStarted()
+		sut.bufferingStarted()
 		currentDate.value = now.addingTimeInterval(-28)
-		_ = await sut.bufferingEnded()
+		_ = sut.bufferingEnded()
 
 		currentDate.value = now
-		let count = await sut.eventsInLastMinute()
+		let count = sut.eventsInLastMinute()
 
 		XCTAssertEqual(count, 1)
 	}
 
 	// MARK: - reset Tests
 
-	func test_reset_clearsAllState() async {
+	func test_reset_clearsAllState() {
 		let sut = makeSUT()
 
-		await sut.bufferingStarted()
-		_ = await sut.bufferingEnded()
-		await sut.reset()
+		sut.bufferingStarted()
+		_ = sut.bufferingEnded()
+		sut.reset()
 
-		let state = await sut.state
+		let state = sut.state
 		XCTAssertFalse(state.isBuffering)
 		XCTAssertNil(state.bufferingStartTime)
 		XCTAssertEqual(state.bufferingCount, 0)
@@ -219,6 +220,7 @@ final class RebufferingMonitorTests: XCTestCase {
 
 // MARK: - Test Helpers
 
-private final class CurrentDateStub: @unchecked Sendable {
+@MainActor
+private final class CurrentDateStub {
 	var value: Date = Date()
 }

@@ -136,11 +136,7 @@ class VideoCommentsUIIntegrationTests: XCTestCase {
 	}
 
 	private func assertThat(_ sut: ListViewController, isRendering comments: [VideoComment], file: StaticString = #filePath, line: UInt = #line) {
-		sut.view.enforceLayoutCycle()
-
-		guard sut.numberOfRenderedCommentViews() == comments.count else {
-			return XCTFail("Expected \(comments.count) comments, got \(sut.numberOfRenderedCommentViews()) instead.", file: file, line: line)
-		}
+		XCTAssertEqual(sut.numberOfRenderedCommentViews(), comments.count, "comments count", file: file, line: line)
 
 		comments.enumerated().forEach { index, comment in
 			assertThat(sut, hasViewConfiguredFor: comment, at: index, file: file, line: line)

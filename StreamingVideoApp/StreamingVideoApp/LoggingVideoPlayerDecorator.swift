@@ -9,11 +9,13 @@ import Foundation
 import StreamingCore
 
 /// A decorator that adds structured logging to any VideoPlayer implementation.
-/// Uses Task.immediate with [weak self] to prevent malloc crashes in tests.
+/// Uses Essential Feed pattern: store Tasks and cancel in deinit.
 public final class LoggingVideoPlayerDecorator: VideoPlayer {
 	private let decoratee: VideoPlayer
 	private let logger: Logger
 	private let correlationID: UUID
+	private var pendingTasks = Set<Task<Void, Never>>()
+	private let tasksLock = NSLock()
 
 	public init(
 		decoratee: VideoPlayer,
@@ -23,6 +25,15 @@ public final class LoggingVideoPlayerDecorator: VideoPlayer {
 		self.decoratee = decoratee
 		self.logger = logger
 		self.correlationID = correlationID
+	}
+
+	deinit {
+		tasksLock.lock()
+		let tasks = pendingTasks
+		tasksLock.unlock()
+		for task in tasks {
+			task.cancel()
+		}
 	}
 
 	// MARK: - VideoPlayer Properties
@@ -115,10 +126,17 @@ public final class LoggingVideoPlayerDecorator: VideoPlayer {
 			metadata: metadata
 		)
 
-		// Use Task.immediate with [weak self] to prevent malloc crashes
-		Task.immediate { [weak self, logger, context, level, message] in
+		// Essential Feed pattern: store Task and cancel in deinit
+		let task = Task { [weak self, logger, context, level, message] in
 			guard self != nil else { return }
 			await logger.log(LogEntry(level: level, message: message, context: context))
 		}
+		addTask(task)
+	}
+
+	private func addTask(_ task: Task<Void, Never>) {
+		tasksLock.lock()
+		pendingTasks.insert(task)
+		tasksLock.unlock()
 	}
 }

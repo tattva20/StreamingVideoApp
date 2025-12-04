@@ -8,13 +8,16 @@
 import Foundation
 import Combine
 
-public actor PlaybackPerformanceService: PerformanceMonitor {
+/// Thread-safe @MainActor class implementation of playback performance monitoring.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class PlaybackPerformanceService: PerformanceMonitor {
 
 	// MARK: - Private Properties
 
 	private let thresholds: PerformanceThresholds
-	private let currentDate: @Sendable () -> Date
-	private let uuidGenerator: @Sendable () -> UUID
+	private let currentDate: () -> Date
+	private let uuidGenerator: () -> UUID
 
 	private var sessionID: UUID?
 	private var sessionStartTime: Date?
@@ -27,21 +30,21 @@ public actor PlaybackPerformanceService: PerformanceMonitor {
 	private var currentBitrate: Int?
 	private var previousBitrate: Int?
 
-	// Combine subjects - nonisolated(unsafe) is safe because PassthroughSubject is thread-safe
-	private nonisolated(unsafe) let metricsSubject = PassthroughSubject<PerformanceSnapshot, Never>()
-	private nonisolated(unsafe) let alertSubject = PassthroughSubject<PerformanceAlert, Never>()
+	// Combine subjects - thread-safe via @MainActor isolation
+	private let metricsSubject = PassthroughSubject<PerformanceSnapshot, Never>()
+	private let alertSubject = PassthroughSubject<PerformanceAlert, Never>()
 
 	// MARK: - PerformanceMonitor Protocol
 
-	public nonisolated var metricsPublisher: AnyPublisher<PerformanceSnapshot, Never> {
+	public var metricsPublisher: AnyPublisher<PerformanceSnapshot, Never> {
 		metricsSubject.eraseToAnyPublisher()
 	}
 
-	public nonisolated var alertPublisher: AnyPublisher<PerformanceAlert, Never> {
+	public var alertPublisher: AnyPublisher<PerformanceAlert, Never> {
 		alertSubject.eraseToAnyPublisher()
 	}
 
-	public nonisolated var metricsStream: AsyncStream<PerformanceSnapshot> {
+	public var metricsStream: AsyncStream<PerformanceSnapshot> {
 		metricsSubject.toAsyncStream()
 	}
 
@@ -49,8 +52,8 @@ public actor PlaybackPerformanceService: PerformanceMonitor {
 
 	public init(
 		thresholds: PerformanceThresholds = .default,
-		currentDate: @escaping @Sendable () -> Date = { Date() },
-		uuidGenerator: @escaping @Sendable () -> UUID = { UUID() }
+		currentDate: @escaping () -> Date = { Date() },
+		uuidGenerator: @escaping () -> UUID = { UUID() }
 	) {
 		self.thresholds = thresholds
 		self.currentDate = currentDate
@@ -88,15 +91,11 @@ public actor PlaybackPerformanceService: PerformanceMonitor {
 			checkStartupTime(sessionID: sessionID)
 
 		case .bufferingStarted:
-			Task {
-				await rebufferingMonitor?.bufferingStarted()
-			}
+			rebufferingMonitor?.bufferingStarted()
 
 		case .bufferingEnded:
-			Task {
-				if let event = await rebufferingMonitor?.bufferingEnded() {
-					await checkRebuffering(sessionID: sessionID, event: event)
-				}
+			if let event = rebufferingMonitor?.bufferingEnded() {
+				checkRebuffering(sessionID: sessionID, event: event)
 			}
 
 		case .playbackStalled:
@@ -190,11 +189,11 @@ public actor PlaybackPerformanceService: PerformanceMonitor {
 		}
 	}
 
-	private func checkRebuffering(sessionID: UUID, event: RebufferingMonitor.BufferingEvent) async {
+	private func checkRebuffering(sessionID: UUID, event: RebufferingMonitor.BufferingEvent) {
 		guard let rebufferingMonitor else { return }
 
-		let state = await rebufferingMonitor.state
-		let eventsPerMinute = await rebufferingMonitor.eventsInLastMinute()
+		let state = rebufferingMonitor.state
+		let eventsPerMinute = rebufferingMonitor.eventsInLastMinute()
 
 		// Check prolonged buffering
 		if event.duration >= thresholds.maxBufferingDuration {
@@ -251,31 +250,29 @@ public actor PlaybackPerformanceService: PerformanceMonitor {
 	private func emitSnapshot() {
 		guard let sessionID, let sessionStart = sessionStartTime else { return }
 
-		Task {
-			let bufferState = await rebufferingMonitor?.state ?? RebufferingMonitor.State(
-				isBuffering: false,
-				bufferingStartTime: nil,
-				bufferingEvents: [],
-				totalBufferingDuration: 0
-			)
+		let bufferState = rebufferingMonitor?.state ?? RebufferingMonitor.State(
+			isBuffering: false,
+			bufferingStartTime: nil,
+			bufferingEvents: [],
+			totalBufferingDuration: 0
+		)
 
-			let snapshot = PerformanceSnapshot(
-				timestamp: currentDate(),
-				sessionID: sessionID,
-				timeToFirstFrame: startupTracker.measurement?.timeToFirstFrame,
-				isBuffering: bufferState.isBuffering,
-				bufferingCount: bufferState.bufferingCount,
-				totalBufferingDuration: bufferState.totalBufferingDuration,
-				currentBufferingDuration: bufferState.currentBufferingDuration,
-				currentBitrate: currentBitrate,
-				networkQuality: currentNetwork,
-				memoryUsageMB: currentMemory.usedMB,
-				memoryPressure: currentMemory.pressure,
-				sessionStartTime: sessionStart
-			)
+		let snapshot = PerformanceSnapshot(
+			timestamp: currentDate(),
+			sessionID: sessionID,
+			timeToFirstFrame: startupTracker.measurement?.timeToFirstFrame,
+			isBuffering: bufferState.isBuffering,
+			bufferingCount: bufferState.bufferingCount,
+			totalBufferingDuration: bufferState.totalBufferingDuration,
+			currentBufferingDuration: bufferState.currentBufferingDuration,
+			currentBitrate: currentBitrate,
+			networkQuality: currentNetwork,
+			memoryUsageMB: currentMemory.usedMB,
+			memoryPressure: currentMemory.pressure,
+			sessionStartTime: sessionStart
+		)
 
-			metricsSubject.send(snapshot)
-		}
+		metricsSubject.send(snapshot)
 	}
 
 	private func emitAlert(_ alert: PerformanceAlert) {

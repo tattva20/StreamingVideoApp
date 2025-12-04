@@ -9,24 +9,15 @@ import Combine
 import Foundation
 @testable import StreamingCore
 
-final class MemoryMonitorSpy: MemoryMonitor, @unchecked Sendable {
-	private let lock = NSLock()
+@MainActor
+final class MemoryMonitorSpy: MemoryMonitor {
 	private var _startMonitoringCallCount = 0
 	private var _stopMonitoringCallCount = 0
 
-	private nonisolated(unsafe) let stateSubject = CurrentValueSubject<MemoryState?, Never>(nil)
+	private let stateSubject = CurrentValueSubject<MemoryState?, Never>(nil)
 
-	var startMonitoringCallCount: Int {
-		lock.lock()
-		defer { lock.unlock() }
-		return _startMonitoringCallCount
-	}
-
-	var stopMonitoringCallCount: Int {
-		lock.lock()
-		defer { lock.unlock() }
-		return _stopMonitoringCallCount
-	}
+	var startMonitoringCallCount: Int { _startMonitoringCallCount }
+	var stopMonitoringCallCount: Int { _stopMonitoringCallCount }
 
 	var statePublisher: AnyPublisher<MemoryState, Never> {
 		stateSubject
@@ -38,20 +29,16 @@ final class MemoryMonitorSpy: MemoryMonitor, @unchecked Sendable {
 		statePublisher.toAsyncStream()
 	}
 
-	func currentMemoryState() async -> MemoryState {
+	func currentMemoryState() -> MemoryState {
 		stateSubject.value ?? makeMemoryState(availableMB: 500)
 	}
 
-	func startMonitoring() async {
-		lock.lock()
+	func startMonitoring() {
 		_startMonitoringCallCount += 1
-		lock.unlock()
 	}
 
-	func stopMonitoring() async {
-		lock.lock()
+	func stopMonitoring() {
 		_stopMonitoringCallCount += 1
-		lock.unlock()
 	}
 
 	func simulateMemoryState(_ state: MemoryState) {

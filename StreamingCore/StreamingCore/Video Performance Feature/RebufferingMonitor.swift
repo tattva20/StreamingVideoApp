@@ -7,7 +7,10 @@
 
 import Foundation
 
-public actor RebufferingMonitor {
+/// Monitors rebuffering events during video playback.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class RebufferingMonitor {
 
 	// MARK: - State
 
@@ -40,30 +43,30 @@ public actor RebufferingMonitor {
 
 	// MARK: - Private Properties
 
-	private var isBuffering = false
+	private var _isBuffering = false
 	private var bufferingStartTime: Date?
 	private var bufferingEvents: [BufferingEvent] = []
 	private var totalBufferingDuration: TimeInterval = 0
-	private let currentDate: @Sendable () -> Date
+	private let currentDate: () -> Date
 
 	// MARK: - Initialization
 
-	public init(currentDate: @escaping @Sendable () -> Date = { Date() }) {
+	public init(currentDate: @escaping () -> Date = { Date() }) {
 		self.currentDate = currentDate
 	}
 
 	// MARK: - Public Methods
 
 	public func bufferingStarted() {
-		guard !isBuffering else { return }
-		isBuffering = true
+		guard !_isBuffering else { return }
+		_isBuffering = true
 		bufferingStartTime = currentDate()
 	}
 
 	public func bufferingEnded() -> BufferingEvent? {
-		guard isBuffering, let startTime = bufferingStartTime else { return nil }
+		guard _isBuffering, let startTime = bufferingStartTime else { return nil }
 
-		isBuffering = false
+		_isBuffering = false
 		let endTime = currentDate()
 		let event = BufferingEvent(startTime: startTime, endTime: endTime)
 
@@ -76,7 +79,7 @@ public actor RebufferingMonitor {
 
 	public var state: State {
 		State(
-			isBuffering: isBuffering,
+			isBuffering: _isBuffering,
 			bufferingStartTime: bufferingStartTime,
 			bufferingEvents: bufferingEvents,
 			totalBufferingDuration: totalBufferingDuration
@@ -84,7 +87,7 @@ public actor RebufferingMonitor {
 	}
 
 	public func reset() {
-		isBuffering = false
+		_isBuffering = false
 		bufferingStartTime = nil
 		bufferingEvents = []
 		totalBufferingDuration = 0

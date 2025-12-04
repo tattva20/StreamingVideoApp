@@ -16,8 +16,6 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		super.tearDown()
 		// Reset orientation lock to default after each test to prevent test pollution
 		AppDelegate.orientationLock = .allButUpsideDown
-		// Allow pending cleanup to complete before next test
-		RunLoop.current.run(until: Date())
 	}
 
 	func test_videoPlayerView_hasTitle() {
@@ -404,7 +402,6 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		sut.simulateLandscapeOrientation()
 		sut.view.layoutIfNeeded()
 
-		let expectedBottomOffset: CGFloat = 64
 		let playerViewBottom = sut.playerView.frame.maxY
 		let sliderCenterY = sut.progressSlider.center.y
 		let currentTimeCenterY = sut.currentTimeLabel.center.y

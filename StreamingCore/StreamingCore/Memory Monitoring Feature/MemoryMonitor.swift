@@ -8,14 +8,16 @@
 import Combine
 import Foundation
 
-public protocol MemoryStateProvider: Sendable {
-	func currentMemoryState() async -> MemoryState
+@MainActor
+public protocol MemoryStateProvider: AnyObject {
+	func currentMemoryState() -> MemoryState
 }
 
-public protocol MemoryMonitor: MemoryStateProvider, AnyObject, Sendable {
+@MainActor
+public protocol MemoryMonitor: MemoryStateProvider {
 	var statePublisher: AnyPublisher<MemoryState, Never> { get }
 	var stateStream: AsyncStream<MemoryState> { get }
 
-	func startMonitoring() async
-	func stopMonitoring() async
+	func startMonitoring()
+	func stopMonitoring()
 }

@@ -34,9 +34,9 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didBecomeReady)
-		await sut.send(.play)
+		sut.send(.load(anyURL()))
+		sut.send(.didBecomeReady)
+		sut.send(.play)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(receivedStates, [.playing])
@@ -55,10 +55,10 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didBecomeReady)
-		await sut.send(.play)
-		await sut.send(.pause)
+		sut.send(.load(anyURL()))
+		sut.send(.didBecomeReady)
+		sut.send(.play)
+		sut.send(.pause)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(receivedStates, [.paused])
@@ -80,10 +80,10 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didBecomeReady)
-		await sut.send(.play) // active
-		await sut.send(.didStartBuffering) // active (buffering from playing)
+		sut.send(.load(anyURL()))
+		sut.send(.didBecomeReady)
+		sut.send(.play) // active
+		sut.send(.didStartBuffering) // active (buffering from playing)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(activeCount, 2)
@@ -108,8 +108,8 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didFail(error))
+		sut.send(.load(anyURL()))
+		sut.send(.didFail(error))
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(receivedErrors, [error])
@@ -130,9 +130,9 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didBecomeReady)
-		await sut.send(.play)
+		sut.send(.load(anyURL()))
+		sut.send(.didBecomeReady)
+		sut.send(.play)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(receivedTransitions.count, 1)
@@ -158,10 +158,10 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didBecomeReady)
-		await sut.send(.play)
-		await sut.send(.didStartBuffering)
+		sut.send(.load(anyURL()))
+		sut.send(.didBecomeReady)
+		sut.send(.play)
+		sut.send(.didStartBuffering)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(bufferingStartedCount, 1)
@@ -180,10 +180,10 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL()))
-		await sut.send(.didBecomeReady)
-		await sut.send(.play)
-		await sut.send(.didReachEnd)
+		sut.send(.load(anyURL()))
+		sut.send(.didBecomeReady)
+		sut.send(.play)
+		sut.send(.didReachEnd)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 	}
@@ -204,10 +204,10 @@ final class PlaybackStateObserverTests: XCTestCase {
 			}
 			.store(in: &cancellables)
 
-		await sut.send(.load(anyURL())) // idle -> loading
-		await sut.send(.didBecomeReady) // loading -> ready
-		await sut.send(.play) // ready -> playing
-		await sut.send(.pause) // playing -> paused
+		sut.send(.load(anyURL())) // idle -> loading
+		sut.send(.didBecomeReady) // loading -> ready
+		sut.send(.play) // ready -> playing
+		sut.send(.pause) // playing -> paused
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		XCTAssertEqual(stateChangeCount, 4)

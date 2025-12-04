@@ -9,6 +9,7 @@ import XCTest
 import Combine
 @testable import StreamingCore
 
+@MainActor
 final class PlaybackPerformanceServiceTests: XCTestCase {
 
 	private var cancellables = Set<AnyCancellable>()
@@ -49,8 +50,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.loadStarted)
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.loadStarted)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -73,8 +74,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.loadStarted)
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.loadStarted)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -99,11 +100,11 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.loadStarted)
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.loadStarted)
 
 		currentDate.value = startTime.addingTimeInterval(1.5)
-		await sut.recordEvent(.firstFrameRendered)
+		sut.recordEvent(.firstFrameRendered)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -126,8 +127,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.bufferingStarted)
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.bufferingStarted)
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -149,9 +150,9 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.bufferingStarted)
-		await sut.recordEvent(.bufferingEnded(duration: 2.0))
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.bufferingStarted)
+		sut.recordEvent(.bufferingEnded(duration: 2.0))
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -173,8 +174,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.networkChanged(quality: .poor))
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.networkChanged(quality: .poor))
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -195,8 +196,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 				expectation.fulfill()
 			}
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.qualityChanged(bitrate: 6_000_000))
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.qualityChanged(bitrate: 6_000_000))
 
 		await fulfillment(of: [expectation], timeout: 1.0)
 		cancellable.cancel()
@@ -236,12 +237,12 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 		let startTime = Date()
 		currentDate.value = startTime
 
-		await sut2.startMonitoring(for: sessionID)
-		await sut2.recordEvent(.loadStarted)
+		sut2.startMonitoring(for: sessionID)
+		sut2.recordEvent(.loadStarted)
 
 		// Simulate 3 second startup (between warning and critical)
 		currentDate.value = startTime.addingTimeInterval(3.0)
-		await sut2.recordEvent(.firstFrameRendered)
+		sut2.recordEvent(.firstFrameRendered)
 
 		// Give time for alert to be emitted
 		try? await Task.sleep(nanoseconds: 100_000_000)
@@ -264,8 +265,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 			.store(in: &cancellables)
 
 		let sessionID = UUID()
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.playbackStalled)
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.playbackStalled)
 
 		// Give time for alert to be emitted
 		try? await Task.sleep(nanoseconds: 100_000_000)
@@ -285,8 +286,8 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 			.store(in: &cancellables)
 
 		let sessionID = UUID()
-		await sut.startMonitoring(for: sessionID)
-		await sut.recordEvent(.memoryWarning(level: .warning))
+		sut.startMonitoring(for: sessionID)
+		sut.recordEvent(.memoryWarning(level: .warning))
 
 		// Give time for alert to be emitted
 		try? await Task.sleep(nanoseconds: 100_000_000)
@@ -305,11 +306,11 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 		let sut = makeSUT()
 		let sessionID = UUID()
 
-		await sut.startMonitoring(for: sessionID)
-		await sut.stopMonitoring()
+		sut.startMonitoring(for: sessionID)
+		sut.stopMonitoring()
 
 		// After stopping, recording events should not produce snapshots
-		await sut.recordEvent(.loadStarted)
+		sut.recordEvent(.loadStarted)
 
 		var receivedSnapshots: [PerformanceSnapshot] = []
 		sut.metricsPublisher
@@ -326,7 +327,7 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 		let sut = makeSUT()
 		let sessionID = UUID()
 
-		await sut.startMonitoring(for: sessionID)
+		sut.startMonitoring(for: sessionID)
 
 		// Start collecting from stream
 		let task = Task {
@@ -342,7 +343,7 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 		try? await Task.sleep(nanoseconds: 50_000_000)
 
 		// Emit an event
-		await sut.recordEvent(.loadStarted)
+		sut.recordEvent(.loadStarted)
 
 		// Give time for event processing
 		try? await Task.sleep(nanoseconds: 300_000_000)
@@ -398,6 +399,7 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 
 // MARK: - Test Helpers
 
-private final class CurrentDateStub: @unchecked Sendable {
+@MainActor
+private final class CurrentDateStub {
 	var value: Date = Date()
 }

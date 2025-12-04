@@ -38,10 +38,9 @@ public final class AVPlayerBufferAdapter: @unchecked Sendable {
 
 	/// Apply current buffer configuration to a new player item
 	/// Call this when replacing the player's current item
-	public func applyToNewItem(_ item: AVPlayerItem) async {
-		let config = await bufferManager.currentConfiguration
-		await MainActor.run {
-			item.preferredForwardBufferDuration = config.preferredForwardBufferDuration
-		}
+	@MainActor
+	public func applyToNewItem(_ item: AVPlayerItem) {
+		let config = bufferManager.currentConfiguration
+		item.preferredForwardBufferDuration = config.preferredForwardBufferDuration
 	}
 }

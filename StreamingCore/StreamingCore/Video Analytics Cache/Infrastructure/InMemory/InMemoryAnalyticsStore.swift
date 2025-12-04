@@ -7,7 +7,10 @@
 
 import Foundation
 
-public actor InMemoryAnalyticsStore: AnalyticsStore {
+/// In-memory analytics store for testing and development.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class InMemoryAnalyticsStore: AnalyticsStore {
     private var sessions: [UUID: LocalPlaybackSession] = [:]
     private var events: [UUID: [LocalPlaybackEvent]] = [:]
 

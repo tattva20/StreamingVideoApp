@@ -8,14 +8,16 @@
 import Combine
 import Foundation
 
-public protocol BufferSizeProvider: Sendable {
-	var currentConfiguration: BufferConfiguration { get async }
+@MainActor
+public protocol BufferSizeProvider: AnyObject {
+	var currentConfiguration: BufferConfiguration { get }
 }
 
-public protocol BufferManager: BufferSizeProvider, AnyObject, Sendable {
+@MainActor
+public protocol BufferManager: BufferSizeProvider {
 	var configurationPublisher: AnyPublisher<BufferConfiguration, Never> { get }
 	var configurationStream: AsyncStream<BufferConfiguration> { get }
 
-	func updateMemoryState(_ state: MemoryState) async
-	func updateNetworkQuality(_ quality: NetworkQuality) async
+	func updateMemoryState(_ state: MemoryState)
+	func updateNetworkQuality(_ quality: NetworkQuality)
 }

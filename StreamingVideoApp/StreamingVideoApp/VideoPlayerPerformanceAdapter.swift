@@ -12,7 +12,9 @@ import StreamingCoreiOS
 
 /// Bridges AVPlayer performance observations to the platform-agnostic PerformanceMonitor
 /// Coordinates bandwidth estimation with network quality monitoring
-public final class VideoPlayerPerformanceAdapter: @unchecked Sendable {
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class VideoPlayerPerformanceAdapter {
 
 	private let performanceService: any PerformanceMonitor
 	private let bandwidthEstimator: NetworkBandwidthEstimator
@@ -33,15 +35,15 @@ public final class VideoPlayerPerformanceAdapter: @unchecked Sendable {
 
 	// MARK: - Monitoring Control
 
-	public func startMonitoring(sessionID: UUID) async {
-		await performanceService.startMonitoring(for: sessionID)
+	public func startMonitoring(sessionID: UUID) {
+		performanceService.startMonitoring(for: sessionID)
 		_isObserving = true
 		hasRecordedFirstFrame = false
 	}
 
-	public func stopMonitoring() async {
+	public func stopMonitoring() {
 		_isObserving = false
-		await performanceService.stopMonitoring()
+		performanceService.stopMonitoring()
 		cancellables.removeAll()
 	}
 
@@ -49,61 +51,53 @@ public final class VideoPlayerPerformanceAdapter: @unchecked Sendable {
 
 	public func simulatePlaybackStarted() {
 		guard _isObserving else { return }
-		Task {
-			await performanceService.recordEvent(.loadStarted)
-			if !hasRecordedFirstFrame {
-				hasRecordedFirstFrame = true
-				await performanceService.recordEvent(.firstFrameRendered)
-			}
+		performanceService.recordEvent(.loadStarted)
+		if !hasRecordedFirstFrame {
+			hasRecordedFirstFrame = true
+			performanceService.recordEvent(.firstFrameRendered)
 		}
 	}
 
 	public func simulateBufferingStarted() {
 		guard _isObserving else { return }
-		Task {
-			await performanceService.recordEvent(.bufferingStarted)
-		}
+		performanceService.recordEvent(.bufferingStarted)
 	}
 
 	public func simulateBufferingEnded() {
 		guard _isObserving else { return }
-		Task {
-			await performanceService.recordEvent(.bufferingEnded(duration: 0))
-		}
+		performanceService.recordEvent(.bufferingEnded(duration: 0))
 	}
 
 	// MARK: - Quality Updates
 
-	public func updateNetworkQuality(_ quality: NetworkQuality) async {
-		await performanceService.recordEvent(.networkChanged(quality: quality))
+	public func updateNetworkQuality(_ quality: NetworkQuality) {
+		performanceService.recordEvent(.networkChanged(quality: quality))
 		if let service = performanceService as? PlaybackPerformanceService {
-			await service.updateNetwork(quality)
+			service.updateNetwork(quality)
 		}
 	}
 
-	public func updateMemory(usedMB: Double, pressure: MemoryPressureLevel) async {
-		await performanceService.recordEvent(.memoryWarning(level: pressure))
+	public func updateMemory(usedMB: Double, pressure: MemoryPressureLevel) {
+		performanceService.recordEvent(.memoryWarning(level: pressure))
 		if let service = performanceService as? PlaybackPerformanceService {
-			await service.updateMemory(usedMB: usedMB, pressure: pressure)
+			service.updateMemory(usedMB: usedMB, pressure: pressure)
 		}
 	}
 
 	// MARK: - Bandwidth Tracking
 
-	public func recordBandwidthSample(bytesTransferred: Int64, duration: TimeInterval) async {
+	public func recordBandwidthSample(bytesTransferred: Int64, duration: TimeInterval) {
 		let sample = BandwidthSample(
 			bytesTransferred: bytesTransferred,
 			duration: duration,
 			timestamp: Date()
 		)
-		await bandwidthEstimator.recordSample(sample)
-		await performanceService.recordEvent(.bytesTransferred(bytes: bytesTransferred, duration: duration))
+		bandwidthEstimator.recordSample(sample)
+		performanceService.recordEvent(.bytesTransferred(bytes: bytesTransferred, duration: duration))
 	}
 
 	public var currentBandwidthEstimate: BandwidthEstimate {
-		get async {
-			await bandwidthEstimator.currentEstimate
-		}
+		bandwidthEstimator.currentEstimate
 	}
 
 	// MARK: - AVPlayer Observer Integration
@@ -136,68 +130,65 @@ public final class VideoPlayerPerformanceAdapter: @unchecked Sendable {
 	private func handlePlaybackStateChange(_ state: ObserverPlaybackState) {
 		guard _isObserving else { return }
 
-		Task {
-			switch state {
-			case .playing:
-				if !hasRecordedFirstFrame {
-					hasRecordedFirstFrame = true
-					await performanceService.recordEvent(.firstFrameRendered)
-				}
-				await performanceService.recordEvent(.playbackResumed)
-
-			case .buffering:
-				await performanceService.recordEvent(.bufferingStarted)
-
-			case .stalled:
-				await performanceService.recordEvent(.playbackStalled)
-
-			case .paused, .idle:
-				break
-
-			case .failed:
-				await performanceService.recordEvent(.playbackStalled)
+		switch state {
+		case .playing:
+			if !hasRecordedFirstFrame {
+				hasRecordedFirstFrame = true
+				performanceService.recordEvent(.firstFrameRendered)
 			}
+			performanceService.recordEvent(.playbackResumed)
+
+		case .buffering:
+			performanceService.recordEvent(.bufferingStarted)
+
+		case .stalled:
+			performanceService.recordEvent(.playbackStalled)
+
+		case .paused, .idle:
+			break
+
+		case .failed:
+			performanceService.recordEvent(.playbackStalled)
+
+		@unknown default:
+			break
 		}
 	}
 
 	private func handleBufferingStateChange(_ state: BufferingState) {
 		guard _isObserving else { return }
 
-		Task {
-			switch state {
-			case .buffering:
-				await performanceService.recordEvent(.bufferingStarted)
+		switch state {
+		case .buffering:
+			performanceService.recordEvent(.bufferingStarted)
 
-			case .ready:
-				await performanceService.recordEvent(.bufferingEnded(duration: 0))
+		case .ready:
+			performanceService.recordEvent(.bufferingEnded(duration: 0))
 
-			case .stalled:
-				await performanceService.recordEvent(.playbackStalled)
+		case .stalled:
+			performanceService.recordEvent(.playbackStalled)
 
-			case .unknown:
-				break
+		case .unknown:
+			break
 
-			@unknown default:
-				break
-			}
+		@unknown default:
+			break
 		}
 	}
 
 	private func handlePerformanceEvent(_ event: StreamingCore.PerformanceEvent) {
 		guard _isObserving else { return }
 
-		Task {
-			// Handle bandwidth tracking specially for the estimator
-			if case .bytesTransferred(let bytes, let duration) = event {
-				let sample = BandwidthSample(
-					bytesTransferred: bytes,
-					duration: duration,
-					timestamp: Date()
-				)
-				await bandwidthEstimator.recordSample(sample)
-			}
-			// Forward all events to the performance service
-			await performanceService.recordEvent(event)
+		// Handle bandwidth tracking specially for the estimator
+		if case .bytesTransferred(let bytes, let duration) = event {
+			let sample = BandwidthSample(
+				bytesTransferred: bytes,
+				duration: duration,
+				timestamp: Date()
+			)
+			bandwidthEstimator.recordSample(sample)
 		}
+		// Forward all events to the performance service
+		performanceService.recordEvent(event)
 	}
 }

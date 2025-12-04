@@ -7,18 +7,21 @@
 
 import Foundation
 
-public actor PlaybackAnalyticsService: PlaybackAnalyticsLogger {
+/// Analytics service for tracking playback sessions and events.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class PlaybackAnalyticsService: PlaybackAnalyticsLogger {
     private let store: AnalyticsStore
-    private let currentDate: @Sendable () -> Date
-    private let uuidGenerator: @Sendable () -> UUID
+    private let currentDate: () -> Date
+    private let uuidGenerator: () -> UUID
 
     private var currentSession: PlaybackSession?
     private var performanceTracker: PerformanceTracker?
 
     public init(
         store: AnalyticsStore,
-        currentDate: @escaping @Sendable () -> Date = { Date() },
-        uuidGenerator: @escaping @Sendable () -> UUID = { UUID() }
+        currentDate: @escaping () -> Date = { Date() },
+        uuidGenerator: @escaping () -> UUID = { UUID() }
     ) {
         self.store = store
         self.currentDate = currentDate
@@ -89,23 +92,23 @@ public actor PlaybackAnalyticsService: PlaybackAnalyticsLogger {
         performanceTracker = nil
     }
 
-    public func getCurrentPerformanceMetrics(watchDuration: TimeInterval) async -> PerformanceMetrics? {
+    public func getCurrentPerformanceMetrics(watchDuration: TimeInterval) -> PerformanceMetrics? {
         performanceTracker?.buildMetrics(watchDuration: watchDuration)
     }
 
-    public func trackVideoLoadStarted() async {
+    public func trackVideoLoadStarted() {
         performanceTracker?.videoLoadStarted(at: currentDate())
     }
 
-    public func trackFirstFrameRendered() async {
+    public func trackFirstFrameRendered() {
         performanceTracker?.firstFrameRendered(at: currentDate())
     }
 
-    public func trackBufferingStarted() async {
+    public func trackBufferingStarted() {
         performanceTracker?.bufferingStarted(at: currentDate())
     }
 
-    public func trackBufferingEnded() async {
+    public func trackBufferingEnded() {
         performanceTracker?.bufferingEnded(at: currentDate())
     }
 }

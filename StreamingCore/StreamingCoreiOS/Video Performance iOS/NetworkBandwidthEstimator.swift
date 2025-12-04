@@ -7,8 +7,10 @@
 
 import Foundation
 
-/// Thread-safe bandwidth estimator that collects samples and calculates bandwidth estimates
-public actor NetworkBandwidthEstimator {
+/// Thread-safe bandwidth estimator that collects samples and calculates bandwidth estimates.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class NetworkBandwidthEstimator {
 
 	private let maxSamples: Int
 	private var samples: [BandwidthSample] = []

@@ -146,10 +146,10 @@ final class PlaybackAnalyticsServiceTests: XCTestCase {
             appVersion: "1.0.0"
         )
 
-        await sut.trackVideoLoadStarted()
-        await sut.trackFirstFrameRendered()
+        sut.trackVideoLoadStarted()
+        sut.trackFirstFrameRendered()
 
-        let metrics = await sut.getCurrentPerformanceMetrics(watchDuration: 60.0)
+        let metrics = sut.getCurrentPerformanceMetrics(watchDuration: 60.0)
         XCTAssertNotNil(metrics?.timeToFirstFrame)
     }
 
@@ -162,19 +162,19 @@ final class PlaybackAnalyticsServiceTests: XCTestCase {
             appVersion: "1.0.0"
         )
 
-        await sut.trackBufferingStarted()
+        sut.trackBufferingStarted()
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-        await sut.trackBufferingEnded()
+        sut.trackBufferingEnded()
 
-        let metrics = await sut.getCurrentPerformanceMetrics(watchDuration: 60.0)
+        let metrics = sut.getCurrentPerformanceMetrics(watchDuration: 60.0)
         XCTAssertEqual(metrics?.bufferingEvents, 1)
         XCTAssertGreaterThan(metrics?.totalBufferingDuration ?? 0, 0)
     }
 
-    func test_getCurrentPerformanceMetrics_returnsNilWithoutSession() async {
+    func test_getCurrentPerformanceMetrics_returnsNilWithoutSession() {
         let (sut, _) = makeSUT()
 
-        let metrics = await sut.getCurrentPerformanceMetrics(watchDuration: 60.0)
+        let metrics = sut.getCurrentPerformanceMetrics(watchDuration: 60.0)
 
         XCTAssertNil(metrics)
     }

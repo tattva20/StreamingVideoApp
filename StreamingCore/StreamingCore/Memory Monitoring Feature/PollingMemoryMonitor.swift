@@ -8,22 +8,25 @@
 import Combine
 import Foundation
 
-public actor PollingMemoryMonitor: MemoryMonitor {
-	private let memoryReader: @Sendable () -> MemoryState
+/// Thread-safe @MainActor class implementation of memory monitoring.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class PollingMemoryMonitor: MemoryMonitor {
+	private let memoryReader: () -> MemoryState
 	private let thresholds: MemoryThresholds
 
-	private nonisolated(unsafe) let stateSubject = CurrentValueSubject<MemoryState?, Never>(nil)
+	private let stateSubject = CurrentValueSubject<MemoryState?, Never>(nil)
 	private var pollingTask: Task<Void, Never>?
 	private var isMonitoring = false
 
-	public nonisolated var statePublisher: AnyPublisher<MemoryState, Never> {
+	public var statePublisher: AnyPublisher<MemoryState, Never> {
 		stateSubject
 			.compactMap { $0 }
 			.removeDuplicates()
 			.eraseToAnyPublisher()
 	}
 
-	public nonisolated var stateStream: AsyncStream<MemoryState> {
+	public var stateStream: AsyncStream<MemoryState> {
 		statePublisher.toAsyncStream()
 	}
 
@@ -35,11 +38,11 @@ public actor PollingMemoryMonitor: MemoryMonitor {
 		self.thresholds = thresholds
 	}
 
-	public func currentMemoryState() async -> MemoryState {
+	public func currentMemoryState() -> MemoryState {
 		memoryReader()
 	}
 
-	public func startMonitoring() async {
+	public func startMonitoring() {
 		guard !isMonitoring else { return }
 		isMonitoring = true
 
@@ -48,14 +51,16 @@ public actor PollingMemoryMonitor: MemoryMonitor {
 				guard let self = self else { break }
 
 				let state = memoryReader()
-				await self.updateState(state)
+				await MainActor.run {
+					self.updateState(state)
+				}
 
 				try? await Task.sleep(nanoseconds: UInt64(thresholds.pollingInterval * 1_000_000_000))
 			}
 		}
 	}
 
-	public func stopMonitoring() async {
+	public func stopMonitoring() {
 		isMonitoring = false
 		pollingTask?.cancel()
 		pollingTask = nil

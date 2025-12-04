@@ -8,15 +8,18 @@
 import Combine
 import Foundation
 
-public actor ResourceCleanupCoordinator {
+/// Thread-safe @MainActor class implementation of resource cleanup coordination.
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class ResourceCleanupCoordinator {
 	private var cleaners: [ResourceCleaner]
 	private let memoryMonitor: MemoryMonitor
 	private var isAutoCleanupEnabled = false
 	private var monitoringTask: Task<Void, Never>?
 
-	private nonisolated(unsafe) let cleanupSubject = PassthroughSubject<[CleanupResult], Never>()
+	private let cleanupSubject = PassthroughSubject<[CleanupResult], Never>()
 
-	public nonisolated var cleanupResultsPublisher: AnyPublisher<[CleanupResult], Never> {
+	public var cleanupResultsPublisher: AnyPublisher<[CleanupResult], Never> {
 		cleanupSubject.eraseToAnyPublisher()
 	}
 
@@ -35,12 +38,12 @@ public actor ResourceCleanupCoordinator {
 		guard !isAutoCleanupEnabled else { return }
 		isAutoCleanupEnabled = true
 
-		await memoryMonitor.startMonitoring()
+		memoryMonitor.startMonitoring()
 
 		monitoringTask = Task { [weak self] in
 			guard let self = self else { return }
 
-			for await state in await self.memoryMonitor.stateStream {
+			for await state in self.memoryMonitor.stateStream {
 				guard !Task.isCancelled else { break }
 
 				let thresholds = MemoryThresholds.default
@@ -50,13 +53,17 @@ public actor ResourceCleanupCoordinator {
 				case .critical:
 					// Critical: Clean everything possible
 					let results = await self.cleanupAll()
-					await self.triggerCleanupResults(results)
+					await MainActor.run {
+						self.triggerCleanupResults(results)
+					}
 
 				case .warning:
 					// Warning: Clean low and medium priority only
 					let results = await self.cleanupUpTo(priority: .medium)
 					if !results.isEmpty {
-						await self.triggerCleanupResults(results)
+						await MainActor.run {
+							self.triggerCleanupResults(results)
+						}
 					}
 
 				case .normal:
@@ -70,7 +77,7 @@ public actor ResourceCleanupCoordinator {
 		isAutoCleanupEnabled = false
 		monitoringTask?.cancel()
 		monitoringTask = nil
-		await memoryMonitor.stopMonitoring()
+		memoryMonitor.stopMonitoring()
 	}
 
 	/// Clean all registered resources (highest priority first)

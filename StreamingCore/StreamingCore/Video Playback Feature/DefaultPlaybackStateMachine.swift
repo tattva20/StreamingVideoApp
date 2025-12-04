@@ -8,31 +8,33 @@
 import Foundation
 import Combine
 
-/// Thread-safe actor implementation of the playback state machine.
+/// Thread-safe @MainActor class implementation of the playback state machine.
 /// Enforces valid state transitions and emits state changes via Combine publishers.
-public actor DefaultPlaybackStateMachine {
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class DefaultPlaybackStateMachine {
 
 	private var _currentState: PlaybackState = .idle
-	private nonisolated(unsafe) let stateSubject = CurrentValueSubject<PlaybackState, Never>(.idle)
-	private nonisolated(unsafe) let transitionSubject = PassthroughSubject<PlaybackTransition, Never>()
-	private let currentDate: @Sendable () -> Date
+	private let stateSubject = CurrentValueSubject<PlaybackState, Never>(.idle)
+	private let transitionSubject = PassthroughSubject<PlaybackTransition, Never>()
+	private let currentDate: () -> Date
 
 	/// The current playback state
-	public nonisolated var currentState: PlaybackState {
+	public var currentState: PlaybackState {
 		stateSubject.value
 	}
 
 	/// Publisher that emits the current state and all future state changes
-	public nonisolated var statePublisher: AnyPublisher<PlaybackState, Never> {
+	public var statePublisher: AnyPublisher<PlaybackState, Never> {
 		stateSubject.eraseToAnyPublisher()
 	}
 
 	/// Publisher that emits only state transitions (not the initial state)
-	public nonisolated var transitionPublisher: AnyPublisher<PlaybackTransition, Never> {
+	public var transitionPublisher: AnyPublisher<PlaybackTransition, Never> {
 		transitionSubject.eraseToAnyPublisher()
 	}
 
-	public init(currentDate: @escaping @Sendable () -> Date = { Date() }) {
+	public init(currentDate: @escaping () -> Date = { Date() }) {
 		self.currentDate = currentDate
 	}
 

@@ -10,7 +10,8 @@ import Combine
 
 /// Protocol for performance monitoring with Combine publishers
 /// Following Essential Feed's publisher-based patterns
-public protocol PerformanceMonitor: AnyObject, Sendable {
+@MainActor
+public protocol PerformanceMonitor: AnyObject {
 	/// Publisher that emits real-time performance snapshots
 	var metricsPublisher: AnyPublisher<PerformanceSnapshot, Never> { get }
 
@@ -20,9 +21,9 @@ public protocol PerformanceMonitor: AnyObject, Sendable {
 	/// Async sequence for Swift 6.2 Observations pattern
 	var metricsStream: AsyncStream<PerformanceSnapshot> { get }
 
-	func startMonitoring(for sessionID: UUID) async
-	func stopMonitoring() async
-	func recordEvent(_ event: PerformanceEvent) async
+	func startMonitoring(for sessionID: UUID)
+	func stopMonitoring()
+	func recordEvent(_ event: PerformanceEvent)
 }
 
 /// Extension providing default Combine helpers (Essential Feed pattern)
