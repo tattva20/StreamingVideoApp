@@ -49,6 +49,21 @@ Detailed documentation for each streaming feature:
 | [Memory Management](docs/features/MEMORY-MANAGEMENT.md) | Pressure monitoring and resource cleanup |
 | [Network Quality](docs/features/NETWORK-QUALITY.md) | Real-time network monitoring and bandwidth estimation |
 
+### Advanced Streaming Features
+
+Core streaming infrastructure for production-quality video playback:
+
+| Feature | Description |
+|---------|-------------|
+| [Player State Machine](docs/features/PLAYER-STATE-MACHINE.md) | Explicit state transitions with 60+ valid paths |
+| [Adaptive Bitrate](docs/features/ADAPTIVE-BITRATE.md) | Quality selection based on network and buffer health |
+| [Video Preloading](docs/features/VIDEO-PRELOADING.md) | Predictive loading for seamless transitions |
+| [Rebuffering Detection](docs/features/REBUFFERING-DETECTION.md) | Stall monitoring and ratio tracking |
+| [Startup Performance](docs/features/STARTUP-PERFORMANCE.md) | Time-to-First-Frame (TTFF) measurement |
+| [Performance Alerts](docs/features/PERFORMANCE-ALERTS.md) | Threshold monitoring and severity levels |
+| [Audio Session](docs/features/AUDIO-SESSION.md) | Interruption handling and category configuration |
+| [AVPlayer Integration](docs/features/AVPLAYER-INTEGRATION.md) | Platform adapter bridging AVPlayer to domain |
+
 ---
 
 ## Overview
