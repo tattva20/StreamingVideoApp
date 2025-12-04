@@ -1,16 +1,13 @@
 # StreamingVideoApp
 
 <p align="center">
+  <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml">
+    <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
   <img src="https://img.shields.io/badge/Platform-iOS%2015%2B-blue.svg" alt="Platform: iOS 15+">
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6">
   <img src="https://img.shields.io/badge/Xcode-16-blue.svg" alt="Xcode 16">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
-</p>
-
-<p align="center">
-  <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml">
-    <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml/badge.svg" alt="CI">
-  </a>
 </p>
 
 <p align="center">
