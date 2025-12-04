@@ -16,6 +16,23 @@
 
 ---
 
+## Documentation
+
+For a deeper understanding of the philosophies, patterns, and principles behind this codebase, explore our detailed documentation:
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/ARCHITECTURE.md) | Clean Architecture layers, boundaries, and data flow |
+| [Dependency Rejection](docs/DEPENDENCY-REJECTION.md) | Pure functions and the "Impure → Pure → Impure" sandwich |
+| [TDD](docs/TDD.md) | Test-Driven Development practices and testing patterns |
+| [SOLID](docs/SOLID.md) | SOLID principles with concrete code examples |
+| [State Machines](docs/STATE-MACHINES.md) | Pure state machine design for video playback |
+| [Design Patterns](docs/DESIGN-PATTERNS.md) | Decorator, Composite, Adapter, Strategy patterns |
+| [Reactive Programming](docs/REACTIVE-PROGRAMMING.md) | Combine framework patterns and best practices |
+| [Performance](docs/PERFORMANCE.md) | Bitrate adaptation, preloading, and memory management |
+
+---
+
 ## Overview
 
 StreamingVideoApp demonstrates professional iOS development practices with a modular, testable architecture that scales from small features to enterprise-level applications.
@@ -381,20 +398,7 @@ The `main` branch is protected with the following rules:
 
 ### Setting Up Branch Protection
 
-To configure branch protection programmatically:
-
-```bash
-# 1. Install GitHub CLI
-brew install gh
-
-# 2. Authenticate with GitHub
-gh auth login
-
-# 3. Run the setup script
-./scripts/setup-branch-protection.sh
-```
-
-Alternatively, configure manually at:
+Configure branch protection manually at:
 `https://github.com/tattva20/StreamingVideoApp/settings/branches`
 
 ---
