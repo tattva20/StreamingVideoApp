@@ -50,14 +50,25 @@ gh api \
   -H "Accept: application/vnd.github+json" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   "/repos/$OWNER/$REPO/branches/$BRANCH/protection" \
-  -f required_status_checks='{"strict":true,"contexts":["build-ios","build-macos"]}' \
-  -f enforce_admins=false \
-  -f required_pull_request_reviews='{"dismiss_stale_reviews":true,"require_code_owner_reviews":false,"required_approving_review_count":1}' \
-  -f restrictions=null \
-  -F allow_force_pushes=true \
-  -F allow_deletions=false \
-  -F block_creations=false \
-  -F required_conversation_resolution=true
+  --input - <<'EOF'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["build-ios", "build-macos"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "allow_force_pushes": true,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": true
+}
+EOF
 
 echo ""
 echo "✅ Branch protection rules applied!"
