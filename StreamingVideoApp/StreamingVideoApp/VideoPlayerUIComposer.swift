@@ -8,6 +8,46 @@ import UIKit
 import StreamingCore
 import StreamingCoreiOS
 
+// MARK: - Associated Object Extension for Performance Adapter
+
+private var performanceAdapterKey: UInt8 = 0
+
+public extension VideoPlayerViewController {
+	var performanceAdapter: VideoPlayerPerformanceAdapter? {
+		get {
+			objc_getAssociatedObject(self, &performanceAdapterKey) as? VideoPlayerPerformanceAdapter
+		}
+		set {
+			objc_setAssociatedObject(
+				self,
+				&performanceAdapterKey,
+				newValue,
+				.OBJC_ASSOCIATION_RETAIN_NONATOMIC
+			)
+		}
+	}
+}
+
+// MARK: - Associated Object Extension for Stateful Player
+
+private var statefulPlayerKey: UInt8 = 0
+
+public extension VideoPlayerViewController {
+	var statefulPlayer: StatefulVideoPlayer? {
+		get {
+			objc_getAssociatedObject(self, &statefulPlayerKey) as? StatefulVideoPlayer
+		}
+		set {
+			objc_setAssociatedObject(
+				self,
+				&statefulPlayerKey,
+				newValue,
+				.OBJC_ASSOCIATION_RETAIN_NONATOMIC
+			)
+		}
+	}
+}
+
 @MainActor
 public enum VideoPlayerUIComposer {
 	public static func videoPlayerComposedWith(
@@ -32,7 +72,23 @@ public enum VideoPlayerUIComposer {
 		if let analytics = analyticsLogger {
 			videoPlayer = AnalyticsVideoPlayerDecorator(decoratee: videoPlayer, analyticsLogger: analytics)
 		}
-		let controller = VideoPlayerViewController(viewModel: viewModel, player: videoPlayer)
+
+		// Wrap with stateful player for state machine control
+		let stateMachine = DefaultPlaybackStateMachine()
+		let statefulPlayer = StatefulVideoPlayer(decoratee: videoPlayer, stateMachine: stateMachine)
+
+		let controller = VideoPlayerViewController(viewModel: viewModel, player: statefulPlayer)
+		controller.statefulPlayer = statefulPlayer
+
+		// Create and wire performance monitoring
+		let performanceService = PlaybackPerformanceService()
+		let bandwidthEstimator = NetworkBandwidthEstimator()
+		let performanceAdapter = VideoPlayerPerformanceAdapter(
+			performanceService: performanceService,
+			bandwidthEstimator: bandwidthEstimator
+		)
+		performanceAdapter.startMonitoring(sessionID: UUID())
+		controller.performanceAdapter = performanceAdapter
 
 		if let commentsController = commentsController {
 			controller.setCommentsController(commentsController)

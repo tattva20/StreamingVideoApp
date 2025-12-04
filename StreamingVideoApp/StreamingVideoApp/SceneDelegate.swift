@@ -15,6 +15,39 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	var window: UIWindow?
 
 	private var videoPlayerFactory: ((Video) -> VideoPlayer)?
+	private var cancellables = Set<AnyCancellable>()
+	private var _isAutoCleanupEnabled = false
+
+	// MARK: - Public Properties for Testing
+
+	var isAutoCleanupEnabled: Bool { _isAutoCleanupEnabled }
+
+	lazy var memoryMonitor: PollingMemoryMonitor = {
+		MemoryMonitorFactory.makeSystemMemoryMonitor()
+	}()
+
+	lazy var resourceCleanupCoordinator: ResourceCleanupCoordinator = {
+		let videoCleaner = VideoCacheCleaner(
+			deleteAction: { [store] in
+				try store.deleteCachedVideos()
+			}
+		)
+		let imageCleaner = ImageCacheCleaner(
+			clearAction: {
+				// Image cache is managed through VideoImageDataStore
+				// Clear happens automatically with video cache invalidation
+				return 0
+			}
+		)
+		return ResourceCleanupCoordinator(
+			cleaners: [videoCleaner, imageCleaner],
+			memoryMonitor: memoryMonitor
+		)
+	}()
+
+	lazy var bufferManager: AdaptiveBufferManager = {
+		AdaptiveBufferManager()
+	}()
 
 	private lazy var analyticsStore: AnalyticsStore = {
 		InMemoryAnalyticsStore()
@@ -101,6 +134,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	func configureWindow() {
 		window?.rootViewController = navigationController
 		window?.makeKeyAndVisible()
+		enableAutoCleanup()
+	}
+
+	private func enableAutoCleanup() {
+		guard !_isAutoCleanupEnabled else { return }
+		_isAutoCleanupEnabled = true
+		resourceCleanupCoordinator.enableAutoCleanup()
 	}
 
 	func sceneWillResignActive(_ scene: UIScene) {
