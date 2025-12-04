@@ -31,6 +31,24 @@ For a deeper understanding of the philosophies, patterns, and principles behind 
 | [Reactive Programming](docs/REACTIVE-PROGRAMMING.md) | Combine framework patterns and best practices |
 | [Performance](docs/PERFORMANCE.md) | Bitrate adaptation, preloading, and memory management |
 
+### Feature Documentation
+
+Detailed documentation for each streaming feature:
+
+| Feature | Description |
+|---------|-------------|
+| [Video Feed](docs/features/VIDEO-FEED.md) | Paginated video list with infinite scroll and caching |
+| [Video Playback](docs/features/VIDEO-PLAYBACK.md) | Full-featured player with state machine and controls |
+| [Video Comments](docs/features/VIDEO-COMMENTS.md) | Threaded comments with relative timestamps |
+| [Picture-in-Picture](docs/features/PICTURE-IN-PICTURE.md) | Floating video window for multitasking |
+| [Thumbnail Loading](docs/features/THUMBNAIL-LOADING.md) | Lazy image loading with shimmer and caching |
+| [Offline Support](docs/features/OFFLINE-SUPPORT.md) | CoreData caching and fallback strategies |
+| [Analytics](docs/features/ANALYTICS.md) | Playback tracking and engagement metrics |
+| [Logging](docs/features/LOGGING.md) | Structured logging with correlation IDs |
+| [Buffer Management](docs/features/BUFFER-MANAGEMENT.md) | Adaptive buffering based on network and memory |
+| [Memory Management](docs/features/MEMORY-MANAGEMENT.md) | Pressure monitoring and resource cleanup |
+| [Network Quality](docs/features/NETWORK-QUALITY.md) | Real-time network monitoring and bandwidth estimation |
+
 ---
 
 ## Overview
