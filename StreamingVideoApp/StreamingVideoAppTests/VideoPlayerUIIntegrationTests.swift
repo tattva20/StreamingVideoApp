@@ -16,6 +16,10 @@ class VideoPlayerUIIntegrationTests: XCTestCase {
 		super.tearDown()
 		// Reset orientation lock to default after each test to prevent test pollution
 		AppDelegate.orientationLock = .allButUpsideDown
+		// Process any pending async work to avoid Swift runtime crash during deallocation
+		for _ in 0..<3 {
+			RunLoop.current.run(until: Date())
+		}
 	}
 
 	func test_videoPlayerView_hasTitle() {

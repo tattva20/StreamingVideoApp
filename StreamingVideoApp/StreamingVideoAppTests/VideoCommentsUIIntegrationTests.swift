@@ -13,6 +13,14 @@ import Combine
 @MainActor
 class VideoCommentsUIIntegrationTests: XCTestCase {
 
+	override func tearDown() {
+		super.tearDown()
+		// Process any pending async work to avoid Swift runtime crash during deallocation
+		for _ in 0..<3 {
+			RunLoop.current.run(until: Date())
+		}
+	}
+
 	func test_commentsView_hasTitle() {
 		let (sut, _) = makeSUT()
 

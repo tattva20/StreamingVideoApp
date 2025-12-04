@@ -93,8 +93,8 @@ extension VideosUIIntegrationTests {
 			try await imageLoader.result(at: index, timeout: timeout)
 		}
 
-		func cancelPendingRequests() async throws {
-			try await imageLoader.cancelPendingRequests()
+		func cancelPendingRequests() {
+			imageLoader.cancelPendingRequests()
 		}
 	}
 

@@ -72,11 +72,11 @@ class LoaderSpy<Param, Resource: Sendable> {
 		throw Timeout()
 	}
 
-	func cancelPendingRequests() async throws {
+	func cancelPendingRequests() {
 		for (index, request) in requests.enumerated() where request.result == nil {
 			request.continuation.finish(throwing: CancellationError())
 
-			while requests[index].result == nil { await Task.yield() }
+			while requests[index].result == nil { RunLoop.current.run(until: Date()) }
 		}
 	}
 }
