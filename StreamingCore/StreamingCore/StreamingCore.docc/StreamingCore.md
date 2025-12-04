@@ -1,77 +1,201 @@
 # ``StreamingCore``
 
-Platform-agnostic video streaming framework providing core business logic.
+Platform-agnostic video streaming framework providing core business logic following Clean Architecture principles.
 
 ## Overview
 
-StreamingCore provides the foundation for video streaming applications with a clean, testable architecture. It contains domain models, protocols, and business logic that can be shared across platforms (iOS, macOS, tvOS).
+StreamingCore is the foundation of the video streaming application, containing all platform-independent business logic. It provides a complete set of protocols, domain models, and use cases that can be implemented by any platform (iOS, macOS, tvOS).
+
+### Design Principles
+
+The framework follows several key architectural principles:
+
+- **Clean Architecture**: Domain models and business rules are isolated from infrastructure concerns
+- **Protocol-Oriented Design**: All major components are defined as protocols for testability and flexibility
+- **Unidirectional Data Flow**: State changes flow through well-defined paths
+- **Dependency Injection**: Dependencies are injected rather than created internally
 
 ### Key Features
 
-- **Video Loading** - Protocol-based video fetching with caching support
-- **Playback Management** - State machine-driven playback control
-- **Performance Monitoring** - Real-time metrics and adaptive quality
-- **Memory Management** - Automatic resource cleanup under pressure
-- **Structured Logging** - Comprehensive logging infrastructure
+| Feature | Description |
+|---------|-------------|
+| Video Loading | Protocol-based video fetching with local caching and fallback strategies |
+| Playback Control | State machine-driven playback with validated transitions |
+| Performance Monitoring | Real-time metrics collection with adaptive quality decisions |
+| Memory Management | Automatic resource cleanup under memory pressure |
+| Buffer Management | Adaptive buffering based on network and memory conditions |
+| Analytics | Comprehensive playback event tracking and engagement metrics |
+| Structured Logging | Multi-destination logging with configurable levels |
 
-### Architecture
+### Architecture Layers
 
-StreamingCore follows Clean Architecture principles:
+```
+┌─────────────────────────────────────────┐
+│         Presentation Layer              │
+│   (ViewModels, Presenters, Mappers)     │
+├─────────────────────────────────────────┤
+│          Use Case Layer                 │
+│  (Loaders, Services, Coordinators)      │
+├─────────────────────────────────────────┤
+│           Domain Layer                  │
+│    (Models, Protocols, Value Types)     │
+├─────────────────────────────────────────┤
+│        Infrastructure Layer             │
+│  (HTTP Client, CoreData, FileSystem)    │
+└─────────────────────────────────────────┘
+```
 
-- **Domain Layer** - Models, protocols, and business rules
-- **Use Cases** - Application-specific business logic
-- **Presentation** - ViewModels and Presenters (platform-agnostic)
+### Thread Safety
+
+All public APIs are designed to be called from the main thread unless otherwise documented. Types marked with `@MainActor` enforce main thread execution. Async operations return results on the main thread.
 
 ## Topics
 
+### Essentials
+
+- <doc:GettingStarted>
+- <doc:Architecture>
+
+### Domain Models
+
+Core data structures representing the video streaming domain.
+
+- ``Video``
+- ``VideoComment``
+- ``Paginated``
+
 ### Video Loading
+
+Protocols and implementations for fetching video metadata.
 
 - ``VideoLoader``
 - ``VideoCache``
-- ``Video``
+- ``RemoteVideoLoader``
+- ``LocalVideoLoader``
+- ``VideoStore``
 
-### Playback Management
+### Image Loading
+
+Protocols for loading and caching video thumbnails.
+
+- ``VideoImageDataLoader``
+- ``VideoImageDataCache``
+- ``VideoImageDataStore``
+
+### Playback State Machine
+
+State machine implementation for managing playback lifecycle.
 
 - ``VideoPlayer``
 - ``PlaybackState``
 - ``PlaybackAction``
 - ``PlaybackError``
+- ``PlaybackTransition``
+- ``PlaybackStateMachine``
 
-### Performance Optimization
+### Performance Monitoring
+
+Real-time performance tracking and quality adaptation.
 
 - ``PerformanceMonitor``
+- ``PerformanceSnapshot``
+- ``PerformanceAlert``
+- ``PlaybackPerformanceService``
+- ``RebufferingMonitor``
+
+### Bitrate Adaptation
+
+Intelligent bitrate selection based on network conditions.
+
+- ``BitrateLevel``
+- ``BitrateDecision``
 - ``BitrateStrategy``
-- ``VideoPreloader``
+- ``ConservativeBitrateStrategy``
 - ``NetworkQuality``
+
+### Video Preloading
+
+Proactive video loading for smooth playback transitions.
+
+- ``VideoPreloader``
+- ``PreloadableVideo``
+- ``PreloadPriority``
+- ``PreloadStrategy``
+- ``AdjacentVideoPreloadStrategy``
 
 ### Buffer Management
 
+Adaptive buffering strategies based on system conditions.
+
 - ``BufferManager``
-- ``BufferSizeProvider``
+- ``BufferState``
 - ``BufferConfiguration``
+- ``BufferStrategy``
+- ``AdaptiveBufferManager``
 
 ### Memory Management
 
+Monitoring and responding to memory pressure.
+
 - ``MemoryMonitor``
-- ``MemoryStateProvider``
 - ``MemoryState``
 - ``MemoryThresholds``
+- ``MemoryStateProvider``
+- ``PollingMemoryMonitor``
 
 ### Resource Cleanup
+
+Automatic cleanup of resources under memory pressure.
 
 - ``ResourceCleaner``
 - ``CleanupPriority``
 - ``CleanupResult``
+- ``ResourceCleanupCoordinator``
+- ``VideoCacheCleaner``
+- ``ImageCacheCleaner``
 
-### Logging
+### Analytics
+
+Playback analytics and engagement tracking.
+
+- ``PlaybackAnalyticsLogger``
+- ``PlaybackSession``
+- ``PlaybackEvent``
+- ``PlaybackEventType``
+- ``EngagementMetrics``
+- ``AnalyticsStore``
+
+### Structured Logging
+
+Comprehensive logging infrastructure.
 
 - ``Logger``
 - ``LogLevel``
 - ``LogEntry``
 - ``LogContext``
+- ``ConsoleLogger``
+- ``CompositeLogger``
 
-### Analytics
+### Presentation
 
-- ``PlaybackAnalyticsLogger``
-- ``PlaybackSession``
-- ``PlaybackEventType``
+Generic presentation layer components.
+
+- ``LoadResourcePresenter``
+- ``ResourceLoadingView``
+- ``ResourceErrorView``
+- ``ResourceLoadingViewModel``
+- ``ResourceErrorViewModel``
+
+### Networking
+
+HTTP client abstraction for API communication.
+
+- ``HTTPClient``
+- ``URLSessionHTTPClient``
+
+### Comments
+
+Video comments feature.
+
+- ``VideoCommentLoader``
+- ``RemoteVideoCommentLoader``
