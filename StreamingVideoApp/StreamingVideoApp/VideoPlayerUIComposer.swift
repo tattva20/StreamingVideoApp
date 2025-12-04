@@ -8,6 +8,7 @@ import UIKit
 import StreamingCore
 import StreamingCoreiOS
 
+@MainActor
 public enum VideoPlayerUIComposer {
 	public static func videoPlayerComposedWith(
 		video: Video,

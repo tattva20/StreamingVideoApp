@@ -11,60 +11,62 @@ import StreamingCore
 import StreamingCoreiOS
 @testable import StreamingVideoApp
 
+// Tests re-enabled for nonisolated actor isolation experiment
+
 @MainActor
 final class VideoPlayerPerformanceAdapterTests: XCTestCase {
 
 	// MARK: - Start Monitoring
 
-//	func test_startMonitoring_startsPerformanceServiceSession() {
-//		let (sut, performanceService) = makeSUT()
-//		let sessionID = UUID()
-//
-//		sut.startMonitoring(sessionID: sessionID)
-//
-//		XCTAssertEqual(performanceService.currentSessionID, sessionID)
-//	}
+	func test_startMonitoring_startsPerformanceServiceSession() {
+		let (sut, performanceService) = makeSUT()
+		let sessionID = UUID()
 
-//	func test_startMonitoring_startsPlayerObservation() {
-//		let (sut, _) = makeSUT()
-//
-//		sut.startMonitoring(sessionID: UUID())
-//
-//		XCTAssertTrue(sut.isObserving)
-//	}
+		sut.startMonitoring(sessionID: sessionID)
+
+		XCTAssertEqual(performanceService.currentSessionID, sessionID)
+	}
+
+	func test_startMonitoring_startsPlayerObservation() {
+		let (sut, _) = makeSUT()
+
+		sut.startMonitoring(sessionID: UUID())
+
+		XCTAssertTrue(sut.isObserving)
+	}
 
 	// MARK: - Network Quality Updates
 
-//	func test_networkQualityChanged_updatesPerformanceService() {
-//		let (sut, performanceService) = makeSUT()
-//		sut.startMonitoring(sessionID: UUID())
-//
-//		sut.updateNetworkQuality(.poor)
-//
-//		XCTAssertTrue(performanceService.recordedEvents.containsNetworkChanged(to: .poor))
-//	}
+	func test_networkQualityChanged_updatesPerformanceService() {
+		let (sut, performanceService) = makeSUT()
+		sut.startMonitoring(sessionID: UUID())
+
+		sut.updateNetworkQuality(.poor)
+
+		XCTAssertTrue(performanceService.recordedEvents.containsNetworkChanged(to: .poor))
+	}
 
 	// MARK: - Memory Updates
 
-//	func test_memoryPressureChanged_updatesPerformanceService() {
-//		let (sut, performanceService) = makeSUT()
-//		sut.startMonitoring(sessionID: UUID())
-//
-//		sut.updateMemory(usedMB: 500, pressure: .warning)
-//
-//		XCTAssertTrue(performanceService.recordedEvents.containsMemoryWarning(level: .warning))
-//	}
+	func test_memoryPressureChanged_updatesPerformanceService() {
+		let (sut, performanceService) = makeSUT()
+		sut.startMonitoring(sessionID: UUID())
+
+		sut.updateMemory(usedMB: 500, pressure: .warning)
+
+		XCTAssertTrue(performanceService.recordedEvents.containsMemoryWarning(level: .warning))
+	}
 
 	// MARK: - Bandwidth Updates
 
-//	func test_recordBandwidthSample_updatesEstimator() {
-//		let (sut, _) = makeSUT()
-//		sut.startMonitoring(sessionID: UUID())
-//
-//		sut.recordBandwidthSample(bytesTransferred: 1_000_000, duration: 1.0)
-//
-//		XCTAssertEqual(sut.currentBandwidthEstimate.averageBandwidthBps, 8_000_000)
-//	}
+	func test_recordBandwidthSample_updatesEstimator() {
+		let (sut, _) = makeSUT()
+		sut.startMonitoring(sessionID: UUID())
+
+		sut.recordBandwidthSample(bytesTransferred: 1_000_000, duration: 1.0)
+
+		XCTAssertEqual(sut.currentBandwidthEstimate.averageBandwidthBps, 8_000_000)
+	}
 
 	// MARK: - Helpers
 

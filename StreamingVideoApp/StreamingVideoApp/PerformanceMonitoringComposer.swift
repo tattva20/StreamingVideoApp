@@ -11,6 +11,7 @@ import StreamingCore
 import StreamingCoreiOS
 
 /// Factory that composes all performance monitoring components
+@MainActor
 public enum PerformanceMonitoringComposer {
 
 	/// Creates a fully wired performance monitoring system for a video player
