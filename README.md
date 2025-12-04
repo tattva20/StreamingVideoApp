@@ -159,6 +159,117 @@ StreamingVideoApp.xcworkspace/
 
 ---
 
+## Design Philosophy
+
+### Why TDD?
+
+Test-Driven Development is not optional in this codebase:
+
+- **Tests document behavior** - Tests describe what the code should do, not how
+- **Confidence to refactor** - Comprehensive tests enable fearless changes
+- **Forces decoupled design** - Hard to test = hard to maintain
+- **Catches regressions immediately** - Red tests show exactly what broke
+
+### Why Clean Architecture?
+
+Clean Architecture keeps the codebase maintainable as it grows:
+
+- **Business logic survives UI changes** - Core doesn't know about UIKit
+- **Platform-agnostic core enables reuse** - Same core for iOS, macOS, watchOS
+- **Clear boundaries prevent coupling** - Dependencies flow inward only
+- **Easy to test in isolation** - No framework dependencies in tests
+
+### Why SOLID?
+
+SOLID principles make code that scales:
+
+- **Single Responsibility** - Each class is easy to understand and test
+- **Open/Closed** - Add features without modifying existing code
+- **Liskov Substitution** - Swap implementations freely (mocks, stubs, real)
+- **Interface Segregation** - No class forced to implement unused methods
+- **Dependency Inversion** - High-level modules independent of low-level details
+
+---
+
+## SOLID Principles in Practice
+
+### Single Responsibility (S)
+
+Each class has ONE reason to change:
+
+```swift
+// Good - Separate responsibilities
+RemoteVideoLoader    // Only fetches from network
+LocalVideoLoader     // Only fetches from cache
+VideoLoaderCacheDecorator  // Only handles caching logic
+```
+
+### Open/Closed (O)
+
+Extend behavior without modifying existing code using the Decorator pattern:
+
+```swift
+// Adding caching without changing RemoteVideoLoader
+let cachedLoader = VideoLoaderCacheDecorator(
+    decoratee: remoteLoader,
+    cache: localCache
+)
+```
+
+### Liskov Substitution (L)
+
+Any `VideoLoader` implementation can replace another:
+
+```swift
+protocol VideoLoader {
+    func load() async throws -> [Video]
+}
+
+// All these can be used interchangeably:
+let loader: VideoLoader = RemoteVideoLoader(...)     // Production
+let loader: VideoLoader = LocalVideoLoader(...)      // Offline
+let loader: VideoLoader = VideoLoaderCacheDecorator(...) // Cached
+let loader: VideoLoader = VideoLoaderSpy()           // Testing
+```
+
+### Interface Segregation (I)
+
+Small, focused protocols instead of large ones:
+
+```swift
+// Good - Clients adopt only what they need
+protocol VideoLoader { ... }
+protocol VideoCache { ... }
+protocol VideoImageDataLoader { ... }
+
+// Bad - One giant protocol forces unused implementations
+protocol VideoService {
+    func load() async throws -> [Video]
+    func cache(_ videos: [Video]) async throws
+    func loadImage(for video: Video) async throws -> Data
+    func validate(_ video: Video) -> Bool
+    // ... 20 more methods
+}
+```
+
+### Dependency Inversion (D)
+
+High-level modules depend on abstractions, not concretions:
+
+```swift
+// StreamingCore defines protocols (abstractions)
+public protocol HTTPClient {
+    func get(from url: URL) async throws -> (Data, HTTPURLResponse)
+}
+
+// StreamingVideoApp provides implementations (concretions)
+final class URLSessionHTTPClient: HTTPClient { ... }
+
+// Business logic never knows about URLSession
+```
+
+---
+
 ## Getting Started
 
 ### Requirements
@@ -337,21 +448,456 @@ This project was developed following TDD principles from the ground up:
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests first (TDD)
-4. Implement the feature
-5. Ensure all tests pass
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+### Prerequisites
 
-### Contribution Guidelines
+Before contributing, ensure you:
 
-- Follow TDD - no untested code
-- Maintain Clean Architecture boundaries
-- Use meaningful commit messages
-- Update documentation as needed
+1. Read this entire README, especially [Design Philosophy](#design-philosophy) and [SOLID Principles](#solid-principles-in-practice)
+2. Understand TDD, SOLID, and Clean Architecture
+3. Have Xcode 16+ installed
+4. Can run all tests successfully
+
+### Contribution Workflow
+
+#### Step 1: Create Feature Branch
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+#### Step 2: Write Failing Test FIRST (Red)
+
+```swift
+// In appropriate test target
+func test_newFeature_deliversExpectedBehavior() {
+    let sut = makeSUT()
+
+    let result = sut.performAction()
+
+    XCTAssertEqual(result, expectedValue)
+}
+```
+
+#### Step 3: Implement Minimum Code (Green)
+
+Write ONLY enough code to make the test pass. No extra features, no premature optimization.
+
+#### Step 4: Refactor (Keep Tests Green)
+
+Clean up while ensuring tests still pass. Extract protocols if needed. Remove duplication.
+
+#### Step 5: Add Integration Tests
+
+If the feature involves composition, write tests in `StreamingVideoAppTests/`.
+
+#### Step 6: Verify All Tests Pass
+
+```bash
+xcodebuild test -scheme CI_iOS \
+  -destination 'platform=iOS Simulator,name=iPhone 17'
+```
+
+#### Step 7: Submit PR
+
+Follow the [PR Requirements](#pull-request-requirements) below.
+
+### Code Style
+
+- Swift standard naming conventions
+- Protocol-oriented design
+- Dependency injection over singletons
+- Value types where appropriate
+- Clear, descriptive naming
+- No force unwraps unless absolutely necessary
+
+---
+
+## Pull Request Requirements
+
+### Before Submitting
+
+#### Code Quality Checklist
+
+- [ ] All existing tests pass
+- [ ] New code has corresponding tests
+- [ ] No commented-out code
+- [ ] No print statements or debug logs
+- [ ] Clear, descriptive naming
+- [ ] No force unwraps unless justified
+
+#### Architecture Compliance
+
+- [ ] StreamingCore has NO UIKit imports
+- [ ] New protocols in Core, implementations in iOS/App
+- [ ] Dependencies injected, not created internally
+- [ ] No singletons or global state
+
+#### Testing Standards
+
+- [ ] Tests follow Given-When-Then structure
+- [ ] Memory leak tracking included (`trackForMemoryLeaks`)
+- [ ] UI tests have `RunLoop.current.run(until: Date())` in tearDown
+- [ ] Async code has proper `await Task.yield()` patterns
+- [ ] Test doubles use correct pattern (see [Testing Patterns](#testing-patterns))
+
+#### TDD Evidence
+
+- [ ] Can demonstrate test was written before implementation
+- [ ] Tests describe behavior, not implementation details
+- [ ] No tests that simply test framework code
+
+### PR Description Template
+
+```markdown
+## Summary
+[1-2 sentences describing the change]
+
+## Motivation
+[Why is this change needed?]
+
+## Changes
+- [Bullet point changes]
+
+## Test Plan
+- [How was this tested?]
+- [What edge cases were considered?]
+
+## Screenshots (if UI change)
+[Before/After screenshots]
+```
+
+---
+
+## Adding New Features
+
+### Feature in StreamingCore (Business Logic)
+
+#### 1. Define the Protocol
+
+```swift
+// StreamingCore/NewFeature/NewFeatureLoader.swift
+public protocol NewFeatureLoader {
+    func load() async throws -> [NewFeature]
+}
+```
+
+#### 2. Write Tests for Expected Behavior
+
+```swift
+// StreamingCoreTests/NewFeature/RemoteNewFeatureLoaderTests.swift
+func test_load_deliversItemsOnSuccess() async throws {
+    let (sut, client) = makeSUT()
+    let expectedItems = [makeItem(), makeItem()]
+
+    client.complete(with: expectedItems)
+
+    let result = try await sut.load()
+    XCTAssertEqual(result, expectedItems)
+}
+```
+
+#### 3. Implement the Loader
+
+```swift
+// StreamingCore/NewFeature/RemoteNewFeatureLoader.swift
+public final class RemoteNewFeatureLoader: NewFeatureLoader {
+    private let client: HTTPClient
+    private let url: URL
+
+    public init(client: HTTPClient, url: URL) {
+        self.client = client
+        self.url = url
+    }
+
+    public func load() async throws -> [NewFeature] {
+        let (data, response) = try await client.get(from: url)
+        return try NewFeatureMapper.map(data, from: response)
+    }
+}
+```
+
+#### 4. Add Caching (if needed)
+
+Use the Decorator pattern:
+
+```swift
+public final class NewFeatureLoaderCacheDecorator: NewFeatureLoader {
+    private let decoratee: NewFeatureLoader
+    private let cache: NewFeatureCache
+
+    public init(decoratee: NewFeatureLoader, cache: NewFeatureCache) {
+        self.decoratee = decoratee
+        self.cache = cache
+    }
+
+    public func load() async throws -> [NewFeature] {
+        let items = try await decoratee.load()
+        try await cache.save(items)
+        return items
+    }
+}
+```
+
+### Feature in StreamingCoreiOS (UI)
+
+#### 1. Create View Controller
+
+```swift
+// StreamingCoreiOS/NewFeature UI/NewFeatureViewController.swift
+@MainActor
+public final class NewFeatureViewController: UIViewController {
+    // UI implementation
+}
+```
+
+#### 2. Create Cell Controller (if list-based)
+
+Follow the CellController pattern from existing implementations.
+
+#### 3. Write UI Tests
+
+```swift
+// StreamingCoreiOSTests/NewFeature UI/NewFeatureViewControllerTests.swift
+@MainActor
+final class NewFeatureViewControllerTests: XCTestCase {
+    override func tearDown() {
+        super.tearDown()
+        RunLoop.current.run(until: Date())  // Critical for UIKit cleanup
+    }
+}
+```
+
+### Wiring in Composition Root
+
+#### 1. Create Composer
+
+```swift
+// StreamingVideoApp/NewFeatureUIComposer.swift
+enum NewFeatureUIComposer {
+    static func compose(
+        loader: NewFeatureLoader
+    ) -> NewFeatureViewController {
+        let viewModel = NewFeatureViewModel()
+        let controller = NewFeatureViewController(viewModel: viewModel)
+        // Wire dependencies
+        return controller
+    }
+}
+```
+
+#### 2. Add to SceneDelegate
+
+Wire the new feature into the navigation flow.
+
+---
+
+## Code Review Criteria
+
+### Automatic Rejection (Architecture Violations)
+
+- UIKit/AppKit imports in StreamingCore
+- Direct instantiation instead of injection
+- Circular dependencies between modules
+- Business logic in UI layer
+
+### Requires Justification (TDD Violations)
+
+- Code without corresponding tests
+- Tests that test implementation details
+- Tests that rely on timing/delays
+- Skipped or disabled tests
+
+### Requires Discussion (SOLID Violations)
+
+- Classes with multiple responsibilities
+- Concrete dependencies instead of protocols
+- Large interfaces that force unused methods
+- High-level modules depending on low-level details
+
+### Must Fix (Code Quality Issues)
+
+- Force unwraps without safety
+- Retain cycles (missing `[weak self]`)
+- Memory leaks in tests
+- Inconsistent naming conventions
+- Missing error handling
+
+### Suggestions (Style Issues)
+
+- Long methods (>20 lines)
+- Deep nesting (>3 levels)
+- Magic numbers without constants
+- Missing documentation on public API
+
+---
+
+## Testing Patterns
+
+### Memory Leak Detection
+
+Always include in test helpers:
+
+```swift
+private func makeSUT(
+    file: StaticString = #filePath,
+    line: UInt = #line
+) -> SUT {
+    let sut = SUT()
+    trackForMemoryLeaks(sut, file: file, line: line)
+    return sut
+}
+```
+
+### UI Test Cleanup
+
+**Critical:** Prevent malloc errors with RunLoop processing:
+
+```swift
+@MainActor
+final class MyUITests: XCTestCase {
+    override func tearDown() {
+        super.tearDown()
+        RunLoop.current.run(until: Date())
+    }
+}
+```
+
+### Async Test Pattern
+
+For code that spawns Tasks:
+
+```swift
+func test_action_triggersAsyncBehavior() async {
+    let sut = makeSUT()
+
+    sut.performAction()
+    await Task.yield()  // Let spawned Tasks run
+
+    // Assert on results
+}
+```
+
+### Test Double Selection
+
+| Scenario | Pattern |
+|----------|---------|
+| Synchronous spy in UI test | `@MainActor final class Spy` |
+| Async operations | `actor Spy` |
+| Cross-actor shared state | `@unchecked Sendable + NSLock` |
+| Simple stub | `struct Stub` |
+
+Example with NSLock for cross-actor access:
+
+```swift
+final class ResourceCleanerSpy: ResourceCleaner, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _cleanupCallCount = 0
+
+    var cleanupCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _cleanupCallCount
+    }
+
+    func cleanup() {
+        lock.lock()
+        _cleanupCallCount += 1
+        lock.unlock()
+    }
+}
+```
+
+---
+
+## Lessons Learned & Pitfalls to Avoid
+
+This section documents solutions to persistent issues discovered during development.
+
+### 1. Swift 6 @MainActor Deallocation Crash
+
+**Problem:** malloc crash at fixed address during @MainActor class deallocation.
+
+**Error:**
+```
+malloc: *** error for object 0x262c5a6f0: pointer being freed was not allocated
+```
+
+**Root Cause:** Swift 6.2 runtime bug in `swift_task_deinitOnExecutorImpl` (GitHub #84793).
+
+**Solution:**
+1. Set `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated` in build settings
+2. Add explicit `@MainActor` to classes that need main thread access
+3. Add `RunLoop.current.run(until: Date())` in test tearDown
+
+**DO NOT:** Set `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` (causes crashes)
+
+### 2. UIKit Test Cleanup
+
+**Problem:** Tests crash with malloc errors when running in sequence.
+
+**Root Cause:** UIKit views and constraints deallocate asynchronously.
+
+**Solution:**
+```swift
+@MainActor
+final class MyUITests: XCTestCase {
+    override func tearDown() {
+        super.tearDown()
+        RunLoop.current.run(until: Date())
+    }
+}
+```
+
+### 3. AsyncStream + Combine Mixing
+
+**Problem:** Bridging AsyncStream and Combine causes race conditions.
+
+**Solution:** Use pure Combine OR pure async/await, never bridge between them.
+
+### 4. Fire-and-Forget Tasks in Decorators
+
+**Problem:** Decorators with logging/analytics crash on deallocation.
+
+**Solution:** Use `Task.detached` with `[weak self]`:
+```swift
+func play() {
+    Task.detached { [weak self] in
+        await self?.logger.log(.play)
+    }
+    decoratee.play()
+}
+```
+
+### 5. Constraint Conflicts in Orientation Changes
+
+**Problem:** malloc crash when constraints conflict during fullscreen.
+
+**Solution:** Store constraints in arrays, deactivate all before activating new:
+```swift
+func enterFullscreen() {
+    NSLayoutConstraint.deactivate(portraitConstraints)
+    NSLayoutConstraint.activate(landscapeConstraints)
+}
+```
+
+### 6. AVFoundation in Unit Tests
+
+**Problem:** AVPlayer crashes in unit test environment.
+
+**Solution:**
+- Mock AVPlayerItem dependencies with protocols
+- Use integration tests for real AVFoundation testing
+- Stub video player in unit tests
+
+### Anti-Patterns Summary
+
+| Anti-Pattern | Problem | Solution |
+|--------------|---------|----------|
+| Bridging AsyncStream↔Combine | Race conditions | Pick one pattern |
+| Strong self in Task | Memory leaks/crashes | Use `[weak self]` |
+| `@MainActor` in build settings | malloc crashes | Set `nonisolated` |
+| Missing tearDown RunLoop | Test crashes | Add `RunLoop.current.run` |
+| Mixed constraint states | Layout crashes | Deactivate before activate |
 
 ---
 
