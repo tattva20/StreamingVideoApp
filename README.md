@@ -370,6 +370,39 @@ xcodebuild clean build test \
 - **Code Coverage** - Track test coverage metrics
 - **Multiple Xcode Versions** - Fallback Xcode selection
 
+### Branch Protection Rules
+
+The `main` branch is protected with the following rules:
+
+| Rule | Setting | Description |
+|------|---------|-------------|
+| **Require PR** | Enabled | No direct pushes to main |
+| **Required Approvals** | 1 | At least one reviewer must approve |
+| **Dismiss Stale Reviews** | Enabled | New commits invalidate existing approvals |
+| **Required Status Checks** | `build-ios`, `build-macos` | CI must pass before merge |
+| **Up-to-date Branch** | Required | Branch must be current with main |
+| **Conversation Resolution** | Required | All review comments must be resolved |
+| **Force Push** | Allowed (owner only) | Repository owner can force push |
+| **Enforce for Admins** | Disabled | Owner can bypass rules when needed |
+
+### Setting Up Branch Protection
+
+To configure branch protection programmatically:
+
+```bash
+# 1. Install GitHub CLI
+brew install gh
+
+# 2. Authenticate with GitHub
+gh auth login
+
+# 3. Run the setup script
+./scripts/setup-branch-protection.sh
+```
+
+Alternatively, configure manually at:
+`https://github.com/tattva20/StreamingVideoApp/settings/branches`
+
 ---
 
 ## API
