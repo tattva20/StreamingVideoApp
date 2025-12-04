@@ -150,53 +150,53 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(sut.errorMessage, nil)
 	}
 
-//	func test_loadMoreActions_requestMoreFromLoader() {
-//		let (sut, loader) = makeSUT()
-//		sut.simulateAppearance()
-//		loader.completeLoading(with: [makeVideo()])
-//
-//		XCTAssertEqual(loader.loadMoreCallCount, 0, "Expected no requests before until load more action")
-//
-//		sut.simulateLoadMoreAction()
-//		XCTAssertEqual(loader.loadMoreCallCount, 1, "Expected load more request")
-//
-//		sut.simulateLoadMoreAction()
-//		XCTAssertEqual(loader.loadMoreCallCount, 1, "Expected no request while loading more")
-//
-//		loader.completeLoadMore(lastPage: false, at: 0)
-//		sut.simulateLoadMoreAction()
-//		XCTAssertEqual(loader.loadMoreCallCount, 2, "Expected request after load more completed with more pages")
-//
-//		loader.completeLoadMoreWithError(at: 1)
-//		sut.simulateLoadMoreAction()
-//		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected request after load more failure")
-//
-//		loader.completeLoadMore(lastPage: true, at: 2)
-//		sut.simulateLoadMoreAction()
-//		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected no request after loading all pages")
-//	}
+	func test_loadMoreActions_requestMoreFromLoader() {
+		let (sut, loader) = makeSUT()
+		sut.simulateAppearance()
+		loader.completeLoading(with: [makeVideo()])
 
-//	func test_loadingMoreIndicator_isVisibleWhileLoadingMore() {
-//		let (sut, loader) = makeSUT()
-//
-//		sut.simulateAppearance()
-//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator when more pages not available")
-//
-//		loader.completeLoading(with: [makeVideo()], at: 0)
-//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator once loading completes successfully")
-//
-//		sut.simulateLoadMoreAction()
-//		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on load more action")
-//
-//		loader.completeLoadMore(with: [makeVideo()], at: 0)
-//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with success")
-//
-//		sut.simulateLoadMoreAction()
-//		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on second load more action")
-//
-//		loader.completeLoadMoreWithError(at: 1)
-//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with error")
-//	}
+		XCTAssertEqual(loader.loadMoreCallCount, 0, "Expected no requests before until load more action")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 1, "Expected load more request")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 1, "Expected no request while loading more")
+
+		loader.completeLoadMore(lastPage: false, at: 0)
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 2, "Expected request after load more completed with more pages")
+
+		loader.completeLoadMoreWithError(at: 1)
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected request after load more failure")
+
+		loader.completeLoadMore(lastPage: true, at: 2)
+		sut.simulateLoadMoreAction()
+		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected no request after loading all pages")
+	}
+
+	func test_loadingMoreIndicator_isVisibleWhileLoadingMore() {
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator when more pages not available")
+
+		loader.completeLoading(with: [makeVideo()], at: 0)
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator once loading completes successfully")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on load more action")
+
+		loader.completeLoadMore(with: [makeVideo()], at: 0)
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with success")
+
+		sut.simulateLoadMoreAction()
+		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on second load more action")
+
+		loader.completeLoadMoreWithError(at: 1)
+		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with error")
+	}
 
 	func test_loadMoreCompletion_rendersErrorMessageOnError() {
 		let (sut, loader) = makeSUT()
