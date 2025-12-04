@@ -21,21 +21,21 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(sut.title, VideosPresenter.title)
 	}
 
-//	func test_videoSelection_notifiesHandler() {
-//		let video0 = makeVideo()
-//		let video1 = makeVideo()
-//		var selectedVideos = [Video]()
-//		let (sut, loader) = makeSUT(selection: { selectedVideos.append($0) })
-//
-//		sut.simulateAppearance()
-//		loader.completeLoading(with: [video0, video1], at: 0)
-//
-//		sut.simulateTapOnVideoView(at: 0)
-//		XCTAssertEqual(selectedVideos, [video0])
-//
-//		sut.simulateTapOnVideoView(at: 1)
-//		XCTAssertEqual(selectedVideos, [video0, video1])
-//	}
+	func test_videoSelection_notifiesHandler() {
+		let video0 = makeVideo()
+		let video1 = makeVideo()
+		var selectedVideos = [Video]()
+		let (sut, loader) = makeSUT(selection: { selectedVideos.append($0) })
+
+		sut.simulateAppearance()
+		loader.completeLoading(with: [video0, video1], at: 0)
+
+		sut.simulateTapOnVideoView(at: 0)
+		XCTAssertEqual(selectedVideos, [video0])
+
+		sut.simulateTapOnVideoView(at: 1)
+		XCTAssertEqual(selectedVideos, [video0, video1])
+	}
 
 	func test_loadVideoActions_requestVideosFromLoader() {
 		let (sut, loader) = makeSUT()
@@ -229,21 +229,21 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(loader.loadMoreCallCount, 2)
 	}
 
-//	func test_videoImageView_loadsImageURLWhenVisible() {
-//		let video0 = makeVideo(url: URL(string: "http://url-0.com")!)
-//		let video1 = makeVideo(url: URL(string: "http://url-1.com")!)
-//		let (sut, loader) = makeSUT()
-//
-//		sut.simulateAppearance()
-//		XCTAssertEqual(loader.loadedImageURLs, [], "Expected no image URL requests until views become visible")
-//
-//		loader.completeLoading(with: [video0, video1])
-//		sut.simulateVideoViewVisible(at: 0)
-//		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL], "Expected first image URL request once first view becomes visible")
-//
-//		sut.simulateVideoViewVisible(at: 1)
-//		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL, video1.thumbnailURL], "Expected second image URL request once second view also becomes visible")
-//	}
+	func test_videoImageView_loadsImageURLWhenVisible() {
+		let video0 = makeVideo(url: URL(string: "http://url-0.com")!)
+		let video1 = makeVideo(url: URL(string: "http://url-1.com")!)
+		let (sut, loader) = makeSUT()
+
+		sut.simulateAppearance()
+		XCTAssertEqual(loader.loadedImageURLs, [], "Expected no image URL requests until views become visible")
+
+		loader.completeLoading(with: [video0, video1])
+		sut.simulateVideoViewVisible(at: 0)
+		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL], "Expected first image URL request once first view becomes visible")
+
+		sut.simulateVideoViewVisible(at: 1)
+		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL, video1.thumbnailURL], "Expected second image URL request once second view also becomes visible")
+	}
 
 	// MARK: - Helpers
 

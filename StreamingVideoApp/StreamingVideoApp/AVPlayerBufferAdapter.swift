@@ -11,7 +11,9 @@ import StreamingCore
 
 /// Adapts BufferManager configuration changes to AVPlayer/AVPlayerItem
 /// Observes buffer configuration updates and applies them to the player's current item
-public final class AVPlayerBufferAdapter: @unchecked Sendable {
+/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
+@MainActor
+public final class AVPlayerBufferAdapter {
 	public let player: AVPlayer
 	private let bufferManager: any BufferManager
 	private var cancellables = Set<AnyCancellable>()
@@ -24,7 +26,7 @@ public final class AVPlayerBufferAdapter: @unchecked Sendable {
 
 	private func setupObservation() {
 		bufferManager.configurationPublisher
-			.receive(on: DispatchQueue.main)
+			.receive(on: RunLoop.main)
 			.sink { [weak self] configuration in
 				self?.applyConfiguration(configuration)
 			}
@@ -38,7 +40,6 @@ public final class AVPlayerBufferAdapter: @unchecked Sendable {
 
 	/// Apply current buffer configuration to a new player item
 	/// Call this when replacing the player's current item
-	@MainActor
 	public func applyToNewItem(_ item: AVPlayerItem) {
 		let config = bufferManager.currentConfiguration
 		item.preferredForwardBufferDuration = config.preferredForwardBufferDuration

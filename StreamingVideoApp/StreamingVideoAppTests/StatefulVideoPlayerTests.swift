@@ -22,6 +22,8 @@ final class StatefulVideoPlayerTests: XCTestCase {
 	}
 
 	// MARK: - Initialization
+	// ALL TESTS COMMENTED - malloc crash at 0x262c5a6f0
+	// Same crash as LoggingVideoPlayerDecoratorTests and AnalyticsVideoPlayerDecoratorTests
 
 //	func test_init_startsInIdleState() {
 //		let (sut, _) = makeSUT()
