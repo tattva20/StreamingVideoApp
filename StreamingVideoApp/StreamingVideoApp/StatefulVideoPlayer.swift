@@ -37,7 +37,7 @@ public final class StatefulVideoPlayer: VideoPlayer {
 	// MARK: - VideoPlayer Protocol Properties
 
 	public var isPlaying: Bool {
-		currentPlaybackState == .playing
+		decoratee.isPlaying
 	}
 
 	public var currentTime: TimeInterval {
@@ -75,16 +75,16 @@ public final class StatefulVideoPlayer: VideoPlayer {
 	}
 
 	public func play() {
+		decoratee.play()
 		if stateMachine.canPerform(.play) {
 			stateMachine.send(.play)
-			decoratee.play()
 		}
 	}
 
 	public func pause() {
+		decoratee.pause()
 		if stateMachine.canPerform(.pause) {
 			stateMachine.send(.pause)
-			decoratee.pause()
 		}
 	}
 
