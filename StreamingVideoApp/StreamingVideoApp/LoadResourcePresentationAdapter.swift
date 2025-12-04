@@ -73,7 +73,7 @@ final class LoadResourcePresentationAdapter<Resource, View: ResourceView> {
     }
 
     func loadResource() {
-        guard !isLoading else { return }
+        cancellable?.cancel()
 
         presenter?.didStartLoading()
         isLoading = true
