@@ -8,11 +8,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/CI-iOS.yml">
-    <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/CI-iOS.yml/badge.svg" alt="CI-iOS">
-  </a>
-  <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/CI-macOS.yml">
-    <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/CI-macOS.yml/badge.svg" alt="CI-macOS">
+  <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml">
+    <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
 </p>
 
