@@ -37,7 +37,7 @@ final class ResourceCleanupIntegrationTests: XCTestCase {
 	func test_sceneDelegate_cleanupCoordinatorHasCleanersRegistered() async {
 		let sut = SceneDelegate()
 
-		let estimate = await sut.resourceCleanupCoordinator.estimateTotalCleanup()
+		_ = await sut.resourceCleanupCoordinator.estimateTotalCleanup()
 
 		// If cleaners are registered, estimate should be callable (even if 0)
 		XCTAssertTrue(true, "Expected cleanup coordinator to be functional with registered cleaners")

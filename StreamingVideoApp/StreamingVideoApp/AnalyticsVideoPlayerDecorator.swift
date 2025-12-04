@@ -33,8 +33,7 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 
 	public func load(url: URL) {
 		decoratee.load(url: url)
-		let logger = analyticsLogger
-		Task { await logger.trackVideoLoadStarted() }
+		analyticsLogger.trackVideoLoadStarted()
 	}
 
 	public func play() {

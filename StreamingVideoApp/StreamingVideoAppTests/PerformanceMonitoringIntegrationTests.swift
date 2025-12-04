@@ -50,7 +50,6 @@ final class PerformanceMonitoringIntegrationTests: XCTestCase {
 		// Allow deallocation to complete
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
-		RunLoop.current.run(until: Date())
 
 		// The adapter should be deallocated with the controller
 		XCTAssertNil(weakAdapter, "Expected performance adapter to be deallocated when controller is deallocated")

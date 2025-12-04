@@ -176,31 +176,31 @@ final class ResourceCleanupCoordinatorTests: XCTestCase {
 
 	// MARK: - Auto Cleanup Tests
 
-	func test_enableAutoCleanup_startsMemoryMonitoring() async {
+	func test_enableAutoCleanup_startsMemoryMonitoring() {
 		let memoryMonitor = MemoryMonitorSpy()
 		let sut = makeSUT(cleaners: [], memoryMonitor: memoryMonitor)
 
-		await sut.enableAutoCleanup()
+		sut.enableAutoCleanup()
 
 		XCTAssertEqual(memoryMonitor.startMonitoringCallCount, 1)
 	}
 
-	func test_enableAutoCleanup_calledTwice_startsMonitoringOnlyOnce() async {
+	func test_enableAutoCleanup_calledTwice_startsMonitoringOnlyOnce() {
 		let memoryMonitor = MemoryMonitorSpy()
 		let sut = makeSUT(cleaners: [], memoryMonitor: memoryMonitor)
 
-		await sut.enableAutoCleanup()
-		await sut.enableAutoCleanup()
+		sut.enableAutoCleanup()
+		sut.enableAutoCleanup()
 
 		XCTAssertEqual(memoryMonitor.startMonitoringCallCount, 1)
 	}
 
-	func test_disableAutoCleanup_stopsMemoryMonitoring() async {
+	func test_disableAutoCleanup_stopsMemoryMonitoring() {
 		let memoryMonitor = MemoryMonitorSpy()
 		let sut = makeSUT(cleaners: [], memoryMonitor: memoryMonitor)
 
-		await sut.enableAutoCleanup()
-		await sut.disableAutoCleanup()
+		sut.enableAutoCleanup()
+		sut.disableAutoCleanup()
 
 		XCTAssertEqual(memoryMonitor.stopMonitoringCallCount, 1)
 	}

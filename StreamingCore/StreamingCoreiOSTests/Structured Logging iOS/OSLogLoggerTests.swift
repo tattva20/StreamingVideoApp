@@ -34,49 +34,49 @@ final class OSLogLoggerTests: XCTestCase {
 
 	// MARK: - Logging
 
-	func test_log_doesNotCrashForDebugLevel() async {
+	func test_log_doesNotCrashForDebugLevel() {
 		let sut = makeSUT(minimumLevel: .debug)
 
-		await sut.log(makeEntry(level: .debug))
+		sut.log(makeEntry(level: .debug))
 	}
 
-	func test_log_doesNotCrashForInfoLevel() async {
+	func test_log_doesNotCrashForInfoLevel() {
 		let sut = makeSUT()
 
-		await sut.log(makeEntry(level: .info))
+		sut.log(makeEntry(level: .info))
 	}
 
-	func test_log_doesNotCrashForWarningLevel() async {
+	func test_log_doesNotCrashForWarningLevel() {
 		let sut = makeSUT()
 
-		await sut.log(makeEntry(level: .warning))
+		sut.log(makeEntry(level: .warning))
 	}
 
-	func test_log_doesNotCrashForErrorLevel() async {
+	func test_log_doesNotCrashForErrorLevel() {
 		let sut = makeSUT()
 
-		await sut.log(makeEntry(level: .error))
+		sut.log(makeEntry(level: .error))
 	}
 
-	func test_log_doesNotCrashForCriticalLevel() async {
+	func test_log_doesNotCrashForCriticalLevel() {
 		let sut = makeSUT()
 
-		await sut.log(makeEntry(level: .critical))
+		sut.log(makeEntry(level: .critical))
 	}
 
 	// MARK: - Filtering
 
-	func test_log_ignoresEntriesBelowMinimumLevel() async {
+	func test_log_ignoresEntriesBelowMinimumLevel() {
 		let sut = makeSUT(minimumLevel: .error)
 
 		// Should not crash and should be filtered
-		await sut.log(makeEntry(level: .info))
+		sut.log(makeEntry(level: .info))
 	}
 
-	func test_log_acceptsEntriesAtMinimumLevel() async {
+	func test_log_acceptsEntriesAtMinimumLevel() {
 		let sut = makeSUT(minimumLevel: .warning)
 
-		await sut.log(makeEntry(level: .warning))
+		sut.log(makeEntry(level: .warning))
 	}
 
 	// MARK: - Concurrent Access
@@ -87,7 +87,7 @@ final class OSLogLoggerTests: XCTestCase {
 		await withTaskGroup(of: Void.self) { group in
 			for i in 0..<10 {
 				group.addTask {
-					await sut.log(self.makeEntry(level: .info, message: "Concurrent \(i)"))
+					sut.log(self.makeEntry(level: .info, message: "Concurrent \(i)"))
 				}
 			}
 		}

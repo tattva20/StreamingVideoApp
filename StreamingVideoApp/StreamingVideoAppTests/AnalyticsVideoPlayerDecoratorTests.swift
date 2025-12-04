@@ -160,7 +160,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
 
-		let events = await logger.loggedEvents
+		let events = logger.loggedEvents
 		XCTAssertEqual(events.count, 1)
 		XCTAssertEqual(events.first?.type, .play)
 	}
@@ -175,7 +175,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
 
-		let events = await logger.loggedEvents
+		let events = logger.loggedEvents
 		XCTAssertEqual(events.count, 1)
 		XCTAssertEqual(events.first?.type, .pause)
 	}
@@ -190,7 +190,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
 
-		let events = await logger.loggedEvents
+		let events = logger.loggedEvents
 		XCTAssertEqual(events.count, 1)
 		if case let .seek(from, to) = events.first?.type {
 			XCTAssertEqual(from, 10.0)
@@ -210,7 +210,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
 
-		let events = await logger.loggedEvents
+		let events = logger.loggedEvents
 		XCTAssertEqual(events.count, 1)
 		if case let .speedChanged(from, to) = events.first?.type {
 			XCTAssertEqual(from, 1.0)
@@ -230,7 +230,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
 
-		let events = await logger.loggedEvents
+		let events = logger.loggedEvents
 		XCTAssertEqual(events.count, 1)
 		if case let .volumeChanged(from, to) = events.first?.type {
 			XCTAssertEqual(from, 0.5)
@@ -250,7 +250,7 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		await Task.yield()
 		try? await Task.sleep(nanoseconds: 100_000_000)
 
-		let events = await logger.loggedEvents
+		let events = logger.loggedEvents
 		XCTAssertEqual(events.count, 1)
 		if case let .muteToggled(isMuted) = events.first?.type {
 			XCTAssertTrue(isMuted)
