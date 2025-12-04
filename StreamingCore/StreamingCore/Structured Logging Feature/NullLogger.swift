@@ -14,7 +14,7 @@ public struct NullLogger: Logger, Sendable {
 
 	public init() {}
 
-	public func log(_ entry: LogEntry) async {
+	public func log(_ entry: LogEntry) {
 		// Intentionally empty - discards all log entries
 	}
 }

@@ -116,9 +116,8 @@ public final class LoggingVideoPlayerDecorator: VideoPlayer {
 			metadata: metadata
 		)
 
-		// Fire-and-forget logging using detached Task to avoid actor context issues
-		Task.detached { [logger, context, level, message] in
-			await logger.log(LogEntry(level: level, message: message, context: context))
-		}
+		// Sync logging - following Essential Feed pattern
+		// Logger implementations handle any async operations internally
+		logger.log(LogEntry(level: level, message: message, context: context))
 	}
 }

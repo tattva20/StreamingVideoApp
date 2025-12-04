@@ -24,7 +24,7 @@ public final class OSLogLogger: StreamingCore.Logger, @unchecked Sendable {
 		self.osLog = OSLog(subsystem: subsystem, category: category)
 	}
 
-	public func log(_ entry: LogEntry) async {
+	public func log(_ entry: LogEntry) {
 		guard entry.level >= minimumLevel else { return }
 
 		let osLogType: OSLogType

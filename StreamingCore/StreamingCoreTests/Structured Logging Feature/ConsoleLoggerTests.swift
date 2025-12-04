@@ -26,65 +26,65 @@ final class ConsoleLoggerTests: XCTestCase {
 
 	// MARK: - Filtering
 
-	func test_log_ignoresEntriesBelowMinimumLevel() async {
+	func test_log_ignoresEntriesBelowMinimumLevel() {
 		let sut = ConsoleLogger(minimumLevel: .warning)
 		let entry = makeEntry(level: .debug)
 
 		// Should not crash and should be filtered (no output visible)
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
-	func test_log_acceptsEntriesAtMinimumLevel() async {
+	func test_log_acceptsEntriesAtMinimumLevel() {
 		let sut = ConsoleLogger(minimumLevel: .info)
 		let entry = makeEntry(level: .info)
 
 		// Should not crash
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
-	func test_log_acceptsEntriesAboveMinimumLevel() async {
+	func test_log_acceptsEntriesAboveMinimumLevel() {
 		let sut = ConsoleLogger(minimumLevel: .info)
 		let entry = makeEntry(level: .error)
 
 		// Should not crash
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
 	// MARK: - Logging All Levels
 
-	func test_log_handlesDebugLevel() async {
+	func test_log_handlesDebugLevel() {
 		let sut = ConsoleLogger(minimumLevel: .debug)
 
-		await sut.log(makeEntry(level: .debug))
+		sut.log(makeEntry(level: .debug))
 	}
 
-	func test_log_handlesInfoLevel() async {
+	func test_log_handlesInfoLevel() {
 		let sut = ConsoleLogger(minimumLevel: .debug)
 
-		await sut.log(makeEntry(level: .info))
+		sut.log(makeEntry(level: .info))
 	}
 
-	func test_log_handlesWarningLevel() async {
+	func test_log_handlesWarningLevel() {
 		let sut = ConsoleLogger(minimumLevel: .debug)
 
-		await sut.log(makeEntry(level: .warning))
+		sut.log(makeEntry(level: .warning))
 	}
 
-	func test_log_handlesErrorLevel() async {
+	func test_log_handlesErrorLevel() {
 		let sut = ConsoleLogger(minimumLevel: .debug)
 
-		await sut.log(makeEntry(level: .error))
+		sut.log(makeEntry(level: .error))
 	}
 
-	func test_log_handlesCriticalLevel() async {
+	func test_log_handlesCriticalLevel() {
 		let sut = ConsoleLogger(minimumLevel: .debug)
 
-		await sut.log(makeEntry(level: .critical))
+		sut.log(makeEntry(level: .critical))
 	}
 
 	// MARK: - Metadata Handling
 
-	func test_log_handlesMetadata() async {
+	func test_log_handlesMetadata() {
 		let sut = ConsoleLogger()
 		let context = LogContext(
 			file: "test.swift",
@@ -94,10 +94,10 @@ final class ConsoleLoggerTests: XCTestCase {
 		)
 		let entry = LogEntry(level: .info, message: "Test", context: context)
 
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
-	func test_log_handlesCorrelationID() async {
+	func test_log_handlesCorrelationID() {
 		let sut = ConsoleLogger()
 		let context = LogContext(
 			file: "test.swift",
@@ -107,7 +107,7 @@ final class ConsoleLoggerTests: XCTestCase {
 		)
 		let entry = LogEntry(level: .info, message: "Test", context: context)
 
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
 	// MARK: - Concurrent Access
@@ -118,7 +118,7 @@ final class ConsoleLoggerTests: XCTestCase {
 		await withTaskGroup(of: Void.self) { group in
 			for i in 0..<10 {
 				group.addTask {
-					await sut.log(self.makeEntry(level: .info, message: "Message \(i)"))
+					sut.log(self.makeEntry(level: .info, message: "Message \(i)"))
 				}
 			}
 		}

@@ -20,56 +20,56 @@ final class NullLoggerTests: XCTestCase {
 
 	// MARK: - Logging
 
-	func test_log_doesNotCrash() async {
+	func test_log_doesNotCrash() {
 		let sut = NullLogger()
 		let entry = makeEntry(level: .info)
 
 		// Should not crash - this is the main test
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
-	func test_log_acceptsAllLevels() async {
+	func test_log_acceptsAllLevels() {
 		let sut = NullLogger()
 
-		await sut.log(makeEntry(level: .debug))
-		await sut.log(makeEntry(level: .info))
-		await sut.log(makeEntry(level: .warning))
-		await sut.log(makeEntry(level: .error))
-		await sut.log(makeEntry(level: .critical))
+		sut.log(makeEntry(level: .debug))
+		sut.log(makeEntry(level: .info))
+		sut.log(makeEntry(level: .warning))
+		sut.log(makeEntry(level: .error))
+		sut.log(makeEntry(level: .critical))
 
 		// No crash means success
 	}
 
 	// MARK: - Convenience Methods
 
-	func test_debug_doesNotCrash() async {
+	func test_debug_doesNotCrash() {
 		let sut = NullLogger()
 
-		await sut.debug("Test debug message")
+		sut.debug("Test debug message")
 	}
 
-	func test_info_doesNotCrash() async {
+	func test_info_doesNotCrash() {
 		let sut = NullLogger()
 
-		await sut.info("Test info message")
+		sut.info("Test info message")
 	}
 
-	func test_warning_doesNotCrash() async {
+	func test_warning_doesNotCrash() {
 		let sut = NullLogger()
 
-		await sut.warning("Test warning message")
+		sut.warning("Test warning message")
 	}
 
-	func test_error_doesNotCrash() async {
+	func test_error_doesNotCrash() {
 		let sut = NullLogger()
 
-		await sut.error("Test error message")
+		sut.error("Test error message")
 	}
 
-	func test_critical_doesNotCrash() async {
+	func test_critical_doesNotCrash() {
 		let sut = NullLogger()
 
-		await sut.critical("Test critical message")
+		sut.critical("Test critical message")
 	}
 
 	// MARK: - Sendable
@@ -78,7 +78,7 @@ final class NullLoggerTests: XCTestCase {
 		let sut = NullLogger()
 
 		await Task.detached {
-			await sut.log(self.makeEntry(level: .info))
+			sut.log(self.makeEntry(level: .info))
 		}.value
 	}
 

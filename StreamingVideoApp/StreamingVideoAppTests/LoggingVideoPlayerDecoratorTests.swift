@@ -238,7 +238,9 @@ final class LoggingVideoPlayerDecoratorTests: XCTestCase {
 //}
 
 /// Simple null logger for forwarding tests - does nothing
-actor NullLogger: Logger {
-	let minimumLevel: LogLevel = .debug
-	func log(_ entry: LogEntry) async {}
+/// Following Essential Feed pattern - @MainActor class with sync log
+@MainActor
+final class NullLoggerStub: Logger {
+	nonisolated let minimumLevel: LogLevel = .debug
+	nonisolated func log(_ entry: LogEntry) {}
 }

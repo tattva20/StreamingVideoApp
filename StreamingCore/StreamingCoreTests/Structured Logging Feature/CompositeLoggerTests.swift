@@ -26,97 +26,85 @@ final class CompositeLoggerTests: XCTestCase {
 
 	// MARK: - Forwarding
 
-	func test_log_forwardsToAllLoggers() async {
+	func test_log_forwardsToAllLoggers() {
 		let logger1 = LoggerSpy()
 		let logger2 = LoggerSpy()
 		let sut = CompositeLogger(loggers: [logger1, logger2])
 		let entry = makeEntry(level: .info)
 
-		await sut.log(entry)
+		sut.log(entry)
 
-		let entries1 = await logger1.loggedEntries
-		let entries2 = await logger2.loggedEntries
-		XCTAssertEqual(entries1.count, 1)
-		XCTAssertEqual(entries2.count, 1)
+		XCTAssertEqual(logger1.loggedEntries.count, 1)
+		XCTAssertEqual(logger2.loggedEntries.count, 1)
 	}
 
-	func test_log_filtersBasedOnCompositeMinimumLevel() async {
+	func test_log_filtersBasedOnCompositeMinimumLevel() {
 		let logger = LoggerSpy(minimumLevel: .debug)
 		let sut = CompositeLogger(loggers: [logger], minimumLevel: .warning)
 		let entry = makeEntry(level: .debug)
 
-		await sut.log(entry)
+		sut.log(entry)
 
-		let entries = await logger.loggedEntries
-		XCTAssertTrue(entries.isEmpty)
+		XCTAssertTrue(logger.loggedEntries.isEmpty)
 	}
 
-	func test_log_respectsIndividualLoggerMinimumLevels() async {
+	func test_log_respectsIndividualLoggerMinimumLevels() {
 		let debugLogger = LoggerSpy(minimumLevel: .debug)
 		let errorLogger = LoggerSpy(minimumLevel: .error)
 		let sut = CompositeLogger(loggers: [debugLogger, errorLogger])
 		let entry = makeEntry(level: .info)
 
-		await sut.log(entry)
+		sut.log(entry)
 
-		let debugEntries = await debugLogger.loggedEntries
-		let errorEntries = await errorLogger.loggedEntries
-		XCTAssertEqual(debugEntries.count, 1)
-		XCTAssertTrue(errorEntries.isEmpty)
+		XCTAssertEqual(debugLogger.loggedEntries.count, 1)
+		XCTAssertTrue(errorLogger.loggedEntries.isEmpty)
 	}
 
 	// MARK: - Empty Loggers
 
-	func test_log_handlesEmptyLoggersList() async {
+	func test_log_handlesEmptyLoggersList() {
 		let sut = CompositeLogger(loggers: [])
 		let entry = makeEntry(level: .info)
 
 		// Should not crash
-		await sut.log(entry)
+		sut.log(entry)
 	}
 
 	// MARK: - Concurrent Logging
 
-	func test_log_handlesConcurrentLogsToDifferentLoggers() async {
+	func test_log_handlesConcurrentLogsToDifferentLoggers() {
 		let loggers = (0..<5).map { _ in LoggerSpy() }
 		let sut = CompositeLogger(loggers: loggers)
 
-		await withTaskGroup(of: Void.self) { group in
-			for i in 0..<20 {
-				group.addTask {
-					await sut.log(self.makeEntry(level: .info, message: "Message \(i)"))
-				}
-			}
+		for i in 0..<20 {
+			sut.log(self.makeEntry(level: .info, message: "Message \(i)"))
 		}
 
 		for logger in loggers {
-			let entries = await logger.loggedEntries
-			XCTAssertEqual(entries.count, 20)
+			XCTAssertEqual(logger.loggedEntries.count, 20)
 		}
 	}
 
 	// MARK: - Level Filtering
 
-	func test_log_passesEntriesAtMinimumLevel() async {
+	func test_log_passesEntriesAtMinimumLevel() {
 		let logger = LoggerSpy()
 		let sut = CompositeLogger(loggers: [logger], minimumLevel: .warning)
 		let entry = makeEntry(level: .warning)
 
-		await sut.log(entry)
+		sut.log(entry)
 
-		let entries = await logger.loggedEntries
-		XCTAssertEqual(entries.count, 1)
+		XCTAssertEqual(logger.loggedEntries.count, 1)
 	}
 
-	func test_log_passesEntriesAboveMinimumLevel() async {
+	func test_log_passesEntriesAboveMinimumLevel() {
 		let logger = LoggerSpy()
 		let sut = CompositeLogger(loggers: [logger], minimumLevel: .warning)
 		let entry = makeEntry(level: .critical)
 
-		await sut.log(entry)
+		sut.log(entry)
 
-		let entries = await logger.loggedEntries
-		XCTAssertEqual(entries.count, 1)
+		XCTAssertEqual(logger.loggedEntries.count, 1)
 	}
 
 	// MARK: - Helpers

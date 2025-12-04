@@ -9,6 +9,7 @@ import Foundation
 
 /// A logger that forwards log entries to multiple underlying loggers.
 /// Useful for combining console, file, and remote logging.
+/// Following Essential Feed patterns - sync protocol with internal forwarding.
 public final class CompositeLogger: Logger, @unchecked Sendable {
 	private let loggers: [any Logger]
 	public let minimumLevel: LogLevel
@@ -18,16 +19,12 @@ public final class CompositeLogger: Logger, @unchecked Sendable {
 		self.minimumLevel = minimumLevel
 	}
 
-	public func log(_ entry: LogEntry) async {
+	public func log(_ entry: LogEntry) {
 		guard entry.level >= minimumLevel else { return }
 
-		await withTaskGroup(of: Void.self) { group in
-			for logger in loggers {
-				if entry.level >= logger.minimumLevel {
-					group.addTask {
-						await logger.log(entry)
-					}
-				}
+		for logger in loggers {
+			if entry.level >= logger.minimumLevel {
+				logger.log(entry)
 			}
 		}
 	}

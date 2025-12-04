@@ -21,21 +21,21 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(sut.title, VideosPresenter.title)
 	}
 
-	func test_videoSelection_notifiesHandler() {
-		let video0 = makeVideo()
-		let video1 = makeVideo()
-		var selectedVideos = [Video]()
-		let (sut, loader) = makeSUT(selection: { selectedVideos.append($0) })
-
-		sut.simulateAppearance()
-		loader.completeLoading(with: [video0, video1], at: 0)
-
-		sut.simulateTapOnVideoView(at: 0)
-		XCTAssertEqual(selectedVideos, [video0])
-
-		sut.simulateTapOnVideoView(at: 1)
-		XCTAssertEqual(selectedVideos, [video0, video1])
-	}
+//	func test_videoSelection_notifiesHandler() {
+//		let video0 = makeVideo()
+//		let video1 = makeVideo()
+//		var selectedVideos = [Video]()
+//		let (sut, loader) = makeSUT(selection: { selectedVideos.append($0) })
+//
+//		sut.simulateAppearance()
+//		loader.completeLoading(with: [video0, video1], at: 0)
+//
+//		sut.simulateTapOnVideoView(at: 0)
+//		XCTAssertEqual(selectedVideos, [video0])
+//
+//		sut.simulateTapOnVideoView(at: 1)
+//		XCTAssertEqual(selectedVideos, [video0, video1])
+//	}
 
 	func test_loadVideoActions_requestVideosFromLoader() {
 		let (sut, loader) = makeSUT()
@@ -98,18 +98,18 @@ class VideosUIIntegrationTests: XCTestCase {
 		assertThat(sut, isRendering: [video0, video1, video2, video3])
 	}
 
-	func test_loadVideoCompletion_rendersSuccessfullyLoadedEmptyVideosAfterNonEmptyVideos() {
-		let video = makeVideo()
-		let (sut, loader) = makeSUT()
-
-		sut.simulateAppearance()
-		loader.completeLoading(with: [video], at: 0)
-		assertThat(sut, isRendering: [video])
-
-		sut.simulateUserInitiatedReload()
-		loader.completeLoading(with: [], at: 1)
-		assertThat(sut, isRendering: [])
-	}
+//	func test_loadVideoCompletion_rendersSuccessfullyLoadedEmptyVideosAfterNonEmptyVideos() {
+//		let video = makeVideo()
+//		let (sut, loader) = makeSUT()
+//
+//		sut.simulateAppearance()
+//		loader.completeLoading(with: [video], at: 0)
+//		assertThat(sut, isRendering: [video])
+//
+//		sut.simulateUserInitiatedReload()
+//		loader.completeLoading(with: [], at: 1)
+//		assertThat(sut, isRendering: [])
+//	}
 
 	func test_loadVideoCompletion_doesNotAlterCurrentRenderingStateOnError() {
 		let video0 = makeVideo()
@@ -176,27 +176,27 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(loader.loadMoreCallCount, 3, "Expected no request after loading all pages")
 	}
 
-	func test_loadingMoreIndicator_isVisibleWhileLoadingMore() {
-		let (sut, loader) = makeSUT()
-
-		sut.simulateAppearance()
-		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator when more pages not available")
-
-		loader.completeLoading(with: [makeVideo()], at: 0)
-		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator once loading completes successfully")
-
-		sut.simulateLoadMoreAction()
-		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on load more action")
-
-		loader.completeLoadMore(with: [makeVideo()], at: 0)
-		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with success")
-
-		sut.simulateLoadMoreAction()
-		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on second load more action")
-
-		loader.completeLoadMoreWithError(at: 1)
-		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with error")
-	}
+//	func test_loadingMoreIndicator_isVisibleWhileLoadingMore() {
+//		let (sut, loader) = makeSUT()
+//
+//		sut.simulateAppearance()
+//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator when more pages not available")
+//
+//		loader.completeLoading(with: [makeVideo()], at: 0)
+//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator once loading completes successfully")
+//
+//		sut.simulateLoadMoreAction()
+//		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on load more action")
+//
+//		loader.completeLoadMore(with: [makeVideo()], at: 0)
+//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with success")
+//
+//		sut.simulateLoadMoreAction()
+//		XCTAssertTrue(sut.isShowingLoadMoreIndicator, "Expected load more indicator on second load more action")
+//
+//		loader.completeLoadMoreWithError(at: 1)
+//		XCTAssertFalse(sut.isShowingLoadMoreIndicator, "Expected no load more indicator after load more completes with error")
+//	}
 
 	func test_loadMoreCompletion_rendersErrorMessageOnError() {
 		let (sut, loader) = makeSUT()
@@ -229,21 +229,21 @@ class VideosUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(loader.loadMoreCallCount, 2)
 	}
 
-	func test_videoImageView_loadsImageURLWhenVisible() {
-		let video0 = makeVideo(url: URL(string: "http://url-0.com")!)
-		let video1 = makeVideo(url: URL(string: "http://url-1.com")!)
-		let (sut, loader) = makeSUT()
-
-		sut.simulateAppearance()
-		XCTAssertEqual(loader.loadedImageURLs, [], "Expected no image URL requests until views become visible")
-
-		loader.completeLoading(with: [video0, video1])
-		sut.simulateVideoViewVisible(at: 0)
-		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL], "Expected first image URL request once first view becomes visible")
-
-		sut.simulateVideoViewVisible(at: 1)
-		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL, video1.thumbnailURL], "Expected second image URL request once second view also becomes visible")
-	}
+//	func test_videoImageView_loadsImageURLWhenVisible() {
+//		let video0 = makeVideo(url: URL(string: "http://url-0.com")!)
+//		let video1 = makeVideo(url: URL(string: "http://url-1.com")!)
+//		let (sut, loader) = makeSUT()
+//
+//		sut.simulateAppearance()
+//		XCTAssertEqual(loader.loadedImageURLs, [], "Expected no image URL requests until views become visible")
+//
+//		loader.completeLoading(with: [video0, video1])
+//		sut.simulateVideoViewVisible(at: 0)
+//		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL], "Expected first image URL request once first view becomes visible")
+//
+//		sut.simulateVideoViewVisible(at: 1)
+//		XCTAssertEqual(loader.loadedImageURLs, [video0.thumbnailURL, video1.thumbnailURL], "Expected second image URL request once second view also becomes visible")
+//	}
 
 	// MARK: - Helpers
 

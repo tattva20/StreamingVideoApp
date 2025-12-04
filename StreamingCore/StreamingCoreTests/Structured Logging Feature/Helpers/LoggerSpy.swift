@@ -8,36 +8,31 @@
 import Foundation
 import StreamingCore
 
-/// An actor-based spy for testing logger implementations.
-/// Thread-safe by design using Swift actors.
-actor LoggerSpy: Logger {
-	private var _loggedEntries: [LogEntry] = []
-	private let _minimumLevel: LogLevel
-
-	nonisolated var minimumLevel: LogLevel { _minimumLevel }
-
-	var loggedEntries: [LogEntry] {
-		_loggedEntries
-	}
+/// A class-based spy for testing logger implementations.
+/// Following Essential Feed patterns - simple class with sync protocol.
+/// Uses @unchecked Sendable for test-only code that doesn't need thread-safety.
+final class LoggerSpy: Logger, @unchecked Sendable {
+	private(set) var loggedEntries: [LogEntry] = []
+	let minimumLevel: LogLevel
 
 	var loggedMessages: [String] {
-		_loggedEntries.map(\.message)
+		loggedEntries.map(\.message)
 	}
 
 	var loggedLevels: [LogLevel] {
-		_loggedEntries.map(\.level)
+		loggedEntries.map(\.level)
 	}
 
 	init(minimumLevel: LogLevel = .debug) {
-		self._minimumLevel = minimumLevel
+		self.minimumLevel = minimumLevel
 	}
 
-	func log(_ entry: LogEntry) async {
+	func log(_ entry: LogEntry) {
 		guard entry.level >= minimumLevel else { return }
-		_loggedEntries.append(entry)
+		loggedEntries.append(entry)
 	}
 
 	func reset() {
-		_loggedEntries.removeAll()
+		loggedEntries.removeAll()
 	}
 }

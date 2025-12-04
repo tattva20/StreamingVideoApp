@@ -8,9 +8,9 @@
 import Foundation
 
 /// A logger that outputs formatted log entries to the console.
-/// Uses Swift actors for thread-safety.
-public actor ConsoleLogger: Logger {
-	public nonisolated let minimumLevel: LogLevel
+/// Following Essential Feed patterns - simple class with sync protocol.
+public final class ConsoleLogger: Logger, @unchecked Sendable {
+	public let minimumLevel: LogLevel
 	private let dateFormatter: ISO8601DateFormatter
 
 	public init(minimumLevel: LogLevel = .debug) {
@@ -19,7 +19,7 @@ public actor ConsoleLogger: Logger {
 		self.dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 	}
 
-	public func log(_ entry: LogEntry) async {
+	public func log(_ entry: LogEntry) {
 		guard entry.level >= minimumLevel else { return }
 
 		let timestamp = dateFormatter.string(from: entry.timestamp)

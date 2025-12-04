@@ -39,11 +39,6 @@
                BlueprintName = "StreamingVideoAppTests"
                ReferencedContainer = "container:StreamingVideoApp.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "VideoPlayerPerformanceAdapterTests">
-               </Test>
-            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

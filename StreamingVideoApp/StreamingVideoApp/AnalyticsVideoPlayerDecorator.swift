@@ -34,21 +34,21 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 	public func load(url: URL) {
 		decoratee.load(url: url)
 		let logger = analyticsLogger
-		Task.detached { await logger.trackVideoLoadStarted() }
+		Task { await logger.trackVideoLoadStarted() }
 	}
 
 	public func play() {
 		decoratee.play()
 		let position = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.play, position: position) }
+		Task { await logger.log(.play, position: position) }
 	}
 
 	public func pause() {
 		decoratee.pause()
 		let position = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.pause, position: position) }
+		Task { await logger.log(.pause, position: position) }
 	}
 
 	public func seekForward(by seconds: TimeInterval) {
@@ -56,7 +56,7 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 		decoratee.seekForward(by: seconds)
 		let toPosition = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.seek(from: fromPosition, to: toPosition), position: toPosition) }
+		Task { await logger.log(.seek(from: fromPosition, to: toPosition), position: toPosition) }
 	}
 
 	public func seekBackward(by seconds: TimeInterval) {
@@ -64,14 +64,14 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 		decoratee.seekBackward(by: seconds)
 		let toPosition = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.seek(from: fromPosition, to: toPosition), position: toPosition) }
+		Task { await logger.log(.seek(from: fromPosition, to: toPosition), position: toPosition) }
 	}
 
 	public func seek(to time: TimeInterval) {
 		let fromPosition = currentTime
 		decoratee.seek(to: time)
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.seek(from: fromPosition, to: time), position: time) }
+		Task { await logger.log(.seek(from: fromPosition, to: time), position: time) }
 	}
 
 	public func setVolume(_ volume: Float) {
@@ -79,7 +79,7 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 		decoratee.setVolume(volume)
 		let position = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.volumeChanged(from: oldVolume, to: volume), position: position) }
+		Task { await logger.log(.volumeChanged(from: oldVolume, to: volume), position: position) }
 	}
 
 	public func toggleMute() {
@@ -87,7 +87,7 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 		let isMuted = self.isMuted
 		let position = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.muteToggled(isMuted: isMuted), position: position) }
+		Task { await logger.log(.muteToggled(isMuted: isMuted), position: position) }
 	}
 
 	public func setPlaybackSpeed(_ speed: Float) {
@@ -95,6 +95,6 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 		decoratee.setPlaybackSpeed(speed)
 		let position = currentTime
 		let logger = analyticsLogger
-		Task.detached { await logger.log(.speedChanged(from: oldSpeed, to: speed), position: position) }
+		Task { await logger.log(.speedChanged(from: oldSpeed, to: speed), position: position) }
 	}
 }
