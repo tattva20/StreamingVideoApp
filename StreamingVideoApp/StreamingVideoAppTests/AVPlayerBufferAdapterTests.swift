@@ -22,7 +22,7 @@ final class AVPlayerBufferAdapterTests: XCTestCase {
 
 	// MARK: - applyToNewItem
 
-//	func test_applyToNewItem_setsPreferredForwardBufferDuration() async {
+//	func test_applyToNewItem_setsPreferredForwardBufferDuration() {
 //		let expectedDuration: TimeInterval = 15.0
 //		let (sut, bufferManager) = makeSUT()
 //		let item = AVPlayerItem(url: anyURL())
@@ -32,7 +32,7 @@ final class AVPlayerBufferAdapterTests: XCTestCase {
 //			reason: "test"
 //		))
 //
-//		await sut.applyToNewItem(item)
+//		sut.applyToNewItem(item)
 //
 //		XCTAssertEqual(item.preferredForwardBufferDuration, expectedDuration)
 //	}
