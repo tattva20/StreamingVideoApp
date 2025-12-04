@@ -25,10 +25,6 @@ public final class AdaptiveBufferManager: BufferManager {
 			.eraseToAnyPublisher()
 	}
 
-	public var configurationStream: AsyncStream<BufferConfiguration> {
-		configurationPublisher.toAsyncStream()
-	}
-
 	public var currentConfiguration: BufferConfiguration {
 		_currentConfiguration
 	}

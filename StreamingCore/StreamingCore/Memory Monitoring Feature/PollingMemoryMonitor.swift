@@ -26,10 +26,6 @@ public final class PollingMemoryMonitor: MemoryMonitor {
 			.eraseToAnyPublisher()
 	}
 
-	public var stateStream: AsyncStream<MemoryState> {
-		statePublisher.toAsyncStream()
-	}
-
 	public init(
 		memoryReader: @escaping @Sendable () -> MemoryState,
 		thresholds: MemoryThresholds = .default

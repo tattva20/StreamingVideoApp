@@ -16,7 +16,6 @@ public protocol MemoryStateProvider: AnyObject {
 @MainActor
 public protocol MemoryMonitor: MemoryStateProvider {
 	var statePublisher: AnyPublisher<MemoryState, Never> { get }
-	var stateStream: AsyncStream<MemoryState> { get }
 
 	func startMonitoring()
 	func stopMonitoring()

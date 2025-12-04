@@ -180,23 +180,6 @@ final class AdaptiveBufferManagerTests: XCTestCase {
 		XCTAssertEqual(emitCount, 2)
 	}
 
-	// MARK: - Configuration Stream Tests
-
-	func test_configurationStream_emitsConfigurations() async {
-		let sut = makeSUT()
-
-		// Trigger a change
-		let criticalMemoryState = makeMemoryState(availableBytes: 40_000_000)
-		sut.updateMemoryState(criticalMemoryState)
-
-		var receivedConfig: BufferConfiguration?
-		for await config in sut.configurationStream.prefix(1) {
-			receivedConfig = config
-		}
-
-		XCTAssertEqual(receivedConfig?.strategy, .minimal)
-	}
-
 	// MARK: - Buffer Duration Tests
 
 	func test_criticalMemory_hasMinimalBufferDuration() async {

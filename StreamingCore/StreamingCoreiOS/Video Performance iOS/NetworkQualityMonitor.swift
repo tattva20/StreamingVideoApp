@@ -35,17 +35,6 @@ public final class NetworkQualityMonitor: @unchecked Sendable {
 		qualitySubject.eraseToAnyPublisher()
 	}
 
-	public var qualityStream: AsyncStream<NetworkQuality> {
-		AsyncStream { [qualitySubject] continuation in
-			let cancellable = qualitySubject.sink { quality in
-				continuation.yield(quality)
-			}
-			continuation.onTermination = { _ in
-				cancellable.cancel()
-			}
-		}
-	}
-
 	public init() {
 		self.monitor = NWPathMonitor()
 		self.queue = DispatchQueue(label: "com.streamingcore.networkmonitor", qos: .utility)

@@ -25,10 +25,6 @@ final class MemoryMonitorSpy: MemoryMonitor {
 			.eraseToAnyPublisher()
 	}
 
-	var stateStream: AsyncStream<MemoryState> {
-		statePublisher.toAsyncStream()
-	}
-
 	func currentMemoryState() -> MemoryState {
 		stateSubject.value ?? makeMemoryState(availableMB: 500)
 	}

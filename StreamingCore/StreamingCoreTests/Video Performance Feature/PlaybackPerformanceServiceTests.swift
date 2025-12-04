@@ -321,38 +321,6 @@ final class PlaybackPerformanceServiceTests: XCTestCase {
 		XCTAssertTrue(receivedSnapshots.isEmpty)
 	}
 
-	// MARK: - metricsStream Tests
-
-	func test_metricsStream_emitsSnapshotsAsAsyncSequence() async {
-		let sut = makeSUT()
-		let sessionID = UUID()
-
-		sut.startMonitoring(for: sessionID)
-
-		// Start collecting from stream
-		let task = Task {
-			var count = 0
-			for await _ in sut.metricsStream {
-				count += 1
-				if count >= 1 { break }
-			}
-			return count
-		}
-
-		// Give time for stream to be ready
-		try? await Task.sleep(nanoseconds: 50_000_000)
-
-		// Emit an event
-		sut.recordEvent(.loadStarted)
-
-		// Give time for event processing
-		try? await Task.sleep(nanoseconds: 300_000_000)
-
-		task.cancel()
-		let count = await task.value
-		XCTAssertGreaterThanOrEqual(count, 1)
-	}
-
 	// MARK: - Helpers
 
 	private func makeSUT(

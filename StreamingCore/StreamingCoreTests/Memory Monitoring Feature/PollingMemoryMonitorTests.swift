@@ -148,27 +148,6 @@ final class PollingMemoryMonitorTests: XCTestCase {
 		// Should not crash or have any side effects
 	}
 
-	// MARK: - State Stream Tests
-
-	func test_stateStream_emitsStatesFromPublisher() async {
-		let expectedState = Self.makeMemoryState(availableBytes: 300_000_000)
-		let sut = makeSUT(
-			memoryReader: { expectedState },
-			pollingInterval: 0.05
-		)
-
-		sut.startMonitoring()
-
-		var receivedState: MemoryState?
-		for await state in sut.stateStream.prefix(1) {
-			receivedState = state
-		}
-
-		XCTAssertEqual(receivedState, expectedState)
-
-		sut.stopMonitoring()
-	}
-
 	// MARK: - Duplicate State Filtering Tests
 
 	func test_statePublisher_removeDuplicates() async {

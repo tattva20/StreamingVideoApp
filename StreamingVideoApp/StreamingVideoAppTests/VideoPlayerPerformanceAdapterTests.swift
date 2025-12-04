@@ -115,10 +115,6 @@ private final class PerformanceMonitorSpy: PerformanceMonitor {
 		Empty().eraseToAnyPublisher()
 	}
 
-	var metricsStream: AsyncStream<PerformanceSnapshot> {
-		AsyncStream { _ in }
-	}
-
 	var currentSessionID: UUID? { _sessionID }
 	var recordedEvents: [PerformanceEvent] { _recordedEvents }
 

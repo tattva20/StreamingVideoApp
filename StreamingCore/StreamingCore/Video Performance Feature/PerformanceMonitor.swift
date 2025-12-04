@@ -18,9 +18,6 @@ public protocol PerformanceMonitor: AnyObject {
 	/// Publisher that emits performance alerts when thresholds are exceeded
 	var alertPublisher: AnyPublisher<PerformanceAlert, Never> { get }
 
-	/// Async sequence for Swift 6.2 Observations pattern
-	var metricsStream: AsyncStream<PerformanceSnapshot> { get }
-
 	func startMonitoring(for sessionID: UUID)
 	func stopMonitoring()
 	func recordEvent(_ event: PerformanceEvent)

@@ -44,10 +44,6 @@ public final class PlaybackPerformanceService: PerformanceMonitor {
 		alertSubject.eraseToAnyPublisher()
 	}
 
-	public var metricsStream: AsyncStream<PerformanceSnapshot> {
-		metricsSubject.toAsyncStream()
-	}
-
 	// MARK: - Initialization
 
 	public init(

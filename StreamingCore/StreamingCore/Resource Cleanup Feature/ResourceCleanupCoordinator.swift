@@ -15,7 +15,7 @@ public final class ResourceCleanupCoordinator {
 	private var cleaners: [ResourceCleaner]
 	private let memoryMonitor: MemoryMonitor
 	private var isAutoCleanupEnabled = false
-	private var monitoringTask: Task<Void, Never>?
+	private var monitoringCancellable: AnyCancellable?
 
 	private let cleanupSubject = PassthroughSubject<[CleanupResult], Never>()
 
@@ -34,49 +34,47 @@ public final class ResourceCleanupCoordinator {
 		cleaners.sort { $0.priority > $1.priority }
 	}
 
-	public func enableAutoCleanup() async {
+	public func enableAutoCleanup() {
 		guard !isAutoCleanupEnabled else { return }
 		isAutoCleanupEnabled = true
 
 		memoryMonitor.startMonitoring()
 
-		monitoringTask = Task { [weak self] in
-			guard let self = self else { return }
-
-			for await state in self.memoryMonitor.stateStream {
-				guard !Task.isCancelled else { break }
+		monitoringCancellable = memoryMonitor.statePublisher
+			.receive(on: RunLoop.main)
+			.sink { [weak self] state in
+				guard let self = self else { return }
 
 				let thresholds = MemoryThresholds.default
 				let pressureLevel = state.pressureLevel(thresholds: thresholds)
 
-				switch pressureLevel {
-				case .critical:
-					// Critical: Clean everything possible
-					let results = await self.cleanupAll()
-					await MainActor.run {
-						self.triggerCleanupResults(results)
-					}
+				Task { @MainActor [weak self] in
+					guard let self = self else { return }
 
-				case .warning:
-					// Warning: Clean low and medium priority only
-					let results = await self.cleanupUpTo(priority: .medium)
-					if !results.isEmpty {
-						await MainActor.run {
+					switch pressureLevel {
+					case .critical:
+						// Critical: Clean everything possible
+						let results = await self.cleanupAll()
+						self.triggerCleanupResults(results)
+
+					case .warning:
+						// Warning: Clean low and medium priority only
+						let results = await self.cleanupUpTo(priority: .medium)
+						if !results.isEmpty {
 							self.triggerCleanupResults(results)
 						}
-					}
 
-				case .normal:
-					break // No cleanup needed
+					case .normal:
+						break // No cleanup needed
+					}
 				}
 			}
-		}
 	}
 
-	public func disableAutoCleanup() async {
+	public func disableAutoCleanup() {
 		isAutoCleanupEnabled = false
-		monitoringTask?.cancel()
-		monitoringTask = nil
+		monitoringCancellable?.cancel()
+		monitoringCancellable = nil
 		memoryMonitor.stopMonitoring()
 	}
 

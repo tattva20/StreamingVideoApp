@@ -16,7 +16,6 @@ public protocol BufferSizeProvider: AnyObject {
 @MainActor
 public protocol BufferManager: BufferSizeProvider {
 	var configurationPublisher: AnyPublisher<BufferConfiguration, Never> { get }
-	var configurationStream: AsyncStream<BufferConfiguration> { get }
 
 	func updateMemoryState(_ state: MemoryState)
 	func updateNetworkQuality(_ quality: NetworkQuality)

@@ -43,9 +43,6 @@
                <Test
                   Identifier = "VideoPlayerPerformanceAdapterTests">
                </Test>
-               <Test
-                  Identifier = "VideosUIIntegrationTests">
-               </Test>
             </SkippedTests>
          </TestableReference>
       </Testables>
