@@ -7,7 +7,6 @@
 import Foundation
 import StreamingCore
 import StreamingCoreiOS
-import Combine
 
 extension VideosUIIntegrationTests {
 
@@ -16,53 +15,56 @@ extension VideosUIIntegrationTests {
 
 		// MARK: - VideoLoader
 
-		private var videoRequests = [PassthroughSubject<Paginated<Video>, Error>]()
+		private var videoLoader = StreamingVideoAppTests.LoaderSpy<Void, Paginated<Video>>()
 
 		var loadCallCount: Int {
-			return videoRequests.count
+			return videoLoader.requests.count
 		}
 
-		func loadPublisher() -> AnyPublisher<Paginated<Video>, Error> {
-			let publisher = PassthroughSubject<Paginated<Video>, Error>()
-			videoRequests.append(publisher)
-			return publisher.eraseToAnyPublisher()
+		func load() async throws -> Paginated<Video> {
+			try await videoLoader.load(())
 		}
 
-		func completeLoadingWithError(at index: Int = 0) {
-			videoRequests[index].send(completion: .failure(anyNSError()))
+		func completeLoadingWithError(at index: Int = 0) async {
+			videoLoader.fail(with: anyNSError(), at: index)
 		}
 
-		func completeLoading(with videos: [Video] = [], at index: Int = 0) {
-			videoRequests[index].send(Paginated(items: videos, loadMorePublisher: { [weak self] in
-				self?.loadMorePublisher() ?? Empty().eraseToAnyPublisher()
-			}))
-			videoRequests[index].send(completion: .finished)
+		func completeLoading(with videos: [Video] = [], at index: Int = 0) async {
+			videoLoader.complete(
+				with: Paginated(
+					items: videos,
+					loadMore: { @MainActor [weak self] in
+						try await self?.loadMore() ?? Paginated(items: [])
+					}),
+				at: index)
 		}
 
 		// MARK: - LoadMore
 
-		private var loadMoreRequests = [PassthroughSubject<Paginated<Video>, Error>]()
+		private var loadMoreLoader = StreamingVideoAppTests.LoaderSpy<Void, Paginated<Video>>()
 
 		var loadMoreCallCount: Int {
-			return loadMoreRequests.count
+			return loadMoreLoader.requests.count
 		}
 
-		func loadMorePublisher() -> AnyPublisher<Paginated<Video>, Error> {
-			let publisher = PassthroughSubject<Paginated<Video>, Error>()
-			loadMoreRequests.append(publisher)
-			return publisher.eraseToAnyPublisher()
+		func loadMore() async throws -> Paginated<Video> {
+			try await loadMoreLoader.load(())
 		}
 
-		func completeLoadMore(with videos: [Video] = [], lastPage: Bool = false, at index: Int = 0) {
-			loadMoreRequests[index].send(Paginated(
-				items: videos,
-				loadMorePublisher: lastPage ? nil : { [weak self] in
-					self?.loadMorePublisher() ?? Empty().eraseToAnyPublisher()
-				}))
+		func completeLoadMore(with videos: [Video] = [], lastPage: Bool = false, at index: Int = 0) async {
+			let loadMore: @Sendable () async throws -> Paginated<Video> = { @MainActor [weak self] in
+				try await self?.loadMore() ?? Paginated(items: [])
+			}
+
+			loadMoreLoader.complete(
+				with: Paginated(
+					items: videos,
+					loadMore: lastPage ? nil : loadMore),
+				at: index)
 		}
 
-		func completeLoadMoreWithError(at index: Int = 0) {
-			loadMoreRequests[index].send(completion: .failure(anyNSError()))
+		func completeLoadMoreWithError(at index: Int = 0) async {
+			loadMoreLoader.fail(with: anyNSError(), at: index)
 		}
 
 		// MARK: - VideoImageDataLoader
@@ -95,6 +97,8 @@ extension VideosUIIntegrationTests {
 
 		func cancelPendingRequests() {
 			imageLoader.cancelPendingRequests()
+			videoLoader.cancelPendingRequests()
+			loadMoreLoader.cancelPendingRequests()
 		}
 	}
 

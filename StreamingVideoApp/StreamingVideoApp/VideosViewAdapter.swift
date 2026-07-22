@@ -16,7 +16,7 @@ final class VideosViewAdapter: ResourceView {
     private let currentFeed: [Video: CellController]
 
     private typealias ImageDataPresentationAdapter = AsyncLoadResourcePresentationAdapter<Data, WeakRefVirtualProxy<StreamingCoreiOS.VideoCellController>>
-    private typealias LoadMorePresentationAdapter = LoadResourcePresentationAdapter<Paginated<Video>, VideosViewAdapter>
+    private typealias LoadMorePresentationAdapter = AsyncLoadResourcePresentationAdapter<Paginated<Video>, VideosViewAdapter>
 
     init(currentFeed: [Video: CellController] = [:], controller: ListViewController, imageLoader: @escaping (URL) async throws -> Data, selection: @escaping (Video) -> Void) {
         self.currentFeed = currentFeed
@@ -56,12 +56,12 @@ final class VideosViewAdapter: ResourceView {
             return controller
         }
 
-        guard let loadMorePublisher = viewModel.loadMorePublisher else {
+        guard let loadMoreAsync = viewModel.loadMore else {
             controller.display(feed)
             return
         }
 
-        let loadMoreAdapter = LoadMorePresentationAdapter(loader: loadMorePublisher)
+        let loadMoreAdapter = LoadMorePresentationAdapter(loader: loadMoreAsync)
         let loadMore = LoadMoreCellController(callback: loadMoreAdapter.loadResource)
 
         loadMoreAdapter.presenter = LoadResourcePresenter(

@@ -8,7 +8,6 @@ import XCTest
 import StreamingCore
 import StreamingCoreiOS
 import StreamingVideoApp
-import Combine
 
 @MainActor
 class VideoCommentsUIIntegrationTests: XCTestCase {
@@ -29,24 +28,24 @@ class VideoCommentsUIIntegrationTests: XCTestCase {
 		XCTAssertEqual(sut.title, VideoCommentsPresenter.title)
 	}
 
-	func test_loadCommentsActions_requestCommentsFromLoader() {
+	func test_loadCommentsActions_requestCommentsFromLoader() async {
 		let (sut, loader) = makeSUT()
 		XCTAssertEqual(loader.loadCallCount, 0, "Expected no loading requests before view appears")
 
 		sut.simulateAppearance()
 		XCTAssertEqual(loader.loadCallCount, 1, "Expected a loading request once view appears")
 
-		loader.completeLoading(at: 0)
+		await loader.completeLoading(at: 0)
 		sut.simulateUserInitiatedReload()
 		XCTAssertEqual(loader.loadCallCount, 2, "Expected another loading request once user initiates a reload")
 
-		loader.completeLoading(at: 1)
+		await loader.completeLoading(at: 1)
 		sut.simulateUserInitiatedReload()
 		XCTAssertEqual(loader.loadCallCount, 3, "Expected yet another loading request once user initiates another reload")
 	}
 
 
-	func test_loadCommentsCompletion_rendersSuccessfullyLoadedComments() {
+	func test_loadCommentsCompletion_rendersSuccessfullyLoadedComments() async {
 		let comment0 = makeComment(message: "a message", username: "a username")
 		let comment1 = makeComment(message: "another message", username: "another username")
 		let (sut, loader) = makeSUT()
@@ -54,79 +53,79 @@ class VideoCommentsUIIntegrationTests: XCTestCase {
 		sut.simulateAppearance()
 		assertThat(sut, isRendering: [])
 
-		loader.completeLoading(with: [comment0], at: 0)
+		await loader.completeLoading(with: [comment0], at: 0)
 		assertThat(sut, isRendering: [comment0])
 
 		sut.simulateUserInitiatedReload()
-		loader.completeLoading(with: [comment0, comment1], at: 1)
+		await loader.completeLoading(with: [comment0, comment1], at: 1)
 		assertThat(sut, isRendering: [comment0, comment1])
 	}
 
-	func test_loadCommentsCompletion_rendersSuccessfullyLoadedEmptyCommentsAfterNonEmptyComments() {
+	func test_loadCommentsCompletion_rendersSuccessfullyLoadedEmptyCommentsAfterNonEmptyComments() async {
 		let comment = makeComment()
 		let (sut, loader) = makeSUT()
 
 		sut.simulateAppearance()
-		loader.completeLoading(with: [comment], at: 0)
+		await loader.completeLoading(with: [comment], at: 0)
 		assertThat(sut, isRendering: [comment])
 
 		sut.simulateUserInitiatedReload()
-		loader.completeLoading(with: [], at: 1)
+		await loader.completeLoading(with: [], at: 1)
 		assertThat(sut, isRendering: [])
 	}
 
-	func test_loadCommentsCompletion_doesNotAlterCurrentRenderingStateOnError() {
+	func test_loadCommentsCompletion_doesNotAlterCurrentRenderingStateOnError() async {
 		let comment = makeComment()
 		let (sut, loader) = makeSUT()
 
 		sut.simulateAppearance()
-		loader.completeLoading(with: [comment], at: 0)
+		await loader.completeLoading(with: [comment], at: 0)
 		assertThat(sut, isRendering: [comment])
 
 		sut.simulateUserInitiatedReload()
-		loader.completeLoadingWithError(at: 1)
+		await loader.completeLoadingWithError(at: 1)
 		assertThat(sut, isRendering: [comment])
 	}
 
-	func test_loadCommentsCompletion_rendersErrorMessageOnErrorUntilNextReload() {
+	func test_loadCommentsCompletion_rendersErrorMessageOnErrorUntilNextReload() async {
 		let (sut, loader) = makeSUT()
 
 		sut.simulateAppearance()
 		XCTAssertEqual(sut.errorMessage, nil)
 
-		loader.completeLoadingWithError(at: 0)
+		await loader.completeLoadingWithError(at: 0)
 		XCTAssertEqual(sut.errorMessage, loadError)
 
 		sut.simulateUserInitiatedReload()
 		XCTAssertEqual(sut.errorMessage, nil)
 	}
 
-	func test_tapOnErrorView_hidesErrorMessage() {
+	func test_tapOnErrorView_hidesErrorMessage() async {
 		let (sut, loader) = makeSUT()
 
 		sut.simulateAppearance()
 		XCTAssertEqual(sut.errorMessage, nil)
 
-		loader.completeLoadingWithError(at: 0)
+		await loader.completeLoadingWithError(at: 0)
 		XCTAssertEqual(sut.errorMessage, loadError)
 
 		sut.simulateTapOnErrorMessage()
 		XCTAssertEqual(sut.errorMessage, nil)
 	}
 
-	func test_loadingCommentsIndicator_isVisibleWhileLoadingComments() {
+	func test_loadingCommentsIndicator_isVisibleWhileLoadingComments() async {
 		let (sut, loader) = makeSUT()
 
 		sut.simulateAppearance()
 		XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once view appears")
 
-		loader.completeLoading(at: 0)
+		await loader.completeLoading(at: 0)
 		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once loading completes")
 
 		sut.simulateUserInitiatedReload()
 		XCTAssertTrue(sut.isShowingLoadingIndicator, "Expected loading indicator once user initiates a reload")
 
-		loader.completeLoadingWithError(at: 1)
+		await loader.completeLoadingWithError(at: 1)
 		XCTAssertFalse(sut.isShowingLoadingIndicator, "Expected no loading indicator once loading completes with error")
 	}
 
@@ -137,9 +136,14 @@ class VideoCommentsUIIntegrationTests: XCTestCase {
 		line: UInt = #line
 	) -> (sut: ListViewController, loader: LoaderSpy) {
 		let loader = LoaderSpy()
-		let sut = VideoCommentsUIComposer.commentsComposedWith(commentsLoader: loader.loadPublisher)
+		let sut = VideoCommentsUIComposer.commentsComposedWith(commentsLoader: loader.load)
 		trackForMemoryLeaks(loader, file: file, line: line)
 		trackForMemoryLeaks(sut, file: file, line: line)
+
+		addTeardownBlock { [weak loader] in
+			loader?.cancelPendingRequests()
+		}
+
 		return (sut, loader)
 	}
 
@@ -187,25 +191,58 @@ extension VideoCommentsUIIntegrationTests {
 
 	@MainActor
 	class LoaderSpy {
-		private var requests = [PassthroughSubject<[VideoComment], Error>]()
+		private var requests = [(
+			stream: AsyncThrowingStream<[VideoComment], Error>,
+			continuation: AsyncThrowingStream<[VideoComment], Error>.Continuation,
+			result: AsyncResult?
+		)]()
+
+		private struct NoResponse: Error {}
 
 		var loadCallCount: Int {
 			return requests.count
 		}
 
-		func loadPublisher() -> AnyPublisher<[VideoComment], Error> {
-			let publisher = PassthroughSubject<[VideoComment], Error>()
-			requests.append(publisher)
-			return publisher.eraseToAnyPublisher()
+		func load() async throws -> [VideoComment] {
+			let (stream, continuation) = AsyncThrowingStream<[VideoComment], Error>.makeStream()
+			let index = requests.count
+			requests.append((stream, continuation, nil))
+
+			do {
+				for try await result in stream {
+					try Task.checkCancellation()
+					requests[index].result = .success
+					return result
+				}
+
+				try Task.checkCancellation()
+
+				throw NoResponse()
+			} catch {
+				requests[index].result = Task.isCancelled ? .cancelled : .failure
+				throw error
+			}
 		}
 
-		func completeLoading(with comments: [VideoComment] = [], at index: Int = 0) {
-			requests[index].send(comments)
-			requests[index].send(completion: .finished)
+		func completeLoading(with comments: [VideoComment] = [], at index: Int = 0) async {
+			requests[index].continuation.yield(comments)
+			requests[index].continuation.finish()
+
+			while requests[index].result == nil { RunLoop.current.run(until: Date()) }
 		}
 
-		func completeLoadingWithError(at index: Int = 0) {
-			requests[index].send(completion: .failure(anyNSError()))
+		func completeLoadingWithError(at index: Int = 0) async {
+			requests[index].continuation.finish(throwing: anyNSError())
+
+			while requests[index].result == nil { RunLoop.current.run(until: Date()) }
+		}
+
+		func cancelPendingRequests() {
+			for (index, request) in requests.enumerated() where request.result == nil {
+				request.continuation.finish(throwing: CancellationError())
+
+				while requests[index].result == nil { RunLoop.current.run(until: Date()) }
+			}
 		}
 	}
 }

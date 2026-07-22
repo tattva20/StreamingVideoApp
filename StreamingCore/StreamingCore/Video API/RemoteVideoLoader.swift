@@ -5,7 +5,6 @@
 //  Copyright by Octavio Rojas all rights reserved.
 //
 import Foundation
-import Combine
 
 public final class RemoteVideoLoader {
 	private let url: URL
@@ -23,18 +22,18 @@ public final class RemoteVideoLoader {
 }
 
 extension RemoteVideoLoader: VideoLoader {
-	public func load() -> AnyPublisher<[Video], Swift.Error> {
-		client.getPublisher(url: url)
-			.tryMap { data, response in
-				do {
-					return try VideoItemsMapper.map(data, from: response)
-				} catch {
-					throw Error.invalidData
-				}
-			}
-			.mapError { error in
-				error as? RemoteVideoLoader.Error ?? .connectivity
-			}
-			.eraseToAnyPublisher()
+	public func load() async throws -> [Video] {
+		let data: Data
+		let response: HTTPURLResponse
+		do {
+			(data, response) = try await client.get(from: url)
+		} catch {
+			throw Error.connectivity
+		}
+		do {
+			return try VideoItemsMapper.map(data, from: response)
+		} catch {
+			throw Error.invalidData
+		}
 	}
 }

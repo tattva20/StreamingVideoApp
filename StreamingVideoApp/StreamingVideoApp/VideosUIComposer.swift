@@ -5,7 +5,6 @@
 //  Copyright by Octavio Rojas all rights reserved.
 //
 import UIKit
-import Combine
 import StreamingCore
 import StreamingCoreiOS
 
@@ -13,10 +12,10 @@ import StreamingCoreiOS
 public final class VideosUIComposer {
     private init() {}
 
-    private typealias VideosPresentationAdapter = LoadResourcePresentationAdapter<Paginated<Video>, VideosViewAdapter>
+    private typealias VideosPresentationAdapter = AsyncLoadResourcePresentationAdapter<Paginated<Video>, VideosViewAdapter>
 
     public static func videosComposedWith(
-        videoLoader: @MainActor @escaping () -> AnyPublisher<Paginated<Video>, Error>,
+        videoLoader: @MainActor @escaping () async throws -> Paginated<Video>,
         imageLoader: @MainActor @escaping (URL) async throws -> Data,
         selection: @MainActor @escaping (Video) -> Void = { _ in }
     ) -> ListViewController {

@@ -6,51 +6,32 @@
 //
 
 import XCTest
-import Combine
 import StreamingCore
 @testable import StreamingVideoApp
 
 @MainActor
 final class LoadResourcePresentationAdapterTests: XCTestCase {
-	private var cancellables = Set<AnyCancellable>()
 
 	override func tearDown() {
 		super.tearDown()
-		cancellables.removeAll()
 		for _ in 0..<3 {
 			RunLoop.current.run(until: Date())
 		}
 	}
 
-	// MARK: - Cancellation Tests
-
-	func test_loadResource_cancelsExistingRequestOnNewLoad() {
-		var cancelCount = 0
-		let loader = makeDelayedLoader(cancelHandler: { cancelCount += 1 })
-		let sut = makeSUT(loader: loader)
-
-		sut.loadResource()
-		sut.loadResource()
-
-		XCTAssertEqual(cancelCount, 1, "Expected first load to be cancelled when second load starts")
-	}
-
-	func test_loadResource_allowsNewLoadAfterCancellation() {
+	func test_init_doesNotLoadResource() {
 		var loadCount = 0
-		let loader = makeDelayedLoader(loadHandler: { loadCount += 1 })
-		let sut = makeSUT(loader: loader)
+		_ = makeSUT(loader: makeHangingLoader(loadHandler: { loadCount += 1 }))
 
-		sut.loadResource()
-		sut.loadResource()
-
-		XCTAssertEqual(loadCount, 2, "Expected two load attempts")
+		XCTAssertEqual(loadCount, 0, "Expected no loading before load is requested")
 	}
 
 	func test_loadResource_notifiesLoadingStartOnEachLoad() {
 		let presenter = LoadingViewSpy()
-		let sut = makeSUT(loader: makeDelayedLoader(), presenter: presenter)
+		let sut = makeSUT(loader: makeHangingLoader(), presenter: presenter)
 
 		sut.loadResource()
+		sut.didCancelImageRequest()
 		sut.loadResource()
 
 		XCTAssertEqual(presenter.loadingCallCount, 2, "Expected loading notification on each load attempt")
@@ -59,7 +40,7 @@ final class LoadResourcePresentationAdapterTests: XCTestCase {
 	func test_loadResource_deliversResourceOnSuccess() async {
 		let expectedResource = "test resource"
 		let presenter = LoadingViewSpy()
-		let sut = makeSUT(loader: makeImmediateLoader(result: .success(expectedResource)), presenter: presenter)
+		let sut = makeSUT(loader: { expectedResource }, presenter: presenter)
 
 		sut.loadResource()
 		await Task.yield()
@@ -71,7 +52,7 @@ final class LoadResourcePresentationAdapterTests: XCTestCase {
 
 	func test_loadResource_deliversErrorOnFailure() async {
 		let presenter = LoadingViewSpy()
-		let sut = makeSUT(loader: makeImmediateLoader(result: .failure(anyNSError())), presenter: presenter)
+		let sut = makeSUT(loader: { throw self.anyNSError() }, presenter: presenter)
 
 		sut.loadResource()
 		await Task.yield()
@@ -81,15 +62,27 @@ final class LoadResourcePresentationAdapterTests: XCTestCase {
 		XCTAssertEqual(presenter.loadingStates.last, false, "Expected loading to stop after failure")
 	}
 
+	func test_didCancelImageRequest_allowsNewLoadAfterCancellation() {
+		var loadCount = 0
+		let sut = makeSUT(loader: makeHangingLoader(loadHandler: { loadCount += 1 }))
+
+		sut.loadResource()
+		XCTAssertEqual(loadCount, 1, "Expected first load attempt")
+
+		sut.didCancelImageRequest()
+		sut.loadResource()
+		XCTAssertEqual(loadCount, 2, "Expected new load attempt after cancellation")
+	}
+
 	// MARK: - Helpers
 
 	private func makeSUT(
-		loader: @escaping () -> AnyPublisher<String, Error>,
+		loader: @escaping () async throws -> String,
 		presenter: LoadingViewSpy? = nil,
 		file: StaticString = #filePath,
 		line: UInt = #line
-	) -> LoadResourcePresentationAdapter<String, ResourceViewSpy> {
-		let sut = LoadResourcePresentationAdapter<String, ResourceViewSpy>(loader: loader)
+	) -> AsyncLoadResourcePresentationAdapter<String, ResourceViewSpy> {
+		let sut = AsyncLoadResourcePresentationAdapter<String, ResourceViewSpy>(loader: loader)
 		let loadingSpy = presenter ?? LoadingViewSpy()
 		let resourceView = ResourceViewSpy(loadingSpy: loadingSpy)
 		sut.presenter = LoadResourcePresenter(
@@ -101,25 +94,11 @@ final class LoadResourcePresentationAdapterTests: XCTestCase {
 		return sut
 	}
 
-	private func makeDelayedLoader(
-		loadHandler: @escaping () -> Void = {},
-		cancelHandler: @escaping () -> Void = {}
-	) -> () -> AnyPublisher<String, Error> {
+	private func makeHangingLoader(loadHandler: @escaping () -> Void = {}) -> () async throws -> String {
 		return {
 			loadHandler()
-			return Deferred {
-				Future<String, Error> { _ in
-					// Never completes - simulates slow/hanging request
-				}
-			}
-			.handleEvents(receiveCancel: cancelHandler)
-			.eraseToAnyPublisher()
-		}
-	}
-
-	private func makeImmediateLoader(result: Result<String, Error>) -> () -> AnyPublisher<String, Error> {
-		return {
-			result.publisher.eraseToAnyPublisher()
+			try await Task.sleep(nanoseconds: .max)
+			return "unused"
 		}
 	}
 

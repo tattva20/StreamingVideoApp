@@ -15,7 +15,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	var window: UIWindow?
 
 	private var videoPlayerFactory: ((Video) -> VideoPlayer)?
-	private var cancellables = Set<AnyCancellable>()
 	private var _isAutoCleanupEnabled = false
 
 	// MARK: - Public Properties for Testing
@@ -95,7 +94,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		LocalVideoLoader(store: store, currentDate: Date.init)
 	}()
 
-	private lazy var baseURL = URL(string: "https://streaming-videos-c6camc99n-financieraufc-5358s-projects.vercel.app")!
+	private lazy var baseURL = URL(string: "https://streaming-videos-api.vercel.app")!
 
 	private lazy var navigationController = UINavigationController(
 		rootViewController: VideosUIComposer.videosComposedWith(
@@ -157,10 +156,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		let commentsController = VideoCommentsUIComposer.commentsComposedWith(
 			commentsLoader: { [httpClient, baseURL] in
 				let url = VideoCommentsEndpoint.get(video.id).url(baseURL: baseURL)
-				return httpClient
-					.getPublisher(url: url)
-					.tryMap(VideoCommentsMapper.map)
-					.eraseToAnyPublisher()
+				let (data, response) = try await httpClient.get(from: url)
+				return try VideoCommentsMapper.map(data, from: response)
 			})
 
 		let player = videoPlayerFactory?(video)
@@ -173,35 +170,29 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		navigationController.pushViewController(videoPlayerController, animated: true)
 	}
 
-	private func makeRemoteVideoLoaderWithLocalFallback() -> AnyPublisher<Paginated<Video>, Error> {
-		makeRemoteVideoLoader()
-			.receive(on: scheduler)
-			.caching(to: localVideoLoader)
-			.fallback(to: localVideoLoader.loadPublisher)
-			.map(makeFirstPage)
-			.eraseToAnyPublisher()
+	private func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
+		do {
+			let items = try await makeRemoteVideoLoader()
+			try? localVideoLoader.save(items)
+			return makeFirstPage(items: items)
+		} catch {
+			return makeFirstPage(items: try localVideoLoader.load())
+		}
 	}
 
-	private func makeRemoteLoadMoreLoader(last: Video?) -> AnyPublisher<Paginated<Video>, Error> {
-		localVideoLoader.loadPublisher()
-			.zip(makeRemoteVideoLoader(after: last))
-			.map { (cachedItems, newItems) in
-				(cachedItems + newItems, newItems.last)
-			}
-			.map(makePage)
-			.receive(on: scheduler)
-			.caching(to: localVideoLoader)
-			.subscribe(on: scheduler)
-			.eraseToAnyPublisher()
+	private func makeRemoteLoadMoreLoader(last: Video?) async throws -> Paginated<Video> {
+		async let remote = makeRemoteVideoLoader(after: last)
+		let cachedItems = try localVideoLoader.load()
+		let newItems = try await remote
+		let items = cachedItems + newItems
+		try? localVideoLoader.save(items)
+		return makePage(items: items, last: newItems.last)
 	}
 
-	private func makeRemoteVideoLoader(after: Video? = nil) -> AnyPublisher<[Video], Error> {
+	private func makeRemoteVideoLoader(after: Video? = nil) async throws -> [Video] {
 		let url = VideoEndpoint.get(after: after).url(baseURL: baseURL)
-
-		return httpClient
-			.getPublisher(url: url)
-			.tryMap(VideoItemsMapper.map)
-			.eraseToAnyPublisher()
+		let (data, response) = try await httpClient.get(from: url)
+		return try VideoItemsMapper.map(data, from: response)
 	}
 
 	private func makeFirstPage(items: [Video]) -> Paginated<Video> {
@@ -209,8 +200,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	}
 
 	private func makePage(items: [Video], last: Video?) -> Paginated<Video> {
-		Paginated(items: items, loadMorePublisher: last.map { last in
-			{ self.makeRemoteLoadMoreLoader(last: last) }
+		Paginated(items: items, loadMore: last.map { last in
+			{ @MainActor @Sendable in try await self.makeRemoteLoadMoreLoader(last: last) }
 		})
 	}
 

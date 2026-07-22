@@ -8,28 +8,6 @@ import Foundation
 import Combine
 
 public extension Publisher {
-    func fallback(to fallbackPublisher: @escaping () -> AnyPublisher<Output, Failure>) -> AnyPublisher<Output, Failure> {
-        self.catch { _ in fallbackPublisher() }.eraseToAnyPublisher()
-    }
-}
-
-public extension Publisher where Output == [Video] {
-    func caching(to cache: VideoCache) -> AnyPublisher<Output, Failure> {
-        handleEvents(receiveOutput: { videos in
-            try? cache.save(videos)
-        }).eraseToAnyPublisher()
-    }
-}
-
-public extension Publisher where Output == Paginated<Video> {
-    func caching(to cache: VideoCache) -> AnyPublisher<Output, Failure> {
-        handleEvents(receiveOutput: { page in
-            try? cache.save(page.items)
-        }).eraseToAnyPublisher()
-    }
-}
-
-public extension Publisher {
     func dispatchOnMainThread() -> AnyPublisher<Output, Failure> {
         receive(on: DispatchQueue.immediateWhenOnMainThreadScheduler).eraseToAnyPublisher()
     }
@@ -157,44 +135,6 @@ public struct AnyScheduler<SchedulerTimeType: Strideable, SchedulerOptions>: Sch
     public func schedule(after date: SchedulerTimeType, interval: SchedulerTimeType.Stride, tolerance: SchedulerTimeType.Stride, options: SchedulerOptions?, _ action: @escaping () -> Void) -> Cancellable {
         _scheduleAfterInterval(date, interval, tolerance, options, action)
     }
-}
-
-public extension HTTPClient {
-    typealias Publisher = AnyPublisher<(Data, HTTPURLResponse), Error>
-
-    @MainActor
-    func getPublisher(url: URL) -> Publisher {
-        var task: Task<Void, Never>?
-
-        return Deferred {
-            Future { completion in
-                nonisolated(unsafe) let uncheckedCompletion = completion
-                task = Task.immediate {
-                    do {
-                        let result = try await self.get(from: url)
-                        uncheckedCompletion(.success(result))
-                    } catch {
-                        uncheckedCompletion(.failure(error))
-                    }
-                }
-            }
-        }
-        .handleEvents(receiveCancel: { task?.cancel() })
-        .eraseToAnyPublisher()
-    }
-}
-
-public extension LocalVideoLoader {
-	typealias Publisher = AnyPublisher<[Video], Error>
-
-	func loadPublisher() -> Publisher {
-		Deferred {
-			Future { completion in
-				completion(Result { try self.load() })
-			}
-		}
-		.eraseToAnyPublisher()
-	}
 }
 
 public extension VideoImageDataLoader {

@@ -5,16 +5,15 @@
 //  Copyright by Octavio Rojas all rights reserved.
 //
 import UIKit
-import Combine
 import StreamingCore
 import StreamingCoreiOS
 
 @MainActor
 public enum VideoCommentsUIComposer {
-	private typealias CommentsPresentationAdapter = LoadResourcePresentationAdapter<[VideoComment], VideoCommentsViewAdapter>
+	private typealias CommentsPresentationAdapter = AsyncLoadResourcePresentationAdapter<[VideoComment], VideoCommentsViewAdapter>
 
 	public static func commentsComposedWith(
-		commentsLoader: @MainActor @escaping () -> AnyPublisher<[VideoComment], Error>
+		commentsLoader: @MainActor @escaping () async throws -> [VideoComment]
 	) -> ListViewController {
 		let presentationAdapter = CommentsPresentationAdapter(loader: commentsLoader)
 
