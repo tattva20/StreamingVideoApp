@@ -7,7 +7,6 @@
 import os
 import UIKit
 import CoreData
-import Combine
 import StreamingCore
 import StreamingCoreiOS
 
@@ -33,8 +32,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		)
 		let imageCleaner = ImageCacheCleaner(
 			clearAction: {
-				// Image cache is managed through VideoImageDataStore
-				// Clear happens automatically with video cache invalidation
 				return 0
 			}
 		)
@@ -60,17 +57,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		LoggingConfiguration.makeLogger()
 	}()
 
-	private lazy var scheduler: AnyDispatchQueueScheduler = {
-		if let store = store as? CoreDataVideoStore {
-			return .scheduler(for: store)
-		}
-
-		return DispatchQueue(
-			label: "com.streamingvideoapp.infra.queue",
-			qos: .userInitiated
-		).eraseToAnyScheduler()
-	}()
-
 	private lazy var httpClient: HTTPClient = {
 		URLSessionHTTPClient(session: URLSession(configuration: .ephemeral))
 	}()
@@ -90,16 +76,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		}
 	}()
 
-	private lazy var localVideoLoader: LocalVideoLoader = {
-		LocalVideoLoader(store: store, currentDate: Date.init)
-	}()
-
-	private lazy var baseURL = URL(string: "https://streaming-videos-api.vercel.app")!
+	private lazy var videoService = VideoService(httpClient: httpClient, store: store, logger: logger)
 
 	private lazy var navigationController = UINavigationController(
 		rootViewController: VideosUIComposer.videosComposedWith(
-			videoLoader: makeRemoteVideoLoaderWithLocalFallback,
-			imageLoader: loadLocalImageWithRemoteFallback,
+			videoLoader: videoService.loadRemoteVideosWithLocalFallback,
+			imageLoader: videoService.loadLocalImageWithRemoteFallback,
 			selection: showVideoPlayer))
 
 	convenience init(
@@ -122,8 +104,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	}
 
 	private func configureAudioSession() {
-		// Skip audio session configuration during tests to avoid simulator-only malloc crash
-		// See: https://stackoverflow.com/questions/78182592/a-fix-for-addinstanceforfactory-no-factory-registered-for-id-cfuuid-0x60000
 		guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
 
 		let audioSessionConfigurator = AVAudioSessionAdapter()
@@ -143,22 +123,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	}
 
 	func sceneWillResignActive(_ scene: UIScene) {
-		scheduler.schedule { [localVideoLoader, logger] in
-			do {
-				try localVideoLoader.validateCache()
-			} catch {
-				logger.error("Failed to validate cache with error: \(error.localizedDescription)")
-			}
-		}
+		videoService.validateCache()
 	}
 
 	private func showVideoPlayer(for video: Video) {
 		let commentsController = VideoCommentsUIComposer.commentsComposedWith(
-			commentsLoader: { [httpClient, baseURL] in
-				let url = VideoCommentsEndpoint.get(video.id).url(baseURL: baseURL)
-				let (data, response) = try await httpClient.get(from: url)
-				return try VideoCommentsMapper.map(data, from: response)
-			})
+			commentsLoader: videoService.loadComments(for: video))
 
 		let player = videoPlayerFactory?(video)
 		let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(
@@ -168,89 +138,5 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 			analyticsLogger: analyticsLogger,
 			structuredLogger: structuredLogger)
 		navigationController.pushViewController(videoPlayerController, animated: true)
-	}
-
-	private func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
-		do {
-			let items = try await makeRemoteVideoLoader()
-			try? localVideoLoader.save(items)
-			return makeFirstPage(items: items)
-		} catch {
-			return makeFirstPage(items: try localVideoLoader.load())
-		}
-	}
-
-	private func makeRemoteLoadMoreLoader(last: Video?) async throws -> Paginated<Video> {
-		async let remote = makeRemoteVideoLoader(after: last)
-		let cachedItems = try localVideoLoader.load()
-		let newItems = try await remote
-		let items = cachedItems + newItems
-		try? localVideoLoader.save(items)
-		return makePage(items: items, last: newItems.last)
-	}
-
-	private func makeRemoteVideoLoader(after: Video? = nil) async throws -> [Video] {
-		let url = VideoEndpoint.get(after: after).url(baseURL: baseURL)
-		let (data, response) = try await httpClient.get(from: url)
-		return try VideoItemsMapper.map(data, from: response)
-	}
-
-	private func makeFirstPage(items: [Video]) -> Paginated<Video> {
-		makePage(items: items, last: items.last)
-	}
-
-	private func makePage(items: [Video], last: Video?) -> Paginated<Video> {
-		Paginated(items: items, loadMore: last.map { last in
-			{ @MainActor @Sendable in try await self.makeRemoteLoadMoreLoader(last: last) }
-		})
-	}
-
-	private func loadLocalImageWithRemoteFallback(url: URL) async throws -> Data {
-		do {
-			return try await loadLocalImage(url: url)
-		} catch {
-			return try await loadAndCacheRemoteImage(url: url)
-		}
-	}
-
-	private func loadLocalImage(url: URL) async throws -> Data {
-		try await store.schedule { [store] in
-			let localImageLoader = LocalVideoImageDataLoader(store: store)
-			let imageData = try localImageLoader.loadImageData(from: url)
-			return imageData
-		}
-	}
-
-	private func loadAndCacheRemoteImage(url: URL) async throws -> Data {
-		let (data, response) = try await httpClient.get(from: url)
-		let imageData = try VideoImageDataMapper.map(data, from: response)
-		await store.schedule { [store] in
-			let localImageLoader = LocalVideoImageDataLoader(store: store)
-			try? localImageLoader.save(data, for: url)
-		}
-		return imageData
-	}
-}
-
-protocol StoreScheduler {
-	@MainActor
-	func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T
-}
-
-extension CoreDataVideoStore: StoreScheduler {
-	@MainActor
-	func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T {
-		if contextQueue == .main {
-			return try action()
-		} else {
-			return try await perform(action)
-		}
-	}
-}
-
-extension InMemoryVideoStore: StoreScheduler {
-	@MainActor
-	func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T {
-		try action()
 	}
 }
