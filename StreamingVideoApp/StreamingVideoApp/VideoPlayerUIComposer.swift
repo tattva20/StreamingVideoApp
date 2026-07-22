@@ -48,6 +48,24 @@ public extension VideoPlayerViewController {
 	}
 }
 
+private nonisolated(unsafe) var playbackCoordinatorKey: UInt8 = 0
+
+extension VideoPlayerViewController {
+	var playbackCoordinator: PlaybackCoordinator? {
+		get {
+			objc_getAssociatedObject(self, &playbackCoordinatorKey) as? PlaybackCoordinator
+		}
+		set {
+			objc_setAssociatedObject(
+				self,
+				&playbackCoordinatorKey,
+				newValue,
+				.OBJC_ASSOCIATION_RETAIN_NONATOMIC
+			)
+		}
+	}
+}
+
 @MainActor
 public enum VideoPlayerUIComposer {
 	public static func videoPlayerComposedWith(
@@ -125,6 +143,15 @@ public enum VideoPlayerUIComposer {
 		controller.loadViewIfNeeded()
 		if let avPlayer = basePlayer as? AVPlayerVideoPlayer {
 			avPlayer.attach(to: controller.playerView)
+
+			let coordinator = PlaybackCoordinator(
+				player: avPlayer.player,
+				stateMachine: stateMachine,
+				performanceAdapter: performanceAdapter,
+				onTimeUpdate: { [weak controller] _ in controller?.updateTimeDisplay() }
+			)
+			coordinator.start()
+			controller.playbackCoordinator = coordinator
 		}
 
 		let pipController = PictureInPictureController()

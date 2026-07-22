@@ -15,11 +15,15 @@ public final class AVPlayerVideoPlayer: VideoPlayer {
 	public var isMuted: Bool = false
 
 	public var currentTime: TimeInterval {
-		player.currentTime().seconds
+		let seconds = player.currentTime().seconds
+		return seconds.isFinite ? seconds : 0
 	}
 
 	public var duration: TimeInterval {
-		player.currentItem?.duration.seconds ?? 0
+		guard let seconds = player.currentItem?.duration.seconds, seconds.isFinite else {
+			return 0
+		}
+		return seconds
 	}
 
 	public var volume: Float {
