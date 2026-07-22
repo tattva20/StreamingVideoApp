@@ -11,6 +11,8 @@ public final class PictureInPictureController: NSObject, PictureInPictureControl
 	private var pipController: AVPictureInPictureController?
 	private weak var playerView: PlayerView?
 
+	public var onRestoreUserInterface: ((@escaping (Bool) -> Void) -> Void)?
+
 	public var isPictureInPictureActive: Bool {
 		pipController?.isPictureInPictureActive ?? false
 	}
@@ -25,6 +27,7 @@ public final class PictureInPictureController: NSObject, PictureInPictureControl
 		self.playerView = playerView
 		pipController = AVPictureInPictureController(playerLayer: playerView.playerLayer)
 		pipController?.delegate = self
+		pipController?.canStartPictureInPictureAutomaticallyFromInline = true
 	}
 
 	public func togglePictureInPicture() {
@@ -67,5 +70,13 @@ extension PictureInPictureController: AVPictureInPictureControllerDelegate {
 
 	public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
 		// Handle PiP start failure
+	}
+
+	public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+		if let onRestoreUserInterface {
+			onRestoreUserInterface(completionHandler)
+		} else {
+			completionHandler(true)
+		}
 	}
 }
