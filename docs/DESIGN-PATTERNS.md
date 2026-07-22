@@ -287,14 +287,20 @@ public final class AVPlayerStateAdapter: @unchecked Sendable {
 ```
 
 **Bridge Diagram:**
-```
-┌─────────────────┐          ┌─────────────────┐          ┌─────────────────┐
-│    AVPlayer     │──────────│AVPlayerState    │──────────│ PlaybackState   │
-│ (Apple API)     │ KVO      │   Adapter       │ Action   │   Machine       │
-│                 │──────────│                 │──────────│                 │
-│ timeControlStatus│         │ handleStatus()  │          │ send(action)    │
-│ currentItem.status│        │ sendAction()    │          │                 │
-└─────────────────┘          └─────────────────┘          └─────────────────┘
+```mermaid
+flowchart LR
+    A["<b>AVPlayer</b><br/><i>(Apple API)</i><br/>timeControlStatus<br/>currentItem.status"]
+    B["<b>AVPlayerStateAdapter</b><br/>handleStatus()<br/>sendAction()"]
+    C["<b>PlaybackStateMachine</b><br/>send(action)"]
+    A -->|KVO| B
+    B -->|Action| C
+
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class A impure;
+    class B neutral;
+    class C core;
 ```
 
 ### AVAudioSessionAdapter
@@ -337,11 +343,11 @@ Creates the complete video list UI with all dependencies:
 ```swift
 public enum VideosUIComposer {
     public static func videosComposedWith(
-        videoLoader: @escaping () -> AnyPublisher<Paginated<Video>, Error>,
-        imageLoader: @escaping (URL) -> VideoImageDataLoader.Publisher,
+        videoLoader: @MainActor @escaping () async throws -> Paginated<Video>,
+        imageLoader: @MainActor @escaping (URL) async throws -> Data,
         selection: @escaping (Video) -> Void
     ) -> ListViewController {
-        let presentationAdapter = LoadResourcePresentationAdapter<Paginated<Video>, VideosViewAdapter>(
+        let presentationAdapter = AsyncLoadResourcePresentationAdapter<Paginated<Video>, VideosViewAdapter>(
             loader: videoLoader
         )
 
@@ -574,7 +580,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Create UI
         let videosController = VideosUIComposer.videosComposedWith(
-            videoLoader: { loaderWithFallback.loadPublisher() },
+            videoLoader: { Paginated(items: try await loaderWithFallback.load()) },
             imageLoader: makeImageLoader,
             selection: { [weak self] video in
                 self?.showVideoPlayer(video)
@@ -599,33 +605,22 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 ## Pattern Relationships
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Composition Root                              │
-│                    (SceneDelegate)                               │
-│                                                                  │
-│   Creates:                                                       │
-│   ┌───────────────┐    ┌───────────────┐    ┌───────────────┐   │
-│   │   Factory     │    │   Composite   │    │   Decorator   │   │
-│   │  (Composer)   │    │   (Logger)    │    │  (Caching)    │   │
-│   └───────────────┘    └───────────────┘    └───────────────┘   │
-│          │                    │                    │            │
-│          └────────────────────┼────────────────────┘            │
-│                               │                                  │
-│                               ▼                                  │
-│                    ┌───────────────────┐                        │
-│                    │     Adapter       │                        │
-│                    │  (AVPlayer →      │                        │
-│                    │   StateMachine)   │                        │
-│                    └───────────────────┘                        │
-│                               │                                  │
-│                               ▼                                  │
-│                    ┌───────────────────┐                        │
-│                    │    Strategy       │                        │
-│                    │   (Bitrate,       │                        │
-│                    │    Preload)       │                        │
-│                    └───────────────────┘                        │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph CR["Composition Root (SceneDelegate) — Creates:"]
+        F["Factory<br/><i>(Composer)</i>"]
+        C["Composite<br/><i>(Logger)</i>"]
+        D["Decorator<br/><i>(Caching)</i>"]
+    end
+    AD["Adapter<br/><i>(AVPlayer &rarr; StateMachine)</i>"]
+    ST["Strategy<br/><i>(Bitrate, Preload)</i>"]
+    F --> AD
+    C --> AD
+    D --> AD
+    AD --> ST
+
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    class F,C,D,AD,ST neutral;
 ```
 
 ---

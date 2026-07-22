@@ -6,26 +6,9 @@ The Video Feed feature provides a paginated, cacheable list of videos with pull-
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Video Feed                              │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  🎬 Video Thumbnail          │  Title              │    │
-│  │                              │  Description...     │    │
-│  │                              │  Duration: 2:34     │    │
-│  └─────────────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  🎬 Video Thumbnail          │  Title              │    │
-│  │                              │  Description...     │    │
-│  │                              │  Duration: 5:12     │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                        ...                                   │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │              Loading more...                         │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="../images/video-feed.svg" alt="Video Feed screen mockup" width="480">
+</p>
 
 ---
 
@@ -88,12 +71,19 @@ public final class RemoteVideoLoader: VideoLoader {
     private let client: HTTPClient
     private let url: URL
 
-    public func load() -> AnyPublisher<[Video], Error> {
-        client.getPublisher(url: url)
-            .tryMap { data, response in
-                try VideoItemsMapper.map(data, from: response)
-            }
-            .eraseToAnyPublisher()
+    public func load() async throws -> [Video] {
+        let data: Data
+        let response: HTTPURLResponse
+        do {
+            (data, response) = try await client.get(from: url)
+        } catch {
+            throw Error.connectivity
+        }
+        do {
+            return try VideoItemsMapper.map(data, from: response)
+        } catch {
+            throw Error.invalidData
+        }
     }
 }
 ```
@@ -123,42 +113,27 @@ public final class VideoItemsMapper {
 **File:** `StreamingCore/StreamingCore/Shared API/Paginated.swift`
 
 ```swift
-public struct Paginated<Item> {
+public struct Paginated<Item: Sendable>: Sendable {
     public let items: [Item]
-    public let loadMore: ((@escaping LoadMoreCompletion) -> Void)?
+    public let loadMore: (@Sendable () async throws -> Self)?
 
-    public typealias LoadMoreCompletion = (Result<Self, Error>) -> Void
+    public init(items: [Item], loadMore: (@Sendable () async throws -> Self)? = nil) {
+        self.items = items
+        self.loadMore = loadMore
+    }
 }
 ```
 
 ### Load More Flow
 
-```
-User scrolls to bottom
-        │
-        ▼
-┌───────────────────┐
-│ LoadMoreCell      │
-│ appears on screen │
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐
-│ loadMore closure  │
-│ is called         │
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐
-│ Fetch next page   │
-│ with after_id     │
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐
-│ Append new items  │
-│ to existing list  │
-└───────────────────┘
+```mermaid
+flowchart TB
+    A["User scrolls to bottom"]
+    B["LoadMoreCell<br/>appears on screen"]
+    C["loadMore closure<br/>is called"]
+    D["Fetch next page<br/>with after_id"]
+    E["Append new items<br/>to existing list"]
+    A --> B --> C --> D --> E
 ```
 
 ---
@@ -217,23 +192,17 @@ Triggers pagination when visible.
 
 ### Cache-First Loading
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│    Remote    │────▶│    Cache     │────▶│   Display    │
-│    Loader    │     │   Decorator  │     │              │
-└──────────────┘     └──────────────┘     └──────────────┘
-        │                   │
-        │                   ▼
-        │            ┌──────────────┐
-        │            │  Save to     │
-        │            │  Local Store │
-        │            └──────────────┘
-        │
-        ▼ (on failure)
-┌──────────────┐
-│   Fallback   │
-│   to Cache   │
-└──────────────┘
+```mermaid
+flowchart LR
+    Remote["Remote<br/>Loader"]
+    Cache["Cache<br/>Decorator"]
+    Display["Display"]
+    Save["Save to<br/>Local Store"]
+    Fallback["Fallback<br/>to Cache"]
+
+    Remote --> Cache --> Display
+    Cache --> Save
+    Remote -->|on failure| Fallback
 ```
 
 ### Video Loader Cache Decorator
@@ -277,13 +246,13 @@ public final class VideoLoaderWithFallbackComposite: VideoLoader {
 ```swift
 public enum VideosUIComposer {
     public static func videosComposedWith(
-        videoLoader: @escaping () -> AnyPublisher<Paginated<Video>, Error>,
-        imageLoader: @escaping (URL) -> VideoImageDataLoader.Publisher,
+        videoLoader: @MainActor @escaping () async throws -> Paginated<Video>,
+        imageLoader: @MainActor @escaping (URL) async throws -> Data,
         selection: @escaping (Video) -> Void
     ) -> ListViewController {
         let controller = ListViewController()
 
-        let presentationAdapter = LoadResourcePresentationAdapter(loader: videoLoader)
+        let presentationAdapter = AsyncLoadResourcePresentationAdapter(loader: videoLoader)
         controller.onRefresh = presentationAdapter.loadResource
 
         presentationAdapter.presenter = LoadResourcePresenter(

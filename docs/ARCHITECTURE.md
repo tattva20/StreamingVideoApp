@@ -8,38 +8,18 @@ This document explains how Clean Architecture is implemented in StreamingVideoAp
 
 StreamingVideoApp follows **Uncle Bob's Clean Architecture** with strict layer boundaries and dependency inversion. The architecture ensures that business logic is completely independent of frameworks, UI, and external agencies.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│                      StreamingVideoApp                          │
-│                    (Composition Root)                           │
-│                                                                 │
-│   • Dependency injection & wiring                               │
-│   • Platform-specific implementations (AVPlayer, URLSession)    │
-│   • App lifecycle management                                    │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│                      StreamingCoreiOS                           │
-│                    (iOS UI Components)                          │
-│                                                                 │
-│   • UIKit view controllers                                      │
-│   • Table/Collection view cells                                 │
-│   • UI layout and animations                                    │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│                       StreamingCore                             │
-│                 (Platform-Agnostic Core)                        │
-│                                                                 │
-│   • Domain models (Video, VideoComment, PlaybackState)          │
-│   • Use cases (Load, Cache, Validate)                           │
-│   • Presenters and ViewModels                                   │
-│   • Network and storage abstractions (protocols only)           │
-│                                                                 │
-│   ⚠️  NO UIKit/AppKit imports allowed                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    app["StreamingVideoApp<br/><i>Composition Root</i><br/>Dependency injection & wiring<br/>Platform-specific implementations (AVPlayer, URLSession)<br/>App lifecycle management"]
+    ios["StreamingCoreiOS<br/><i>iOS UI Components</i><br/>UIKit view controllers<br/>Table/Collection view cells<br/>UI layout and animations"]
+    core["StreamingCore<br/><i>Platform-Agnostic Core</i><br/>Domain models (Video, VideoComment, PlaybackState)<br/>Use cases (Load, Cache, Validate)<br/>Presenters and ViewModels<br/>Network and storage abstractions (protocols only)<br/>NO UIKit/AppKit imports allowed"]
+    app --- ios --- core
+    class app app
+    class ios neutral
+    class core core
 ```
 
 ---
@@ -48,28 +28,20 @@ StreamingVideoApp follows **Uncle Bob's Clean Architecture** with strict layer b
 
 **Dependencies point inward only.** Nothing in an inner circle can know anything about something in an outer circle.
 
-```
-                    ┌───────────────────┐
-                    │                   │
-                    │   Domain Models   │  ← Innermost (No dependencies)
-                    │   (Video, etc.)   │
-                    │                   │
-              ┌─────┴───────────────────┴─────┐
-              │                               │
-              │        Use Cases              │  ← Depends only on Domain
-              │   (VideoLoader protocol)      │
-              │                               │
-        ┌─────┴───────────────────────────────┴─────┐
-        │                                           │
-        │          Interface Adapters               │  ← Depends on Use Cases
-        │   (Presenters, ViewModels, Mappers)       │
-        │                                           │
-  ┌─────┴───────────────────────────────────────────┴─────┐
-  │                                                       │
-  │              Frameworks & Drivers                     │  ← Outermost
-  │   (URLSession, CoreData, AVPlayer, UIKit)             │
-  │                                                       │
-  └───────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    frameworks["Frameworks & Drivers<br/><i>URLSession, CoreData, AVPlayer, UIKit</i><br/><i>Outermost</i>"]
+    adapters["Interface Adapters<br/><i>Presenters, ViewModels, Mappers</i><br/><i>Depends on Use Cases</i>"]
+    usecases["Use Cases<br/><i>VideoLoader protocol</i><br/><i>Depends only on Domain</i>"]
+    domain["Domain Models<br/><i>Video, etc.</i><br/><i>Innermost — No dependencies</i>"]
+    frameworks -->|depends on| adapters -->|depends on| usecases -->|depends on| domain
+    class frameworks impure
+    class adapters neutral
+    class usecases core
+    class domain core
 ```
 
 ---
@@ -218,37 +190,41 @@ final class AVPlayerVideoPlayer: VideoPlayer {
 
 ### Loading Videos (Remote)
 
-```
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│  SceneDelegate│────▶│ RemoteVideoLoader│────▶│URLSessionHTTPClient│
-│  (Composer)   │     │   (Use Case)    │     │  (HTTP Client)   │
-└──────────────┘     └─────────────────┘     └──────────────────┘
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │VideoItemsMapper │  ← Pure transformation
-                     │  (JSON → Model) │
-                     └─────────────────┘
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │   [Video]       │  ← Domain models
-                     └─────────────────┘
+```mermaid
+flowchart TB
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    scene["SceneDelegate<br/><i>Composer</i>"]
+    loader["RemoteVideoLoader<br/><i>Use Case</i>"]
+    client["URLSessionHTTPClient<br/><i>HTTP Client</i>"]
+    mapper["VideoItemsMapper<br/><i>JSON → Model</i>"]
+    videos["[Video]<br/><i>Domain models</i>"]
+    scene --> loader --> client
+    loader --> mapper --> videos
+    class scene app
+    class loader core
+    class client impure
+    class mapper core
+    class videos core
 ```
 
 ### Presentation Flow
 
-```
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│   [Video]    │────▶│ VideoPresenter  │────▶│ [VideoViewModel] │
-│ (Domain)     │     │   (Pure)        │     │   (View-Ready)   │
-└──────────────┘     └─────────────────┘     └──────────────────┘
-                                                      │
-                                                      ▼
-                                             ┌──────────────────┐
-                                             │ViewController   │
-                                             │   (UI Layer)    │
-                                             └──────────────────┘
+```mermaid
+flowchart TB
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    video["[Video]<br/><i>Domain</i>"]
+    presenter["VideoPresenter<br/><i>Pure</i>"]
+    viewModel["[VideoViewModel]<br/><i>View-Ready</i>"]
+    vc["ViewController<br/><i>UI Layer</i>"]
+    video --> presenter --> viewModel --> vc
+    class video core
+    class presenter core
+    class viewModel neutral
+    class vc app
 ```
 
 ---

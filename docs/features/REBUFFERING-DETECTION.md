@@ -6,21 +6,12 @@ The Rebuffering Detection feature monitors playback stalls, tracks buffering eve
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    Rebuffering Detection                                │
-│                                                                         │
-│  ┌───────────────┐    ┌─────────────────────┐    ┌─────────────────┐  │
-│  │ AVPlayer      │    │ RebufferingMonitor  │    │ Consumers       │  │
-│  │ Events        │───▶│                     │───▶│                 │  │
-│  └───────────────┘    │ - bufferingStarted  │    │ - ABR Strategy  │  │
-│                       │ - bufferingEnded    │    │ - Analytics     │  │
-│  ┌───────────────┐    │ - state             │    │ - Alerts        │  │
-│  │ Buffer Empty  │───▶│ - eventsInLastMin   │    └─────────────────┘  │
-│  └───────────────┘    └─────────────────────┘                         │
-│                                                                         │
-│  Metrics: Count │ Duration │ Events/Min │ Total Time                   │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    AVE["AVPlayer<br/>Events"] --> RM
+    BE["Buffer Empty"] --> RM
+    RM["RebufferingMonitor<br/><i>bufferingStarted · bufferingEnded<br/>state · eventsInLastMin</i>"] --> CON["Consumers<br/><i>ABR Strategy · Analytics · Alerts</i>"]
+    RM -.-> MET["Metrics:<br/>Count · Duration · Events/Min · Total Time"]
 ```
 
 ---
@@ -335,22 +326,13 @@ func test_reset_clearsAllState() {
 
 ## Integration Points
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Integration Flow                         │
-│                                                             │
-│  AVPlayerPerformanceObserver                                │
-│         │                                                   │
-│         │ bufferingStarted/Ended                           │
-│         ▼                                                   │
-│  RebufferingMonitor                                        │
-│         │                                                   │
-│         ├──▶ BitrateStrategy (rebufferingRatio)           │
-│         ├──▶ PerformanceAlerts (threshold checks)          │
-│         ├──▶ Analytics (event tracking)                    │
-│         └──▶ Dashboard (QoE metrics)                       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    APO["AVPlayerPerformanceObserver"] -->|bufferingStarted/Ended| RM["RebufferingMonitor"]
+    RM --> BS["BitrateStrategy<br/><i>rebufferingRatio</i>"]
+    RM --> PA["PerformanceAlerts<br/><i>threshold checks</i>"]
+    RM --> AN["Analytics<br/><i>event tracking</i>"]
+    RM --> DB["Dashboard<br/><i>QoE metrics</i>"]
 ```
 
 ---

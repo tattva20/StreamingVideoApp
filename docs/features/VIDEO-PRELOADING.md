@@ -6,28 +6,22 @@ The Video Preloading feature anticipates user navigation and preloads upcoming v
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     Video Preloading System                             │
-│                                                                         │
-│  ┌───────────────┐    ┌─────────────────────┐    ┌─────────────────┐  │
-│  │ Current Video │    │ PredictivePreload   │    │ VideoPreloader  │  │
-│  │ Index         │───▶│ Strategy            │───▶│                 │  │
-│  └───────────────┘    └─────────────────────┘    │ - preload()     │  │
-│                                                   │ - cancel()      │  │
-│  ┌───────────────┐              │                └─────────────────┘  │
-│  │ Playlist      │              │                         │           │
-│  │               │──────────────┤                         │           │
-│  └───────────────┘              │                         ▼           │
-│                                 │                ┌─────────────────┐  │
-│  ┌───────────────┐              │                │ Preload Cache   │  │
-│  │ Network       │              ▼                │ - Video 1       │  │
-│  │ Quality       │    ┌─────────────────────┐   │ - Video 2       │  │
-│  └───────────────┘    │ Videos to Preload:  │   └─────────────────┘  │
-│                       │ - Next 1-2 videos   │                        │
-│                       │ - Based on network  │                        │
-│                       └─────────────────────┘                        │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    CVI["Current Video<br/>Index"]
+    PL["Playlist"]
+    NQ["Network<br/>Quality"]
+    ST["PredictivePreload<br/>Strategy"]
+    VP["VideoPreloader<br/><i>- preload()<br/>- cancel()</i>"]
+    VTP["Videos to Preload:<br/><i>- Next 1-2 videos<br/>- Based on network</i>"]
+    PC["Preload Cache<br/><i>- Video 1<br/>- Video 2</i>"]
+
+    CVI --> ST
+    PL --> ST
+    NQ --> ST
+    ST --> VP
+    ST --> VTP
+    VP --> PC
 ```
 
 ---
@@ -260,40 +254,15 @@ class VideoFeedViewModel {
 
 ## Preload Workflow
 
-```
-User viewing Video 3
-        │
-        ▼
-┌───────────────────────┐
-│ Strategy determines:  │
-│ - Preload Video 4     │
-│ - Preload Video 5     │
-│ (based on network)    │
-└───────────────────────┘
-        │
-        ▼
-┌───────────────────────┐
-│ Preloader starts:     │
-│ - Video 4 (High)      │
-│ - Video 5 (Medium)    │
-└───────────────────────┘
-        │
-        ▼
-User navigates to Video 4
-        │
-        ▼
-┌───────────────────────┐
-│ Video 4 loads         │
-│ instantly from cache! │
-└───────────────────────┘
-        │
-        ▼
-┌───────────────────────┐
-│ New preloads:         │
-│ - Cancel Video 5      │
-│ - Preload Video 5     │
-│ - Preload Video 6     │
-└───────────────────────┘
+```mermaid
+flowchart TB
+    A["User viewing Video 3"]
+    B["Strategy determines:<br/><i>- Preload Video 4<br/>- Preload Video 5<br/>(based on network)</i>"]
+    C["Preloader starts:<br/><i>- Video 4 (High)<br/>- Video 5 (Medium)</i>"]
+    D["User navigates to Video 4"]
+    E["Video 4 loads<br/>instantly from cache!"]
+    F["New preloads:<br/><i>- Cancel Video 5<br/>- Preload Video 5<br/>- Preload Video 6</i>"]
+    A --> B --> C --> D --> E --> F
 ```
 
 ---

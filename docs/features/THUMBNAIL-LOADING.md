@@ -6,21 +6,9 @@ The Thumbnail Loading feature provides lazy image loading with caching for video
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  ┌───────────────┐                                          │
-│  │ ░░░░░░░░░░░░░ │  Video Title                            │
-│  │ ░ Shimmer ░░░ │  Description...                         │
-│  │ ░░░░░░░░░░░░░ │                          Loading...     │
-│  └───────────────┘                                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌───────────────┐                                          │
-│  │               │  Video Title                             │
-│  │  🖼️ Image    │  Description...                          │
-│  │               │                              ✓ Loaded    │
-│  └───────────────┘                                          │
-└─────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="../images/thumbnail-loading.svg" alt="Thumbnail loading states mockup" width="520">
+</p>
 
 ---
 
@@ -184,32 +172,28 @@ public final class VideoImageDataLoaderWithFallbackComposite: VideoImageDataLoad
 
 ## Loading Flow
 
-```
-Cell becomes visible
-        │
-        ▼
-┌───────────────────┐
-│ Check memory      │
-│ cache             │────────────────┐
-└───────────────────┘                │ hit
-        │ miss                       │
-        ▼                            ▼
-┌───────────────────┐         ┌─────────────┐
-│ Check disk        │         │ Display     │
-│ cache             │────────▶│ image       │
-└───────────────────┘   hit   └─────────────┘
-        │ miss                       ▲
-        ▼                            │
-┌───────────────────┐                │
-│ Fetch from        │                │
-│ network           │────────────────┘
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐
-│ Save to disk      │
-│ cache             │
-└───────────────────┘
+```mermaid
+flowchart TB
+    A["Cell becomes visible"]
+    B["Check memory<br/>cache"]
+    C["Check disk<br/>cache"]
+    D["Fetch from<br/>network"]
+    E["Save to disk<br/>cache"]
+    F["Display<br/>image"]
+
+    A --> B
+    B -->|hit| F
+    B -->|miss| C
+    C -->|hit| F
+    C -->|miss| D
+    D --> F
+    D --> E
+
+    classDef hit fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef miss fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    class D,E miss;
+    class F app;
 ```
 
 ---

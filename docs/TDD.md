@@ -8,18 +8,18 @@ This document explains the TDD practices, testing strategies, and patterns used 
 
 Every feature in StreamingVideoApp is developed following the **Red-Green-Refactor** cycle:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  1. RED    → Write a failing test                       │
-│                                                         │
-│  2. GREEN  → Write minimum code to pass                 │
-│                                                         │
-│  3. REFACTOR → Clean up while tests pass                │
-│                                                         │
-│  ↺ Repeat                                               │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    R["1. RED<br/><i>Write a failing test</i>"] --> G["2. GREEN<br/><i>Write minimum code to pass</i>"]
+    G --> RF["3. REFACTOR<br/><i>Clean up while tests pass</i>"]
+    RF -->|Repeat| R
+
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    class R impure;
+    class G core;
+    class RF neutral;
 ```
 
 ---
@@ -28,17 +28,19 @@ Every feature in StreamingVideoApp is developed following the **Red-Green-Refact
 
 StreamingVideoApp follows the test pyramid with emphasis on unit tests:
 
-```
-                    ╱╲
-                   ╱  ╲
-                  ╱ E2E╲           End-to-End Tests
-                 ╱──────╲          (Real API)
-                ╱        ╲
-               ╱Integration╲       Integration Tests
-              ╱────────────╲       (Composed systems)
-             ╱              ╲
-            ╱   Unit Tests   ╲     Unit Tests
-           ╱──────────────────╲    (Isolated components)
+```mermaid
+flowchart TB
+    E2E["End-to-End Tests<br/><i>(Real API)</i>"]
+    INT["Integration Tests<br/><i>(Composed systems)</i>"]
+    UNIT["Unit Tests<br/><i>(Isolated components)</i>"]
+    E2E --- INT --- UNIT
+
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class E2E impure;
+    class INT neutral;
+    class UNIT core;
 ```
 
 ### Test Categories
@@ -162,24 +164,23 @@ final class ResourceCleanerSpy: ResourceCleaner, @unchecked Sendable {
 }
 ```
 
-### Actor-Based Spy
+### Async Loader Spy
+
+The `VideoLoader` boundary is `async throws`, so its spy is backed by an `AsyncThrowingStream` and awaited from `async` test methods:
 
 ```swift
-actor LoaderSpy: VideoLoader {
-    private(set) var loadCallCount = 0
-    private var completions: [(Result<[Video], Error>) -> Void] = []
+@MainActor
+final class LoaderSpy {
+    private let requests = LoaderSpy<Void, Paginated<Video>>()
 
-    func load() async throws -> [Video] {
-        loadCallCount += 1
-        return try await withCheckedThrowingContinuation { continuation in
-            completions.append { result in
-                continuation.resume(with: result)
-            }
-        }
+    var loadCallCount: Int { requests.count }
+
+    func load() async throws -> Paginated<Video> {
+        try await requests.load(())
     }
 
-    func complete(with videos: [Video]) {
-        completions.first?(.success(videos))
+    func completeLoading(with videos: [Video] = [], at index: Int = 0) async {
+        await requests.complete(with: Paginated(items: videos), at: index)
     }
 }
 ```
@@ -372,11 +373,9 @@ final class StreamingCoreAPIEndToEndTests: XCTestCase {
     }
 
     private func getVideosResult() async throws -> [Video] {
-        let client = URLSessionHTTPClient()
-        let url = URL(string: "https://api.example.com/videos")!
-        let loader = RemoteVideoLoader(client: client, url: url)
-
-        return try await loader.load()
+        let client = URLSessionHTTPClient(session: URLSession(configuration: .ephemeral))
+        let (data, response) = try await client.get(from: videosTestServerURL)
+        return try VideoItemsMapper.map(data, from: response)
     }
 }
 ```
@@ -442,18 +441,18 @@ private func makeItem(id: UUID, title: String) -> (model: Video, json: [String: 
 2. Add explicit `@MainActor` where needed
 3. Add `RunLoop.current.run(until: Date())` in tearDown
 
-### 2. Fire-and-Forget Tasks in Decorators
+### 2. Fire-and-Forget Analytics in Decorators
 
-**Problem:** Decorators with logging/analytics crash on deallocation.
+**Problem:** A `@MainActor` decorator that captured `self` inside a `Task` crashed on deallocation (deinit-isolation runtime bug).
 
-**Solution:** Use `Task.detached` with `[weak self]`:
+**Solution:** Don't capture `self`. Hoist the `Sendable` dependency into a local and let a structured `Task` capture only that — no retain, no isolated-deinit hazard, and the task keeps its priority and context (unlike `Task.detached`):
 
 ```swift
 func play() {
-    Task.detached { [weak self] in
-        await self?.logger.log(.play)
-    }
     decoratee.play()
+    let position = currentTime
+    let logger = analyticsLogger
+    Task { await logger.log(.play, position: position) }
 }
 ```
 

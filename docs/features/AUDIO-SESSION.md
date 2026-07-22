@@ -6,33 +6,13 @@ The Audio Session feature manages iOS audio session configuration for video play
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      Audio Session Management                           │
-│                                                                         │
-│  ┌─────────────────────┐    ┌─────────────────────┐                    │
-│  │ AudioSession        │    │ AVAudioSession      │                    │
-│  │ Configuring         │───▶│ Adapter             │                    │
-│  └─────────────────────┘    └─────────────────────┘                    │
-│                                      │                                  │
-│                                      ▼                                  │
-│                             ┌─────────────────────┐                    │
-│                             │ AVAudioSession      │                    │
-│                             │ .sharedInstance()   │                    │
-│                             └─────────────────────┘                    │
-│                                      │                                  │
-│  Interruptions:                      │                                  │
-│  ┌─────────────────────┐            │                                  │
-│  │ Phone Call          │──┐         │                                  │
-│  │ Siri                │  │         │                                  │
-│  │ Alarm               │  ├────────▶│ Pause/Resume Playback           │
-│  │ Other App Audio     │──┘         │                                  │
-│  └─────────────────────┘            │                                  │
-│                                      │                                  │
-│  Category: .playback                 │                                  │
-│  Mode: .moviePlayback (optional)     │                                  │
-│  Options: .mixWithOthers (optional)  │                                  │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    ASC["AudioSession<br/>Configuring"] --> ADP["AVAudioSession<br/>Adapter"]
+    ADP --> AVS["AVAudioSession<br/>.sharedInstance()"]
+    INT["Interruptions:<br/>Phone Call · Siri<br/>Alarm · Other App Audio"] --> PR["Pause/Resume Playback"]
+    AVS --> PR
+    AVS -.-> CFG["Category: .playback<br/>Mode: .moviePlayback <i>(optional)</i><br/>Options: .mixWithOthers <i>(optional)</i>"]
 ```
 
 ---
@@ -163,41 +143,14 @@ private func handleAudioSessionInterruption(_ notification: Notification) {
 
 ## Interruption Flow
 
-```
-Normal Playback                Phone Call Begins
-     │                              │
-     │                              ▼
-     │                    ┌─────────────────────┐
-     │                    │ .interruptionNotification │
-     │                    │ type: .began        │
-     │                    └─────────────────────┘
-     │                              │
-     │                              ▼
-     │                    ┌─────────────────────┐
-     │                    │ State Machine:      │
-     │                    │ audioSessionInterrupted │
-     │                    │ playing -> paused   │
-     │                    └─────────────────────┘
-     │                              │
-     │                        Phone Call Ends
-     │                              │
-     │                              ▼
-     │                    ┌─────────────────────┐
-     │                    │ .interruptionNotification │
-     │                    │ type: .ended        │
-     │                    │ shouldResume: true  │
-     │                    └─────────────────────┘
-     │                              │
-     │                              ▼
-     │                    ┌─────────────────────┐
-     │                    │ State Machine:      │
-     │                    │ audioSessionResumed │
-     │                    │ paused -> playing   │
-     │                    └─────────────────────┘
-     │                              │
-     │◀─────────────────────────────┘
-     │
-Playback Resumes
+```mermaid
+flowchart TB
+    NP["Normal Playback"] -->|Phone Call Begins| N1["interruptionNotification<br/>type: .began"]
+    N1 --> SM1["State Machine:<br/>audioSessionInterrupted<br/><i>playing → paused</i>"]
+    SM1 -->|Phone Call Ends| N2["interruptionNotification<br/>type: .ended<br/>shouldResume: true"]
+    N2 --> SM2["State Machine:<br/>audioSessionResumed<br/><i>paused → playing</i>"]
+    SM2 --> PR["Playback Resumes"]
+    PR --> NP
 ```
 
 ---

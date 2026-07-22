@@ -6,11 +6,11 @@ This document explains the Combine patterns and reactive programming practices u
 
 ## Overview
 
-StreamingVideoApp uses Apple's **Combine framework** for:
-- Asynchronous data streams
-- State management and publishing
-- Event handling
-- Functional transformations
+StreamingVideoApp uses Apple's **Combine framework** for **observation and state streams**. The video feed and comments loaders now use async/await; Combine backs the parts of the system that are genuinely stream-shaped:
+- Playback state and transition streams
+- Buffer, memory, and performance monitoring
+- Resource cleanup events
+- CoreData store scheduling (`AnyScheduler`)
 
 ---
 
@@ -20,8 +20,8 @@ StreamingVideoApp uses Apple's **Combine framework** for:
 |-----------|---------|---------|
 | `CurrentValueSubject` | State storage with current value access | `PlaybackState` |
 | `PassthroughSubject` | Event streams without state | `PlaybackTransition` |
-| `Deferred + Future` | Lazy async-to-Combine bridging | HTTP requests |
-| `AnyPublisher` | Type-erased publisher for protocols | `VideoLoader` |
+| `AnyScheduler` | Type-erased scheduler for CoreData work | Cache scheduling |
+| `AnyPublisher` | Type-erased publisher for observation | `statePublisher` |
 
 ---
 
@@ -79,81 +79,53 @@ public final class DefaultPlaybackStateMachine {
 
 ---
 
-## 3. Async-to-Combine Bridging
+## 3. Scheduling with AnyScheduler
 
 **File:** `StreamingCore/StreamingCore/Shared Combine/CombineHelpers.swift`
 
-```swift
-public extension HTTPClient {
-    @MainActor
-    func getPublisher(url: URL) -> AnyPublisher<(Data, HTTPURLResponse), Error> {
-        var task: Task<Void, Never>?
+CoreData work is dispatched through a type-erased `AnyScheduler`, keeping store access on the store's own queue:
 
-        return Deferred {
-            Future { completion in
-                task = Task {
-                    do {
-                        let result = try await self.get(from: url)
-                        completion(.success(result))
-                    } catch {
-                        completion(.failure(error))
-                    }
-                }
-            }
-        }
-        .handleEvents(receiveCancel: { task?.cancel() })
-        .eraseToAnyPublisher()
+```swift
+public typealias AnyDispatchQueueScheduler = AnyScheduler<DispatchQueue.SchedulerTimeType, DispatchQueue.SchedulerOptions>
+
+public extension AnyDispatchQueueScheduler {
+    static func scheduler(for store: CoreDataVideoStore) -> AnyDispatchQueueScheduler {
+        CoreDataVideoStoreScheduler(store: store).eraseToAnyScheduler()
     }
 }
 ```
 
 ---
 
-## 4. Functional Transformations
+## 4. Functional Side-Effects
 
-### Fallback Strategy
-
-```swift
-public extension Publisher {
-    func fallback(to fallbackPublisher: @escaping () -> AnyPublisher<Output, Failure>) -> AnyPublisher<Output, Failure> {
-        self.catch { _ in fallbackPublisher() }.eraseToAnyPublisher()
-    }
-}
-```
-
-### Caching Side-Effect
+Image data flows through a Combine caching helper — a `handleEvents` side-effect that writes successful loads to the cache:
 
 ```swift
-public extension Publisher where Output == [Video] {
-    func caching(to cache: VideoCache) -> AnyPublisher<Output, Failure> {
-        handleEvents(receiveOutput: { videos in
-            try? cache.save(videos)
+public extension Publisher where Output == Data {
+    func caching(to cache: VideoImageDataCache, for url: URL) -> AnyPublisher<Output, Failure> {
+        handleEvents(receiveOutput: { data in
+            try? cache.save(data, for: url)
         }).eraseToAnyPublisher()
     }
 }
 ```
 
-### Main Thread Dispatch
-
-```swift
-public extension Publisher {
-    func dispatchOnMainThread() -> AnyPublisher<Output, Failure> {
-        receive(on: DispatchQueue.main).eraseToAnyPublisher()
-    }
-}
-```
-
 ---
 
-## 5. Complete Data Loading Flow
+## 5. Feed and Comments Loading
+
+The feed and comments loaders are **not** Combine. They compose with async/await — remote fetch, cache write, and local fallback expressed directly:
 
 ```swift
-let loadVideos: () -> AnyPublisher<[Video], Error> = {
-    remoteLoader.load()
-        .caching(to: localCache)
-        .fallback(to: { localLoader.loadPublisher() })
-        .dispatchOnMainThread()
-        .eraseToAnyPublisher()
+func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
+    do {
+        let items = try await makeRemoteVideoLoader()
+        try? localVideoLoader.save(items)
+        return makeFirstPage(items: items)
+    } catch {
+        return makeFirstPage(items: try localVideoLoader.load())
+    }
 }
 ```
 

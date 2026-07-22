@@ -6,35 +6,27 @@ The AVPlayer Integration feature provides clean abstractions over Apple's AVPlay
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      AVPlayer Integration Layer                         │
-│                                                                         │
-│  ┌─────────────────────┐                                               │
-│  │      AVPlayer       │                                               │
-│  │   (Platform API)    │                                               │
-│  └─────────────────────┘                                               │
-│           │  KVO                                                        │
-│           │  Notifications                                              │
-│           ▼                                                             │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                     Adapter Layer                                │  │
-│  │  ┌─────────────────────┐    ┌─────────────────────────────────┐ │  │
-│  │  │ AVPlayerStateAdapter│    │ AVPlayerPerformanceObserver    │ │  │
-│  │  │                     │    │                                 │ │  │
-│  │  │ - didBecomeReady    │    │ - playbackStatePublisher       │ │  │
-│  │  │ - didStartPlaying   │    │ - bufferingStatePublisher      │ │  │
-│  │  │ - didStartBuffering │    │ - performanceEventPublisher    │ │  │
-│  │  │ - didFail           │    │                                 │ │  │
-│  │  └─────────────────────┘    └─────────────────────────────────┘ │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│           │                              │                             │
-│           ▼                              ▼                             │
-│  ┌─────────────────────┐    ┌─────────────────────────────────────┐  │
-│  │ PlaybackStateMachine│    │ Performance Monitoring              │  │
-│  │   (Domain Layer)    │    │   (Analytics, Alerts)              │  │
-│  └─────────────────────┘    └─────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    AV["AVPlayer<br/><i>(Platform API)</i>"]
+    subgraph Adapter["Adapter Layer"]
+        SA["AVPlayerStateAdapter<br/><i>- didBecomeReady<br/>- didStartPlaying<br/>- didStartBuffering<br/>- didFail</i>"]
+        PO["AVPlayerPerformanceObserver<br/><i>- playbackStatePublisher<br/>- bufferingStatePublisher<br/>- performanceEventPublisher</i>"]
+    end
+    SM["PlaybackStateMachine<br/><i>(Domain Layer)</i>"]
+    PM["Performance Monitoring<br/><i>(Analytics, Alerts)</i>"]
+
+    AV -->|KVO<br/>Notifications| Adapter
+    SA --> SM
+    PO --> PM
+
+    classDef platform fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef infra fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef domain fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class AV platform;
+    class SA,PO infra;
+    class SM domain;
+    class PM domain;
 ```
 
 ---
@@ -445,31 +437,22 @@ func test_performanceEventPublisher_emitsLoadStarted() {
 
 ### Clean Architecture Compliance
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Presentation Layer                                          │
-│   VideoPlayerViewController                                 │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Domain Layer                                                │
-│   PlaybackStateMachine (pure, testable)                    │
-│   PerformanceService (platform-agnostic)                   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Infrastructure Layer (Adapters)                             │
-│   AVPlayerStateAdapter (AVPlayer → PlaybackAction)         │
-│   AVPlayerPerformanceObserver (AVPlayer → PerformanceEvent)│
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Platform Layer                                              │
-│   AVPlayer, AVPlayerItem, AVAudioSession                   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    P["Presentation Layer<br/><i>VideoPlayerViewController</i>"]
+    D["Domain Layer<br/><i>PlaybackStateMachine (pure, testable)<br/>PerformanceService (platform-agnostic)</i>"]
+    I["Infrastructure Layer (Adapters)<br/><i>AVPlayerStateAdapter (AVPlayer &rarr; PlaybackAction)<br/>AVPlayerPerformanceObserver (AVPlayer &rarr; PerformanceEvent)</i>"]
+    PL["Platform Layer<br/><i>AVPlayer, AVPlayerItem, AVAudioSession</i>"]
+    P --> D --> I --> PL
+
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    class P app;
+    class D core;
+    class I impure;
+    class PL neutral;
 ```
 
 This separation enables:

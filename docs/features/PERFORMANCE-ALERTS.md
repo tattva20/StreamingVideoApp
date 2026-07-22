@@ -6,28 +6,15 @@ The Performance Alerts feature monitors streaming quality metrics and generates 
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     Performance Alert System                            │
-│                                                                         │
-│  ┌───────────────┐    ┌─────────────────────┐    ┌─────────────────┐  │
-│  │ Startup Time  │───▶│                     │    │ PerformanceAlert│  │
-│  └───────────────┘    │                     │    │                 │  │
-│  ┌───────────────┐    │ PerformanceThresholds│──▶│ - type          │  │
-│  │ Rebuffering   │───▶│                     │    │ - severity      │  │
-│  └───────────────┘    │ - check thresholds  │    │ - message       │  │
-│  ┌───────────────┐    │ - determine severity│    │ - suggestion    │  │
-│  │ Memory        │───▶│                     │    └─────────────────┘  │
-│  └───────────────┘    └─────────────────────┘           │             │
-│  ┌───────────────┐              │                       │             │
-│  │ Network       │──────────────┘                       ▼             │
-│  └───────────────┘                            ┌─────────────────┐     │
-│                                               │ Alert Consumers │     │
-│  Severity: info │ warning │ critical          │ - UI Display    │     │
-│                                               │ - Analytics     │     │
-│                                               │ - Auto-Response │     │
-│                                               └─────────────────┘     │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    ST["Startup Time"] --> PT
+    RB["Rebuffering"] --> PT
+    MEM["Memory"] --> PT
+    NET["Network"] --> PT
+    PT["PerformanceThresholds<br/><i>check thresholds<br/>determine severity</i>"] --> PA["PerformanceAlert<br/><i>type · severity<br/>message · suggestion</i>"]
+    PA --> AC["Alert Consumers<br/><i>UI Display · Analytics<br/>Auto-Response</i>"]
+    PA -.-> SEV["Severity: info · warning · critical"]
 ```
 
 ---
@@ -353,38 +340,12 @@ class AlertConsumer {
 
 ## Alert Flow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Alert Flow                             │
-│                                                             │
-│  Performance Event                                          │
-│         │                                                   │
-│         ▼                                                   │
-│  ┌─────────────────────┐                                   │
-│  │ Check Thresholds    │                                   │
-│  │ - acceptable?       │─── Yes ──▶ No alert              │
-│  │ - warning?          │                                   │
-│  │ - critical?         │                                   │
-│  └─────────────────────┘                                   │
-│         │ No                                                │
-│         ▼                                                   │
-│  ┌─────────────────────┐                                   │
-│  │ Create Alert        │                                   │
-│  │ - type              │                                   │
-│  │ - severity          │                                   │
-│  │ - message           │                                   │
-│  │ - suggestion        │                                   │
-│  └─────────────────────┘                                   │
-│         │                                                   │
-│         ▼                                                   │
-│  ┌─────────────────────┐                                   │
-│  │ Dispatch Alert      │                                   │
-│  │ - Analytics         │                                   │
-│  │ - Auto-response     │                                   │
-│  │ - UI notification   │                                   │
-│  └─────────────────────┘                                   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    PE["Performance Event"] --> CT{"Check Thresholds<br/>acceptable? warning? critical?"}
+    CT -->|Yes| NA["No alert"]
+    CT -->|No| CA["Create Alert<br/><i>type · severity<br/>message · suggestion</i>"]
+    CA --> DA["Dispatch Alert<br/><i>Analytics · Auto-response<br/>UI notification</i>"]
 ```
 
 ---

@@ -6,22 +6,23 @@ The Offline Support feature enables the app to work without network connectivity
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Online Mode                              │
-│                                                             │
-│    Remote API ──▶ Cache ──▶ Display                        │
-│                     │                                       │
-│                     ▼                                       │
-│               Save to Local                                 │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Online["Online Mode"]
+        direction LR
+        RA["Remote API"] --> Ca["Cache"] --> Di["Display"]
+        Ca --> SL["Save to Local"]
+    end
+    subgraph Offline["Offline Mode"]
+        direction LR
+        RA2["Remote API ✗"] --> FB["Fallback"] --> LC["Local Cache"] --> Di2["Display"]
+    end
 
-┌─────────────────────────────────────────────────────────────┐
-│                    Offline Mode                             │
-│                                                             │
-│    Remote API ✗ ──▶ Fallback ──▶ Local Cache ──▶ Display   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+    classDef ok fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef bad fill:#fce8e6,stroke:#ea4335,color:#202124;
+    class RA,Ca,Di,SL ok;
+    class RA2 bad;
+    class FB,LC,Di2 ok;
 ```
 
 ---
@@ -253,34 +254,13 @@ func makeVideoLoader() -> VideoLoader {
 
 ## Loading Flow
 
-```
-┌─────────────────┐
-│ Load Videos     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Try Remote      │
-│ Loader          │
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
- success   failure
-    │         │
-    ▼         ▼
-┌─────────┐ ┌─────────────────┐
-│ Save to │ │ Load from       │
-│ Cache   │ │ Local Cache     │
-└────┬────┘ └────────┬────────┘
-     │               │
-     └───────┬───────┘
-             │
-             ▼
-      ┌─────────────┐
-      │ Display     │
-      │ Videos      │
-      └─────────────┘
+```mermaid
+flowchart TB
+    A["Load Videos"] --> B["Try Remote<br/>Loader"]
+    B -->|success| C["Save to<br/>Cache"]
+    B -->|failure| D["Load from<br/>Local Cache"]
+    C --> E["Display<br/>Videos"]
+    D --> E
 ```
 
 ---

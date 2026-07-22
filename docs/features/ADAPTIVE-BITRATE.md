@@ -6,27 +6,13 @@ The Adaptive Bitrate feature dynamically adjusts video quality based on network 
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     Adaptive Bitrate Selection                          │
-│                                                                         │
-│  ┌───────────────┐    ┌─────────────────────┐    ┌─────────────────┐  │
-│  │ Network       │    │                     │    │ Available       │  │
-│  │ Quality       │───▶│   BitrateStrategy   │◀───│ Bitrate Levels  │  │
-│  └───────────────┘    │                     │    └─────────────────┘  │
-│                       └─────────────────────┘                          │
-│  ┌───────────────┐              │                                      │
-│  │ Buffer        │              │                                      │
-│  │ Health        │──────────────┤                                      │
-│  └───────────────┘              │                                      │
-│                                 ▼                                      │
-│  ┌───────────────┐    ┌─────────────────────┐                         │
-│  │ Rebuffering   │    │  BitrateDecision    │                         │
-│  │ Ratio         │───▶│  - upgrade          │                         │
-│  └───────────────┘    │  - downgrade        │                         │
-│                       │  - maintain         │                         │
-│                       └─────────────────────┘                         │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    NQ["Network Quality"] --> BST["BitrateStrategy"]
+    ABL["Available Bitrate Levels"] --> BST
+    BST --> BD["BitrateDecision<br/><i>upgrade · downgrade · maintain</i>"]
+    BH["Buffer Health"] --> BD
+    RR["Rebuffering Ratio"] --> BD
 ```
 
 ---

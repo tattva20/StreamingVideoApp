@@ -19,27 +19,18 @@ This creates the "**Impure → Pure → Impure**" sandwich architecture.
 
 ## The Sandwich Architecture
 
-```
-┌─────────────────────────────────────────┐
-│        IMPURE (iOS/System Layer)        │
-│  AVPlayerStateAdapter                   │
-│  - Observes AVPlayer KVO                │
-│  - Translates to PlaybackAction         │
-└────────────────┬────────────────────────┘
-                 │ send(PlaybackAction)
-                 ↓
-┌─────────────────────────────────────────┐
-│        PURE (Core Domain)               │
-│  DefaultPlaybackStateMachine            │
-│  - nextState(action, state) → PURE      │
-│  - Emits PlaybackTransition             │
-└────────────────┬────────────────────────┘
-                 │ PlaybackTransition
-                 ↓
-┌─────────────────────────────────────────┐
-│  IMPURE (Side Effects & Subscribers)    │
-│  UI Updates, Logging, Caching           │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    impureTop["IMPURE — iOS/System Layer<br/>AVPlayerStateAdapter<br/><i>Observes AVPlayer KVO</i><br/><i>Translates to PlaybackAction</i>"]
+    pure["PURE — Core Domain<br/>DefaultPlaybackStateMachine<br/><i>nextState(action, state) → PURE</i><br/><i>Emits PlaybackTransition</i>"]
+    impureBottom["IMPURE — Side Effects & Subscribers<br/><i>UI Updates, Logging, Caching</i>"]
+    impureTop -->|"send(PlaybackAction)"| pure
+    pure -->|"PlaybackTransition"| impureBottom
+    class impureTop impure
+    class pure core
+    class impureBottom impure
 ```
 
 ---
@@ -306,32 +297,34 @@ Pure validation - compares dates based on business rules with no side effects.
 ### RemoteVideoLoader Flow
 
 ```swift
-client.getPublisher(url: url)           // IMPURE: HTTP request
-    .tryMap { data, response in
-        try VideoItemsMapper.map(...)   // PURE: Transform data
-    }
-    .caching(to: cache)                 // IMPURE: Cache write
-    .dispatchOnMainThread()             // IMPURE: Thread dispatch
-    .sink { ... }                       // IMPURE: UI update
+let (data, response) = try await client.get(from: url)      // IMPURE: HTTP request
+let videos = try VideoItemsMapper.map(data, from: response) // PURE: Transform data
+try? cache.save(videos)                                     // IMPURE: Cache write
+return videos                                               // to caller (UI update)
 ```
 
-```
-Data Flow (Impure → Pure → Impure):
-
-URLSessionHTTPClient.get()
-    ↓ (impure HTTP call)
-(Data, HTTPURLResponse)
-    ↓ (to pure)
-VideoItemsMapper.map()
-    ↓ (pure transformation)
-[Video]
-    ↓ (to impure)
-cache.save()
-    ↓ (impure cache write)
-Main thread dispatch
-    ↓ (impure scheduler)
-UI updates
-    ↓ (impure view updates)
+```mermaid
+flowchart TB
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    get["URLSessionHTTPClient.get()"]
+    data["(Data, HTTPURLResponse)"]
+    map["VideoItemsMapper.map()"]
+    videos["[Video]"]
+    save["cache.save()"]
+    ui["UI updates<br/><i>impure view updates</i>"]
+    get -->|impure HTTP call| data
+    data -->|to pure| map
+    map -->|pure transformation| videos
+    videos -->|to impure| save
+    save -->|impure cache write| ui
+    class get impure
+    class data neutral
+    class map core
+    class videos core
+    class save impure
+    class ui impure
 ```
 
 ---

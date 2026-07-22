@@ -12,26 +12,16 @@ The playback system uses a **finite state machine (FSM)** with:
 - **Reactive state publishing**
 - **Complete testability**
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Playback State Machine                  │
-│                                                             │
-│   ┌───────┐    load    ┌─────────┐   ready   ┌───────┐     │
-│   │ idle  │───────────▶│ loading │──────────▶│ ready │     │
-│   └───────┘            └─────────┘           └───────┘     │
-│       ▲                     │                    │         │
-│       │                     │ fail               │ play    │
-│       │ stop                ▼                    ▼         │
-│       │                ┌─────────┐          ┌─────────┐    │
-│       └────────────────│ failed  │          │ playing │    │
-│       │                └─────────┘          └─────────┘    │
-│       │                                          │         │
-│       │                                          │ pause   │
-│       │                                          ▼         │
-│       │                                     ┌─────────┐    │
-│       └─────────────────────────────────────│ paused  │    │
-│                                             └─────────┘    │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> idle
+    idle --> loading: load
+    loading --> ready: ready
+    loading --> failed: fail
+    ready --> playing: play
+    playing --> paused: pause
+    paused --> idle: stop
+    failed --> idle: stop
 ```
 
 ---
@@ -510,27 +500,20 @@ public final class AVPlayerStateAdapter {
 
 ### Complete Flow
 
-```
-┌─────────────────────────────────────────┐
-│        IMPURE (iOS Layer)               │
-│  AVPlayerStateAdapter                   │
-│  - Observes AVPlayer KVO                │
-│  - Translates to PlaybackAction         │
-└────────────────┬────────────────────────┘
-                 │ send(PlaybackAction)
-                 ↓
-┌─────────────────────────────────────────┐
-│        PURE (Core Domain)               │
-│  DefaultPlaybackStateMachine            │
-│  - nextState(action, state) → PURE      │
-│  - Emits PlaybackTransition             │
-└────────────────┬────────────────────────┘
-                 │ statePublisher
-                 ↓
-┌─────────────────────────────────────────┐
-│  IMPURE (Subscribers)                   │
-│  UI updates, logging, analytics         │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    A["IMPURE · iOS Layer<br/><b>AVPlayerStateAdapter</b><br/><i>observes AVPlayer KVO · translates to PlaybackAction</i>"]
+    P["PURE · Core Domain<br/><b>DefaultPlaybackStateMachine</b><br/><i>nextState(action, state) → pure · emits PlaybackTransition</i>"]
+    S["IMPURE · Subscribers<br/><i>UI updates · logging · analytics</i>"]
+
+    A -->|send PlaybackAction| P
+    P -->|statePublisher| S
+
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef pure fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class A impure
+    class S impure
+    class P pure
 ```
 
 ---

@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  A production-ready iOS video streaming application built with <strong>Test-Driven Development (TDD)</strong>, <strong>SOLID principles</strong>, and <strong>Clean Architecture</strong>.
+  A portfolio-grade iOS video streaming application built with <strong>Test-Driven Development (TDD)</strong>, <strong>SOLID principles</strong>, and <strong>Clean Architecture</strong>.
 </p>
 
 ---
@@ -51,11 +51,11 @@ Detailed documentation for each streaming feature:
 
 ### Advanced Streaming Features
 
-Core streaming infrastructure for production-quality video playback:
+Core streaming infrastructure for high-quality video playback:
 
 | Feature | Description |
 |---------|-------------|
-| [Player State Machine](docs/features/PLAYER-STATE-MACHINE.md) | Explicit state transitions with 60+ valid paths |
+| [Player State Machine](docs/features/PLAYER-STATE-MACHINE.md) | Explicit, exhaustively tested state transitions |
 | [Adaptive Bitrate](docs/features/ADAPTIVE-BITRATE.md) | Quality selection based on network and buffer health |
 | [Video Preloading](docs/features/VIDEO-PRELOADING.md) | Predictive loading for seamless transitions |
 | [Rebuffering Detection](docs/features/REBUFFERING-DETECTION.md) | Stall monitoring and ratio tracking |
@@ -64,15 +64,31 @@ Core streaming infrastructure for production-quality video playback:
 | [Audio Session](docs/features/AUDIO-SESSION.md) | Interruption handling and category configuration |
 | [AVPlayer Integration](docs/features/AVPLAYER-INTEGRATION.md) | Platform adapter bridging AVPlayer to domain |
 
+### Infrastructure Documentation
+
+Detailed documentation for infrastructure components and patterns:
+
+| Document | Description |
+|----------|-------------|
+| [HTTP Client](docs/HTTP-CLIENT.md) | HTTPClient protocol, URLSession implementation, mappers |
+| [Pagination](docs/PAGINATION.md) | Cursor-based (keyset) paging with `after_id`, load-more, and end-of-feed signalling |
+| [Caching Infrastructure](docs/CACHING-INFRASTRUCTURE.md) | VideoStore, CoreData, InMemory implementations |
+| [Composition Root](docs/COMPOSITION-ROOT.md) | SceneDelegate wiring, Composers, dependency graph |
+| [Presenters & ViewModels](docs/PRESENTERS-VIEWMODELS.md) | LoadResourcePresenter, mappers, presentation layer |
+| [Cell Controllers](docs/CELL-CONTROLLERS.md) | CellController pattern, diffable data source integration |
+| [Controls Visibility](docs/CONTROLS-VISIBILITY.md) | Auto-hide controls with timer management |
+| [Bandwidth Estimation](docs/BANDWIDTH-ESTIMATION.md) | Network measurement, quality monitoring, bitrate recommendations |
+| [Testing Infrastructure](docs/TESTING-INFRASTRUCTURE.md) | Spy patterns, memory leak tracking, spec assertions |
+
 ---
 
 ## Overview
 
-StreamingVideoApp demonstrates professional iOS development practices with a modular, testable architecture that scales from small features to enterprise-level applications.
+StreamingVideoApp demonstrates professional iOS development practices with a modular, testable architecture.
 
 ### Key Highlights
 
-- **100% TDD** - Every feature developed test-first
+- **Test-Driven** - Features developed test-first, backed by an extensive automated test suite
 - **Clean Architecture** - Clear separation of concerns across modules
 - **SOLID Principles** - Maintainable, extensible codebase
 - **Comprehensive Testing** - Unit, Integration, and End-to-End tests
@@ -115,41 +131,22 @@ StreamingVideoApp demonstrates professional iOS development practices with a mod
 
 StreamingVideoApp follows a **modular Clean Architecture** with strict layer boundaries:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│                      StreamingVideoApp                          │
-│                    (Composition Root)                           │
-│                                                                 │
-│   Responsibilities:                                             │
-│   • Dependency injection & wiring                               │
-│   • Platform-specific implementations (AVPlayer)                │
-│   • App lifecycle management                                    │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│                      StreamingCoreiOS                           │
-│                    (iOS UI Components)                          │
-│                                                                 │
-│   Responsibilities:                                             │
-│   • UIKit view controllers                                      │
-│   • Table/Collection view cells                                 │
-│   • UI layout and animations                                    │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│                       StreamingCore                             │
-│                 (Platform-Agnostic Core)                        │
-│                                                                 │
-│   Responsibilities:                                             │
-│   • Domain models (Video, VideoComment)                         │
-│   • Use cases (Load, Cache, Validate)                           │
-│   • Presenters and ViewModels                                   │
-│   • Network and storage abstractions                            │
-│                                                                 │
-│   ⚠️  NO UIKit/AppKit imports allowed                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    App["StreamingVideoApp — Composition Root<br/><i>DI &amp; wiring · AVPlayer · app lifecycle</i>"]
+    iOS["StreamingCoreiOS — iOS UI Components<br/><i>UIKit view controllers · cells · layout &amp; animation</i>"]
+    Core["StreamingCore — Platform-Agnostic Core<br/><i>domain models · use cases · presenters · network &amp; storage abstractions</i><br/>🚫 No UIKit / AppKit imports"]
+
+    App -->|depends on| iOS
+    App -->|depends on| Core
+    iOS -->|depends on| Core
+
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    classDef ios fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef core fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    class App app
+    class iOS ios
+    class Core core
 ```
 
 ### Module Structure
@@ -186,8 +183,7 @@ StreamingVideoApp.xcworkspace/
 │   └── StreamingVideoAppTests/         # Integration tests
 │
 └── .github/workflows/                  # CI/CD
-    ├── CI-iOS.yml
-    └── CI-macOS.yml
+    └── ci.yml                          # iOS + macOS test jobs
 ```
 
 ### Design Patterns
@@ -320,7 +316,7 @@ final class URLSessionHTTPClient: HTTPClient { ... }
 
 - **Xcode 16.0+**
 - **iOS 15.0+**
-- **Swift 5.9+**
+- **Swift 6 toolchain** (project builds in Swift 5 language mode)
 
 ### Installation
 
@@ -365,17 +361,20 @@ xcodebuild clean build test \
 
 ### Test Pyramid
 
-```
-                    ╱╲
-                   ╱  ╲
-                  ╱ E2E╲           End-to-End Tests
-                 ╱──────╲          (Real API)
-                ╱        ╲
-               ╱Integration╲       Integration Tests
-              ╱────────────╲       (Composed systems)
-             ╱              ╲
-            ╱   Unit Tests   ╲     Unit Tests
-           ╱──────────────────╲    (Isolated components)
+```mermaid
+flowchart BT
+    UNIT["Unit — isolated components<br/><i>presenters · use cases · mappers</i>"]
+    INT["Integration — composed systems<br/><i>UI + presenter + adapters</i>"]
+    E2E["End-to-End — real API"]
+
+    UNIT --> INT --> E2E
+
+    classDef unit fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef int fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef e2e fill:#fce8e6,stroke:#ea4335,color:#202124;
+    class UNIT unit
+    class INT int
+    class E2E e2e
 ```
 
 ### Test Categories
@@ -400,19 +399,21 @@ xcodebuild clean build test \
 
 ## CI/CD
 
-### GitHub Actions Workflows
+### GitHub Actions Workflow
 
-| Workflow | Trigger | Description |
+A single workflow (`.github/workflows/ci.yml`) runs two jobs on every push and PR to `main`:
+
+| Job | Trigger | Description |
 |----------|---------|-------------|
-| **CI-iOS** | Push/PR to main | Full test suite on iOS Simulator |
-| **CI-macOS** | Push/PR to main | Platform-agnostic tests (faster) |
+| **build-ios** | Push/PR to main | Full test suite on the iOS Simulator (scheme `CI_iOS`) |
+| **build-macos** | Push/PR to main | Platform-agnostic Core tests, no simulator (scheme `CI_macOS`) |
 
 ### CI Features
 
 - **ThreadSanitizer** - Detects data races and threading issues
-- **Parallel Testing** - Faster CI feedback
-- **Code Coverage** - Track test coverage metrics
+- **Two-platform jobs** - iOS Simulator and macOS run concurrently
 - **Multiple Xcode Versions** - Fallback Xcode selection
+- **Test result bundles** - `.xcresult` uploaded as artifacts on failure
 
 ### Branch Protection Rules
 
@@ -440,25 +441,24 @@ Configure branch protection manually at:
 
 ### Backend
 
-The app connects to a custom API hosted on GitHub Pages:
+The app connects to a custom API deployed on Vercel, base URL `https://streaming-videos-api.vercel.app`:
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/v1/videos` | Paginated video list |
-| `GET /api/v1/videos/{id}/comments` | Video comments |
-| `GET /api/v1/videos/{id}/image` | Video thumbnail |
+| `GET /v1/videos?limit=10&after_id={id}` | Paginated video list (keyset cursor) |
+| `GET /v1/videos/{id}/comments` | Video comments |
 
 ### Sample Response
 
 ```json
 {
-  "items": [
+  "videos": [
     {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "id": "550e8400-e29b-41d4-a716-446655440001",
       "title": "Big Buck Bunny",
-      "description": "A large rabbit deals with three bullying rodents.",
-      "image_url": "https://example.com/thumbnail.jpg",
-      "video_url": "https://example.com/video.mp4"
+      "description": "A large and lovable rabbit deals with three tiny bullies.",
+      "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/330px-Big_buck_bunny_poster_big.jpg"
     }
   ]
 }
@@ -558,7 +558,7 @@ If the feature involves composition, write tests in `StreamingVideoAppTests/`.
 
 ```bash
 xcodebuild test -scheme CI_iOS \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+  -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 #### Step 7: Submit PR
@@ -886,7 +886,7 @@ This section documents solutions to persistent issues discovered during developm
 malloc: *** error for object 0x262c5a6f0: pointer being freed was not allocated
 ```
 
-**Root Cause:** Swift 6.2 runtime bug in `swift_task_deinitOnExecutorImpl` (GitHub #84793).
+**Root Cause:** A known Swift runtime bug in deinit isolation — a `@MainActor`-isolated `deinit` can run on the wrong executor and crash inside `swift_task_deinitOnExecutorImpl` (see [swiftlang/swift#87316](https://github.com/swiftlang/swift/issues/87316)).
 
 **Solution:**
 1. Set `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated` in build settings
@@ -912,23 +912,23 @@ final class MyUITests: XCTestCase {
 }
 ```
 
-### 3. AsyncStream + Combine Mixing
+### 3. Mixing async/await and Combine
 
-**Problem:** Bridging AsyncStream and Combine causes race conditions.
+**Problem:** Owning the same state in both Combine and async/await — or bridging them bidirectionally — causes ownership ambiguity and race conditions.
 
-**Solution:** Use pure Combine OR pure async/await, never bridge between them.
+**Solution:** Own each boundary in a single model. A *one-directional, temporary* bridge during a migration is fine — when this codebase moved its feed and comments loaders from Combine to async/await, the interim `HTTPClient`→`Future` bridge was deleted once the migration landed. What to avoid is *permanent bidirectional* mixing, or two owners of the same state across the two models.
 
-### 4. Fire-and-Forget Tasks in Decorators
+### 4. Fire-and-Forget Analytics in Decorators
 
-**Problem:** Decorators with logging/analytics crash on deallocation.
+**Problem:** A `@MainActor` decorator that captured `self` inside a `Task` crashed on deallocation (the deinit-isolation runtime bug above).
 
-**Solution:** Use `Task.detached` with `[weak self]`:
+**Solution:** Don't capture `self`. Hoist the `Sendable` dependency into a local and let a structured `Task` capture only that — no retain, no isolated-deinit hazard, and the task keeps its priority and context (unlike `Task.detached`, which drops them):
 ```swift
 func play() {
-    Task.detached { [weak self] in
-        await self?.logger.log(.play)
-    }
     decoratee.play()
+    let position = currentTime
+    let logger = analyticsLogger
+    Task { await logger.log(.play, position: position) }
 }
 ```
 
@@ -957,8 +957,8 @@ func enterFullscreen() {
 
 | Anti-Pattern | Problem | Solution |
 |--------------|---------|----------|
-| Bridging AsyncStream↔Combine | Race conditions | Pick one pattern |
-| Strong self in Task | Memory leaks/crashes | Use `[weak self]` |
+| Permanent bidirectional async/Combine mixing | Ownership races | One model per boundary; temporary one-way bridge OK |
+| Capturing self in a Task | Isolated-deinit crash | Capture the Sendable dependency, not self |
 | `@MainActor` in build settings | malloc crashes | Set `nonisolated` |
 | Missing tearDown RunLoop | Test crashes | Add `RunLoop.current.run` |
 | Mixed constraint states | Layout crashes | Deactivate before activate |

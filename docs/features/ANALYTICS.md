@@ -6,18 +6,10 @@ The Analytics feature tracks playback events, user engagement, and performance m
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Analytics Pipeline                        │
-│                                                             │
-│  VideoPlayer ──▶ AnalyticsDecorator ──▶ AnalyticsService   │
-│                                              │              │
-│                                              ▼              │
-│                                        AnalyticsStore       │
-│                                              │              │
-│                                              ▼              │
-│                                        Remote Server        │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    VP["VideoPlayer"] --> AD["AnalyticsDecorator"] --> AS["AnalyticsService"]
+    AS --> AST["AnalyticsStore"] --> RS["Remote Server"]
 ```
 
 ---
@@ -383,15 +375,17 @@ func composePlayer(video: Video) -> VideoPlayer {
 
 ## Event Timeline Example
 
-```
-00:00 ──▶ videoPlayed
-00:15 ──▶ videoPaused
-00:15 ──▶ videoPlayed
-00:30 ──▶ bufferingStarted
-00:32 ──▶ bufferingEnded
-01:00 ──▶ videoSeeked (to 02:30)
-02:30 ──▶ videoPlayed
-03:00 ──▶ videoCompleted
+```mermaid
+flowchart TB
+    E1["00:00<br/>videoPlayed"]
+    E2["00:15<br/>videoPaused"]
+    E3["00:15<br/>videoPlayed"]
+    E4["00:30<br/>bufferingStarted"]
+    E5["00:32<br/>bufferingEnded"]
+    E6["01:00<br/>videoSeeked (to 02:30)"]
+    E7["02:30<br/>videoPlayed"]
+    E8["03:00<br/>videoCompleted"]
+    E1 --> E2 --> E3 --> E4 --> E5 --> E6 --> E7 --> E8
 ```
 
 ---

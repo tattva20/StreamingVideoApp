@@ -6,29 +6,16 @@ The Player State Machine provides a robust, predictable way to manage video play
 
 ## Overview
 
-```
-                              ┌─────────────────────────────────────────────────────────┐
-                              │              Playback State Machine                     │
-                              │                                                         │
-                              │   ┌──────┐  load   ┌─────────┐  ready  ┌───────┐      │
-                              │   │ idle │ ──────▶ │ loading │ ──────▶ │ ready │      │
-                              │   └──────┘         └─────────┘         └───────┘      │
-                              │      ▲                   │                  │          │
-                              │      │ stop              │ fail          play│          │
-                              │      │                   ▼                  ▼          │
-                              │      │              ┌────────┐        ┌─────────┐     │
-                              │      ├───────────── │ failed │        │ playing │     │
-                              │      │              └────────┘        └─────────┘     │
-                              │      │                   ▲                │   │        │
-                              │      │                   │              pause│ buffer │
-                              │      │                   │                │   │        │
-                              │      │  ┌────────────────┼────────────────┘   │        │
-                              │      │  │                │                    ▼        │
-                              │      │  ▼                │              ┌───────────┐  │
-                              │   ┌────────┐    end  ┌───────┐         │ buffering │  │
-                              │   │ paused │ ◀───── │ ended  │         └───────────┘  │
-                              │   └────────┘         └───────┘                        │
-                              └─────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    idle --> loading: load
+    loading --> ready: ready
+    loading --> failed: fail
+    ready --> playing: play
+    playing --> paused: pause
+    playing --> buffering: buffer
+    ended --> paused: end
+    failed --> idle: stop
 ```
 
 ---

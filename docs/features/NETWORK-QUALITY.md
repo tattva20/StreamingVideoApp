@@ -6,20 +6,11 @@ The Network Quality Monitoring feature tracks network conditions to enable adapt
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Network Quality Monitoring                 │
-│                                                             │
-│  NWPathMonitor ──▶ NetworkQualityMonitor ──▶ Consumers     │
-│                           │                                 │
-│                           │ qualityPublisher                │
-│                           ▼                                 │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  BufferManager  │  BitrateStrategy  │  Preloader     │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  Quality Levels: Offline │ Poor │ Fair │ Good │ Excellent  │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    NPM["NWPathMonitor"] --> NQM["NetworkQualityMonitor"]
+    NQM -->|qualityPublisher| CON["Consumers<br/><i>BufferManager · BitrateStrategy · Preloader</i>"]
+    NQM -.-> QL["Quality Levels:<br/>Offline · Poor · Fair · Good · Excellent"]
 ```
 
 ---

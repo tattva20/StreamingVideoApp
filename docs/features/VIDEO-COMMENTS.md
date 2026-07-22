@@ -6,21 +6,9 @@ The Video Comments feature displays threaded comments for each video with pull-t
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Comments (12)                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  👤 john_doe                           2 hours ago  │    │
-│  │  Great video! Really enjoyed the content.           │    │
-│  └─────────────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  👤 jane_smith                         1 day ago    │    │
-│  │  Thanks for sharing this, very helpful!             │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                        ...                                   │
-└─────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="../images/video-comments.svg" alt="Comments list mockup" width="480">
+</p>
 
 ---
 
@@ -207,18 +195,9 @@ public final class VideoCommentCellController: NSObject {
 
 Comments are displayed below the video player:
 
-```
-┌─────────────────────────────────────────┐
-│                                         │
-│           Video Player                  │
-│                                         │
-├─────────────────────────────────────────┤
-│                                         │
-│           Comments Container            │
-│           (embedded list)               │
-│                                         │
-└─────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="../images/video-comments-layout.svg" alt="Player over comments layout mockup" width="340">
+</p>
 
 ### VideoPlayerViewController Integration
 
@@ -248,11 +227,11 @@ final class VideoPlayerViewController: UIViewController {
 public enum VideoCommentsUIComposer {
     public static func commentsComposedWith(
         videoId: UUID,
-        commentsLoader: @escaping () -> AnyPublisher<[VideoComment], Error>
+        commentsLoader: @MainActor @escaping () async throws -> [VideoComment]
     ) -> ListViewController {
         let controller = ListViewController()
 
-        let presentationAdapter = LoadResourcePresentationAdapter(
+        let presentationAdapter = AsyncLoadResourcePresentationAdapter(
             loader: commentsLoader
         )
         controller.onRefresh = presentationAdapter.loadResource

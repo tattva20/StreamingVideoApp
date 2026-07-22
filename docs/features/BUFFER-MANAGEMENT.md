@@ -6,18 +6,12 @@ The Buffer Management feature provides adaptive buffering that adjusts to networ
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  Adaptive Buffer Management                  │
-│                                                             │
-│  Network Monitor ──┐                                        │
-│                    │     ┌──────────────────┐               │
-│                    ├────▶│ AdaptiveBuffer   │──▶ AVPlayer   │
-│                    │     │   Manager        │               │
-│  Memory Monitor ───┘     └──────────────────┘               │
-│                                                             │
-│  Strategies: Minimal │ Conservative │ Balanced │ Aggressive │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    NM["Network Monitor"] --> ABM["AdaptiveBuffer<br/>Manager"]
+    MM["Memory Monitor"] --> ABM
+    ABM --> AVP["AVPlayer"]
+    ABM -.-> S["Strategies:<br/>Minimal · Conservative · Balanced · Aggressive"]
 ```
 
 ---
@@ -310,22 +304,18 @@ Use when:
 
 ## State Transitions
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│  Memory: Normal, Network: Good                               │
-│  ──▶ Strategy: Aggressive (60s buffer)                       │
-│                                                              │
-│  Memory: Normal, Network: Poor                               │
-│  ──▶ Strategy: Conservative (15s buffer)                     │
-│                                                              │
-│  Memory: Warning, Network: Any                               │
-│  ──▶ Strategy: Conservative (15s buffer)                     │
-│                                                              │
-│  Memory: Critical, Network: Any                              │
-│  ──▶ Strategy: Minimal (5s buffer)                           │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A["Memory: Normal<br/>Network: Good"] --> AG["Aggressive<br/><i>60s buffer</i>"]
+    B["Memory: Normal<br/>Network: Poor"] --> CO["Conservative<br/><i>15s buffer</i>"]
+    C["Memory: Warning<br/>Network: Any"] --> CO
+    D["Memory: Critical<br/>Network: Any"] --> MI["Minimal<br/><i>5s buffer</i>"]
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    class A,B core;
+    class C neutral;
+    class D impure;
 ```
 
 ---

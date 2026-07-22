@@ -321,37 +321,25 @@ final class CoreDataVideoStore: VideoStore { ... }
 
 ### The Dependency Flow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    StreamingCore (Core)                     │
-│                                                             │
-│  ┌─────────────────┐         ┌─────────────────┐           │
-│  │  VideoLoader    │         │   HTTPClient    │           │
-│  │   (protocol)    │─────────│   (protocol)    │           │
-│  └─────────────────┘         └─────────────────┘           │
-│          ▲                           ▲                     │
-│          │                           │                     │
-│          │ depends on                │ depends on          │
-│          │                           │                     │
-│  ┌─────────────────┐                 │                     │
-│  │RemoteVideoLoader│─────────────────┘                     │
-│  │ (implementation)│                                       │
-│  └─────────────────┘                                       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-                              ▲
-                              │ implements
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                 StreamingVideoApp (App)                     │
-│                                                             │
-│  ┌─────────────────┐         ┌─────────────────┐           │
-│  │URLSessionHTTP   │         │ CoreDataVideo   │           │
-│  │    Client       │         │     Store       │           │
-│  │(implementation) │         │(implementation) │           │
-│  └─────────────────┘         └─────────────────┘           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Core["StreamingCore · Core"]
+        VL["VideoLoader<br/><i>protocol</i>"]
+        HC["HTTPClient<br/><i>protocol</i>"]
+        RVL["RemoteVideoLoader<br/><i>implementation</i>"]
+        RVL -->|depends on| VL
+        RVL -->|depends on| HC
+    end
+    subgraph App["StreamingVideoApp · App"]
+        US["URLSessionHTTPClient<br/><i>implementation</i>"]
+        CD["CoreDataVideoStore<br/><i>implementation</i>"]
+    end
+    App -.->|implements Core protocols| Core
+
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    class VL,HC,RVL core
+    class US,CD app
 ```
 
 ### Business Logic Never Knows About Frameworks

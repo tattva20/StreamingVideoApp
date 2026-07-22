@@ -6,21 +6,11 @@ The Memory Management feature monitors system memory, detects pressure levels, a
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Memory Management                          │
-│                                                             │
-│  PollingMemoryMonitor ──▶ ResourceCleanupCoordinator       │
-│         │                          │                        │
-│         │ statePublisher           │ cleaners               │
-│         ▼                          ▼                        │
-│  ┌─────────────┐           ┌─────────────────┐             │
-│  │MemoryState  │           │ VideoCacheCleaner│             │
-│  │ .normal     │           │ ImageCacheCleaner│             │
-│  │ .warning    │           │ BufferCleaner    │             │
-│  │ .critical   │           └─────────────────┘             │
-│  └─────────────┘                                            │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    PMM["PollingMemoryMonitor"] -->|statePublisher| MS["MemoryState<br/>.normal<br/>.warning<br/>.critical"]
+    PMM --> RCC["ResourceCleanupCoordinator"]
+    RCC -->|cleaners| CL["VideoCacheCleaner<br/>ImageCacheCleaner<br/>BufferCleaner"]
 ```
 
 ---
@@ -371,19 +361,17 @@ public final class ImageCacheCleaner: ResourceCleaner, @unchecked Sendable {
 
 ## Cleanup Strategy
 
-```
-Memory Pressure: Normal
-──▶ No cleanup
-
-Memory Pressure: Warning
-──▶ Clean low priority (images)
-──▶ Clean medium priority (video metadata)
-
-Memory Pressure: Critical
-──▶ Clean ALL priorities
-──▶ Low (images)
-──▶ Medium (video metadata)
-──▶ High (active buffers)
+```mermaid
+flowchart LR
+    N["Memory Pressure: Normal"] --> N2["No cleanup"]
+    W["Memory Pressure: Warning"] --> W2["Clean low priority <i>(images)</i><br/>Clean medium priority <i>(video metadata)</i>"]
+    C["Memory Pressure: Critical"] --> C2["Clean ALL priorities:<br/>Low <i>(images)</i><br/>Medium <i>(video metadata)</i><br/>High <i>(active buffers)</i>"]
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    class N core;
+    class W neutral;
+    class C impure;
 ```
 
 ---

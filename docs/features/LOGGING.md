@@ -6,17 +6,12 @@ The Structured Logging feature provides a comprehensive logging system with mult
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Logging Pipeline                          │
-│                                                             │
-│  VideoPlayer ──▶ LoggingDecorator ──▶ CompositeLogger      │
-│                                              │              │
-│                         ┌────────────────────┼───────────┐  │
-│                         │                    │           │  │
-│                         ▼                    ▼           ▼  │
-│                   ConsoleLogger        OSLogLogger   Remote │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    VP["VideoPlayer"] --> LD["LoggingDecorator"] --> CL["CompositeLogger"]
+    CL --> CoL["ConsoleLogger"]
+    CL --> OS["OSLogLogger"]
+    CL --> RE["Remote"]
 ```
 
 ---
