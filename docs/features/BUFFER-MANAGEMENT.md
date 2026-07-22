@@ -1,6 +1,8 @@
 # Buffer Management Feature
 
-The Buffer Management feature provides adaptive buffering that adjusts to network conditions and memory pressure for optimal playback performance.
+The Buffer Management types model adaptive buffering based on network conditions and memory pressure.
+
+> **Runtime integration status.** For HLS playback, AVFoundation manages buffering natively and tuning it manually can conflict with that logic. The `AdaptiveBufferManager` / `BufferConfiguration` types here are **implemented and unit-tested** but are **not** wired to drive the live player; they remain available for a custom-buffering or non-HLS scenario. `AVPlayerItem.preferredForwardBufferDuration` can be set through `AVPlayerBufferAdapter` when a fixed buffer is genuinely needed.
 
 ---
 

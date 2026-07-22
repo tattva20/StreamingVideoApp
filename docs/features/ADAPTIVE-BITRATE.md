@@ -1,6 +1,8 @@
 # Adaptive Bitrate (ABR) Feature
 
-The Adaptive Bitrate feature dynamically adjusts video quality based on network conditions, buffer health, and rebuffering ratio to optimize the viewing experience.
+The Adaptive Bitrate types model quality selection based on network conditions, buffer health, and rebuffering ratio.
+
+> **Runtime integration status.** The app streams HLS (`.m3u8`), and **AVFoundation performs adaptive bitrate selection natively** over the multivariant renditions. The `BitrateStrategy` / `BitrateLevel` / `BitrateDecision` types described below are **implemented and unit-tested**, but they do **not** drive rendition selection for HLS — doing so would duplicate and fight AVFoundation's own ABR. Their active runtime roles are narrower and honest: the bandwidth estimator is fed from `AVPlayerItemAccessLog.observedBitrate` for **observability/telemetry**, and `PlaybackCoordinator.setPreferredPeakBitRate(_:)` exposes a **maximum-quality cap** (the hook a future data-saver preference would drive). Treat the strategy logic here as a tested component available for a custom-ABR or non-HLS scenario, not as the active ABR driver.
 
 ---
 

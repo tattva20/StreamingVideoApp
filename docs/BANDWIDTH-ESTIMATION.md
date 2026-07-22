@@ -1,6 +1,8 @@
 # Bandwidth Estimation
 
-The Bandwidth Estimation system provides real-time network measurement, quality monitoring, and reliable bitrate recommendations for adaptive video streaming.
+The Bandwidth Estimation system measures network throughput and derives quality/bitrate recommendations.
+
+> **Runtime integration status.** For HLS playback, AVFoundation selects renditions natively; this estimator does **not** drive that selection. At runtime it is fed from `AVPlayerItemAccessLog.observedBitrate` and serves **observability/telemetry** — its estimate is available for metrics and for the `preferredPeakBitRate` quality cap, not as the ABR decision engine.
 
 ---
 
