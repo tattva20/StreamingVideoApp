@@ -205,7 +205,7 @@ public final class AVPlayerPerformanceObserver: @unchecked Sendable {
 	private func handleItemStatusChange(_ status: AVPlayerItem.Status) {
 		switch status {
 		case .readyToPlay:
-			performanceEventSubject.send(.firstFrameRendered)
+			break
 		case .failed:
 			playbackStateSubject.send(.failed(NSError(domain: "AVPlayer", code: -1)))
 		case .unknown:
