@@ -67,4 +67,8 @@ final class PlaybackCoordinator {
 		performanceObserver?.stopObserving()
 		performanceObserver = nil
 	}
+
+	func setPreferredPeakBitRate(_ bitsPerSecond: Double) {
+		player.currentItem?.preferredPeakBitRate = max(0, bitsPerSecond)
+	}
 }

@@ -55,6 +55,22 @@ final class PlaybackCoordinatorTests: XCTestCase {
 		XCTAssertFalse(sut.isObserving)
 	}
 
+	func test_setPreferredPeakBitRate_capsTheCurrentItem() {
+		let item = AVPlayerItem(url: anyURL())
+		let player = AVPlayer(playerItem: item)
+		let stateMachine = DefaultPlaybackStateMachine()
+		let performanceAdapter = VideoPlayerPerformanceAdapter(
+			performanceService: PlaybackPerformanceService(),
+			bandwidthEstimator: NetworkBandwidthEstimator()
+		)
+		let sut = PlaybackCoordinator(player: player, stateMachine: stateMachine, performanceAdapter: performanceAdapter)
+		trackForMemoryLeaks(sut)
+
+		sut.setPreferredPeakBitRate(1_000_000)
+
+		XCTAssertEqual(item.preferredPeakBitRate, 1_000_000)
+	}
+
 	func test_start_deliversPeriodicTimeUpdatesToTheClosure() {
 		var receivedTimes = [TimeInterval]()
 		let (sut, _) = makeSUT(onTimeUpdate: { receivedTimes.append($0) })
