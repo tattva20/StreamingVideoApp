@@ -125,6 +125,9 @@ public final class VideoPlayerViewController: UIViewController {
 	public override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
 		hideControlsTimer?.invalidate()
+		if pipController?.isPictureInPictureActive != true {
+			player.pause()
+		}
 	}
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

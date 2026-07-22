@@ -41,6 +41,25 @@ class VideoPlayerViewControllerTests: XCTestCase {
 		XCTAssertEqual(player.pauseCallCount, 1)
 	}
 
+	func test_viewWillDisappear_pausesPlaybackWhenPictureInPictureIsInactive() {
+		let (sut, player) = makeSUT()
+		sut.loadViewIfNeeded()
+
+		sut.viewWillDisappear(false)
+
+		XCTAssertEqual(player.pauseCallCount, 1)
+	}
+
+	func test_viewWillDisappear_doesNotPausePlaybackWhilePictureInPictureIsActive() {
+		let (sut, player) = makeSUT()
+		sut.loadViewIfNeeded()
+		sut.pipController = PictureInPictureControllingStub(isActive: true)
+
+		sut.viewWillDisappear(false)
+
+		XCTAssertEqual(player.pauseCallCount, 0)
+	}
+
 	func test_seekForwardButtonTap_seeksForward() {
 		let (sut, player) = makeSUT()
 
@@ -378,6 +397,19 @@ class VideoPlayerViewControllerTests: XCTestCase {
 		func setPlaybackSpeed(_ speed: Float) {
 			playbackSpeed = speed
 		}
+	}
+
+	private final class PictureInPictureControllingStub: PictureInPictureControlling {
+		var isPictureInPictureActive: Bool
+		var isPictureInPicturePossible: Bool = true
+
+		init(isActive: Bool) {
+			self.isPictureInPictureActive = isActive
+		}
+
+		func togglePictureInPicture() {}
+		func startPictureInPicture() {}
+		func stopPictureInPicture() {}
 	}
 }
 
