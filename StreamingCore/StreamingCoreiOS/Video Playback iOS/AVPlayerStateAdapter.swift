@@ -23,17 +23,6 @@ public final class AVPlayerStateAdapter: @unchecked Sendable {
 
 	public var isObserving: Bool { _isObserving }
 
-	public init<T: Sendable>(player: AVPlayer, stateMachine: T) where T: AnyObject {
-		self.player = player
-
-		// Capture the state machine weakly and type-erase the action sending
-		self.actionHandler = { [weak stateMachine] action in
-			guard stateMachine != nil else { return }
-			// The caller is responsible for ensuring the stateMachine can receive actions
-			// This design allows for testing with spies
-		}
-	}
-
 	/// Initializes the adapter with an AVPlayer and a closure for sending actions
 	public init(player: AVPlayer, onAction: @escaping @Sendable (PlaybackAction) -> Void) {
 		self.player = player
