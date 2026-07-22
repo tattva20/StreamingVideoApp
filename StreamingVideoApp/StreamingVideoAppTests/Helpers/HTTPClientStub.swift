@@ -7,10 +7,10 @@
 import Foundation
 import StreamingCore
 
-class HTTPClientStub: HTTPClient {
-	private let stub: (URL) -> Result<(Data, HTTPURLResponse), Error>
+final class HTTPClientStub: HTTPClient {
+	private let stub: @Sendable (URL) -> Result<(Data, HTTPURLResponse), Error>
 
-	init(stub: @escaping (URL) -> Result<(Data, HTTPURLResponse), Error>) {
+	init(stub: @escaping @Sendable (URL) -> Result<(Data, HTTPURLResponse), Error>) {
 		self.stub = stub
 	}
 
@@ -24,7 +24,7 @@ extension HTTPClientStub {
 		HTTPClientStub(stub: { _ in .failure(NSError(domain: "offline", code: 0)) })
 	}
 
-	static func online(_ stub: @escaping (URL) -> (Data, HTTPURLResponse)) -> HTTPClientStub {
+	static func online(_ stub: @escaping @Sendable (URL) -> (Data, HTTPURLResponse)) -> HTTPClientStub {
 		HTTPClientStub { url in .success(stub(url)) }
 	}
 }

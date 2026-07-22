@@ -21,11 +21,12 @@ public actor DefaultVideoPreloader: VideoPreloader {
 		// Cancel existing task for this video if any
 		activeTasks[video.id]?.cancel()
 
+		let url = video.url
 		let task = Task { [httpClient] in
 			guard !Task.isCancelled else { return }
 
 			do {
-				_ = try await httpClient.get(from: video.url)
+				_ = try await httpClient.get(from: url)
 			} catch {
 				// Preload failures are expected (network issues, cancellation)
 				// We silently ignore them as preloading is opportunistic

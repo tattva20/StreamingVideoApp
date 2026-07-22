@@ -10,7 +10,7 @@ import StreamingCoreiOS
 
 // MARK: - Associated Object Extension for Performance Adapter
 
-private var performanceAdapterKey: UInt8 = 0
+private nonisolated(unsafe) var performanceAdapterKey: UInt8 = 0
 
 public extension VideoPlayerViewController {
 	var performanceAdapter: VideoPlayerPerformanceAdapter? {
@@ -30,7 +30,7 @@ public extension VideoPlayerViewController {
 
 // MARK: - Associated Object Extension for Stateful Player
 
-private var statefulPlayerKey: UInt8 = 0
+private nonisolated(unsafe) var statefulPlayerKey: UInt8 = 0
 
 public extension VideoPlayerViewController {
 	var statefulPlayer: StatefulVideoPlayer? {

@@ -8,6 +8,7 @@ import XCTest
 import StreamingCore
 import StreamingCoreiOS
 
+@MainActor
 class VideoPlayerViewControllerTests: XCTestCase {
 
 	func test_viewDidLoad_setsTitle() {

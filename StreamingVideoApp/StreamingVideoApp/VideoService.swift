@@ -44,8 +44,8 @@ final class VideoService {
 		}
 	}
 
-	func loadComments(for video: Video) -> () async throws -> [VideoComment] {
-		return { [httpClient, baseURL] in
+	func loadComments(for video: Video) -> @MainActor @Sendable () async throws -> [VideoComment] {
+		return { @MainActor @Sendable [httpClient, baseURL] in
 			let url = VideoCommentsEndpoint.get(video.id).url(baseURL: baseURL)
 			let (data, response) = try await httpClient.get(from: url)
 			return try VideoCommentsMapper.map(data, from: response)

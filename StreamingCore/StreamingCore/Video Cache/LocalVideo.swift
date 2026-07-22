@@ -6,7 +6,7 @@
 //
 import Foundation
 
-public struct LocalVideo: Equatable {
+public struct LocalVideo: Equatable, Sendable {
     public let id: UUID
     public let title: String
     public let description: String?

@@ -117,8 +117,9 @@ final class ConsoleLoggerTests: XCTestCase {
 
 		await withTaskGroup(of: Void.self) { group in
 			for i in 0..<10 {
+				let entry = makeEntry(level: .info, message: "Message \(i)")
 				group.addTask {
-					sut.log(self.makeEntry(level: .info, message: "Message \(i)"))
+					sut.log(entry)
 				}
 			}
 		}

@@ -7,6 +7,7 @@
 import XCTest
 import StreamingCoreiOS
 
+@MainActor
 class ControlsVisibilityControllerTests: XCTestCase {
 
 	func test_init_controlsAreVisible() {

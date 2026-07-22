@@ -9,6 +9,7 @@ import XCTest
 import AVKit
 @testable import StreamingCoreiOS
 
+@MainActor
 final class PictureInPictureControllerTests: XCTestCase {
 
 	func test_init_doesNotStartPictureInPicture() {

@@ -86,8 +86,9 @@ final class OSLogLoggerTests: XCTestCase {
 
 		await withTaskGroup(of: Void.self) { group in
 			for i in 0..<10 {
+				let entry = makeEntry(level: .info, message: "Concurrent \(i)")
 				group.addTask {
-					sut.log(self.makeEntry(level: .info, message: "Concurrent \(i)"))
+					sut.log(entry)
 				}
 			}
 		}

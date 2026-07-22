@@ -51,8 +51,10 @@ extension DispatchQueue {
 }
 
 extension NotificationCenter {
-	func addObserver(of object: AnyObject, for notification: UIApplication.Notification, using block: @escaping (Notification) -> Void) -> Any {
-		addObserver(forName: notification.name, object: object, queue: .main, using: block)
+	func addObserver(of object: AnyObject, for notification: UIApplication.Notification, using block: @escaping @MainActor @Sendable () -> Void) -> Any {
+		addObserver(forName: notification.name, object: object, queue: .main) { _ in
+			MainActor.assumeIsolated { block() }
+		}
 	}
 }
 

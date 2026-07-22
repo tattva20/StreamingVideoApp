@@ -22,7 +22,7 @@ class VideoAcceptanceTests: XCTestCase {
 	}
 
 	func test_onVideoSelection_navigatesToVideoPlayer() throws {
-		let video = try launch(httpClient: .online(response), store: .empty)
+		let video = try launch(httpClient: .online(Self.response), store: .empty)
 
 		video.simulateTapOnVideo(at: 0)
 
@@ -31,7 +31,7 @@ class VideoAcceptanceTests: XCTestCase {
 	}
 
 	func test_onVideoSelection_displaysVideoPlayerWithCorrectTitle() throws {
-		let video = try launch(httpClient: .online(response), store: .empty)
+		let video = try launch(httpClient: .online(Self.response), store: .empty)
 
 		video.simulateTapOnVideo(at: 0)
 
@@ -41,7 +41,7 @@ class VideoAcceptanceTests: XCTestCase {
 	}
 
 	func test_onVideoSelection_displaysCommentsSection() throws {
-		let video = try launch(httpClient: .online(response), store: .empty)
+		let video = try launch(httpClient: .online(Self.response), store: .empty)
 
 		video.simulateTapOnVideo(at: 0)
 
@@ -51,7 +51,7 @@ class VideoAcceptanceTests: XCTestCase {
 	}
 
     func test_onLaunch_displaysRemoteVideosWhenCustomerHasConnectivity() throws {
-        let video = try launch(httpClient: .online(response), store: .empty)
+        let video = try launch(httpClient: .online(Self.response), store: .empty)
 
         XCTAssertEqual(video.numberOfRenderedVideoViews(), 2)
     }
@@ -59,7 +59,7 @@ class VideoAcceptanceTests: XCTestCase {
     func test_onLaunch_displaysCachedRemoteVideosWhenCustomerHasNoConnectivity() throws {
         let sharedStore = try CoreDataVideoStore.empty
 
-        let onlineVideo = try launch(httpClient: .online(response), store: sharedStore)
+        let onlineVideo = try launch(httpClient: .online(Self.response), store: sharedStore)
         onlineVideo.simulateVideoViewVisible(at: 0)
         onlineVideo.simulateVideoViewVisible(at: 1)
 
@@ -117,12 +117,12 @@ class VideoAcceptanceTests: XCTestCase {
         sut.sceneWillResignActive(UIApplication.shared.connectedScenes.first!)
     }
 
-    private func response(for url: URL) -> (Data, HTTPURLResponse) {
+    private nonisolated static func response(for url: URL) -> (Data, HTTPURLResponse) {
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
         return (makeData(for: url), response)
     }
 
-    private func makeData(for url: URL) -> Data {
+    private nonisolated static func makeData(for url: URL) -> Data {
         switch url.path {
         case "/thumb-0.jpg": return UIImage.make(withColor: .red).pngData()!
         case "/thumb-1.jpg": return UIImage.make(withColor: .green).pngData()!
@@ -132,7 +132,7 @@ class VideoAcceptanceTests: XCTestCase {
         }
     }
 
-    private func makeVideosData() -> Data {
+    private nonisolated static func makeVideosData() -> Data {
         return try! JSONSerialization.data(withJSONObject: [
             "videos": [
                 ["id": "00000000-0000-0000-0000-000000000000", "title": "Video 0", "description": "Description 0", "url": "https://video.com/video-0.mp4", "thumbnail_url": "https://video.com/thumb-0.jpg", "duration": 120.0],

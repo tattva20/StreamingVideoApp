@@ -76,9 +76,10 @@ final class NullLoggerTests: XCTestCase {
 
 	func test_canBeUsedAcrossConcurrencyBoundaries() async {
 		let sut = NullLogger()
+		let entry = makeEntry(level: .info)
 
 		await Task.detached {
-			sut.log(self.makeEntry(level: .info))
+			sut.log(entry)
 		}.value
 	}
 

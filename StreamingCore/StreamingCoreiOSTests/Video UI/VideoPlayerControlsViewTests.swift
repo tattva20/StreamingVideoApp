@@ -8,6 +8,7 @@
 import XCTest
 @testable import StreamingCoreiOS
 
+@MainActor
 final class VideoPlayerControlsViewTests: XCTestCase {
 
 	// MARK: - UI Element Creation Tests

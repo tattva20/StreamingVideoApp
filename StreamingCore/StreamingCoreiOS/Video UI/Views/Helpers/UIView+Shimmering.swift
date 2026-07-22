@@ -48,16 +48,26 @@ extension UIView {
 			locations = [0.4, 0.5, 0.6]
 			frame = CGRect(x: -size.width, y: 0, width: size.width*3, height: size.height)
 
+			add(makeShimmerAnimation(), forKey: "shimmer")
+
+			nonisolated(unsafe) weak var layer = self
+			observer = NotificationCenter.default.addObserver(
+				forName: UIApplication.willEnterForegroundNotification,
+				object: nil,
+				queue: .main
+			) { _ in
+				guard let layer else { return }
+				layer.add(layer.makeShimmerAnimation(), forKey: "shimmer")
+			}
+		}
+
+		private func makeShimmerAnimation() -> CABasicAnimation {
 			let animation = CABasicAnimation(keyPath: #keyPath(CAGradientLayer.locations))
 			animation.fromValue = [0.0, 0.1, 0.2]
 			animation.toValue = [0.8, 0.9, 1.0]
 			animation.duration = 1.25
 			animation.repeatCount = .infinity
-			add(animation, forKey: "shimmer")
-
-			observer = NotificationCenter.default.addObserver(of: UIApplication.shared, for: .willEnterForeground) { [weak self] _ in
-				self?.add(animation, forKey: "shimmer")
-			}
+			return animation
 		}
 	}
 }
