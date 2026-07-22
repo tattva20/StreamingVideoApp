@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 360" role="img" aria-labelledby="t d" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <title id="t">Player over comments layout</title>
+  <desc id="d">Screen layout: the video player occupies the top region, with the comments container embedded as a scrolling list below it.</desc>
+  <rect x="1" y="1" width="398" height="358" rx="18" fill="#f7f8fa" stroke="#e4e7eb"/>
+  <rect x="16" y="16" width="368" height="328" rx="12" fill="#ffffff" stroke="#eceef1"/>
+  <!-- player region -->
+  <rect x="32" y="32" width="336" height="120" rx="10" fill="#12161c"/>
+  <circle cx="200" cy="92" r="24" fill="#ffffff" opacity="0.95"/>
+  <path d="M193 79 l17 13 -17 13 z" fill="#e5484d"/>
+  <text x="200" y="140" font-size="11" font-weight="600" fill="#ffffff" opacity="0.55" text-anchor="middle">Video Player</text>
+  <!-- comments container -->
+  <rect x="32" y="164" width="336" height="164" rx="10" fill="#fbfcfd" stroke="#e8ebef"/>
+  <text x="48" y="188" font-size="12" font-weight="700" fill="#6b7280">Comments Container <tspan fill="#98a2b3" font-weight="500">· embedded list</tspan></text>
+  <g>
+    <rect x="48" y="200" width="304" height="36" rx="7" fill="#ffffff" stroke="#eceef1"/>
+    <circle cx="68" cy="218" r="9" fill="#e5484d" opacity="0.18"/>
+    <rect x="86" y="210" width="120" height="7" rx="3.5" fill="#dfe3e8"/>
+    <rect x="86" y="222" width="180" height="7" rx="3.5" fill="#eef1f4"/>
+  </g>
+  <g>
+    <rect x="48" y="244" width="304" height="36" rx="7" fill="#ffffff" stroke="#eceef1"/>
+    <circle cx="68" cy="262" r="9" fill="#4285f4" opacity="0.18"/>
+    <rect x="86" y="254" width="100" height="7" rx="3.5" fill="#dfe3e8"/>
+    <rect x="86" y="266" width="160" height="7" rx="3.5" fill="#eef1f4"/>
+  </g>
+  <g>
+    <rect x="48" y="288" width="304" height="36" rx="7" fill="#ffffff" stroke="#eceef1"/>
+    <circle cx="68" cy="306" r="9" fill="#12a150" opacity="0.18"/>
+    <rect x="86" y="298" width="130" height="7" rx="3.5" fill="#dfe3e8"/>
+    <rect x="86" y="310" width="150" height="7" rx="3.5" fill="#eef1f4"/>
+  </g>
+</svg>

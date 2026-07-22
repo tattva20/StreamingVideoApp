@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 316" role="img" aria-labelledby="t d" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <title id="t">Comments list</title>
+  <desc id="d">A comments panel titled "Comments (12)" with two comment cards showing an avatar, username, relative timestamp and the comment text.</desc>
+  <rect x="1" y="1" width="518" height="314" rx="18" fill="#f7f8fa" stroke="#e4e7eb"/>
+  <rect x="16" y="16" width="488" height="284" rx="12" fill="#ffffff" stroke="#eceef1"/>
+  <text x="36" y="48" font-size="16" font-weight="700" fill="#1f2933">Comments <tspan fill="#98a2b3" font-weight="600">(12)</tspan></text>
+  <line x1="16" y1="64" x2="504" y2="64" stroke="#eceef1"/>
+  <!-- comment 1 -->
+  <g>
+    <rect x="32" y="80" width="456" height="80" rx="10" fill="#fbfcfd" stroke="#e8ebef"/>
+    <circle cx="64" cy="108" r="16" fill="#e5484d" opacity="0.15"/>
+    <circle cx="64" cy="103" r="6" fill="#e5484d" opacity="0.8"/>
+    <path d="M52 120 a12 10 0 0 1 24 0 z" fill="#e5484d" opacity="0.8"/>
+    <text x="92" y="104" font-size="13" font-weight="700" fill="#1f2933">john_doe</text>
+    <text x="472" y="104" font-size="11" font-weight="600" fill="#98a2b3" text-anchor="end">2 hours ago</text>
+    <text x="92" y="130" font-size="12.5" fill="#4b5563">Great video! Really enjoyed the content.</text>
+  </g>
+  <!-- comment 2 -->
+  <g>
+    <rect x="32" y="172" width="456" height="80" rx="10" fill="#fbfcfd" stroke="#e8ebef"/>
+    <circle cx="64" cy="200" r="16" fill="#4285f4" opacity="0.15"/>
+    <circle cx="64" cy="195" r="6" fill="#4285f4" opacity="0.8"/>
+    <path d="M52 212 a12 10 0 0 1 24 0 z" fill="#4285f4" opacity="0.8"/>
+    <text x="92" y="196" font-size="13" font-weight="700" fill="#1f2933">jane_smith</text>
+    <text x="472" y="196" font-size="11" font-weight="600" fill="#98a2b3" text-anchor="end">1 day ago</text>
+    <text x="92" y="222" font-size="12.5" fill="#4b5563">Thanks for sharing this, very helpful!</text>
+  </g>
+  <text x="260" y="282" font-size="15" font-weight="700" fill="#c3c9d2" text-anchor="middle">· · ·</text>
+</svg>

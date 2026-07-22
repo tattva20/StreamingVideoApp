@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 336" role="img" aria-labelledby="t d" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <title id="t">Video player screen</title>
+  <desc id="d">A video player with play button, a scrubber from 0:00 to 5:00, and a control row: skip back 10s, play, skip forward 10s, volume, speed, fullscreen and Picture-in-Picture.</desc>
+  <rect x="1" y="1" width="558" height="334" rx="18" fill="#f7f8fa" stroke="#e4e7eb"/>
+  <rect x="16" y="16" width="528" height="304" rx="12" fill="#ffffff" stroke="#eceef1"/>
+  <!-- video stage -->
+  <rect x="36" y="34" width="488" height="176" rx="10" fill="#12161c"/>
+  <circle cx="280" cy="122" r="30" fill="#ffffff" opacity="0.95"/>
+  <path d="M271 106 l22 16 -22 16 z" fill="#e5484d"/>
+  <!-- scrubber -->
+  <text x="36" y="248" font-size="11" font-weight="600" fill="#98a2b3">0:00</text>
+  <line x1="74" y1="244" x2="486" y2="244" stroke="#e7eaee" stroke-width="4" stroke-linecap="round"/>
+  <line x1="74" y1="244" x2="176" y2="244" stroke="#e5484d" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="176" cy="244" r="7" fill="#e5484d"/>
+  <text x="524" y="248" font-size="11" font-weight="600" fill="#98a2b3" text-anchor="end">5:00</text>
+  <!-- control row -->
+  <g fill="#4b5563">
+    <!-- skip back -->
+    <g transform="translate(70,286)">
+      <path d="M8 -7 l-9 7 9 7 z M18 -7 l-9 7 9 7 z" fill="#4b5563"/>
+      <text x="4" y="22" font-size="9" font-weight="600" fill="#98a2b3" text-anchor="middle">10s</text>
+    </g>
+    <!-- play (primary) -->
+    <g transform="translate(160,286)">
+      <circle cx="6" cy="0" r="16" fill="#e5484d"/>
+      <path d="M1 -7 l11 7 -11 7 z" fill="#ffffff"/>
+    </g>
+    <text x="150" y="312" font-size="9" font-weight="600" fill="#98a2b3">Play</text>
+    <!-- skip fwd -->
+    <g transform="translate(238,286)">
+      <path d="M-1 -7 l9 7 -9 7 z M9 -7 l9 7 -9 7 z" fill="#4b5563"/>
+      <text x="8" y="22" font-size="9" font-weight="600" fill="#98a2b3" text-anchor="middle">10s</text>
+    </g>
+    <!-- volume -->
+    <g transform="translate(300,282)">
+      <path d="M0 0 h6 l8 -6 v18 l-8 -6 h-6 z" fill="#4b5563"/>
+      <line x1="20" y1="6" x2="72" y2="6" stroke="#e7eaee" stroke-width="4" stroke-linecap="round"/>
+      <line x1="20" y1="6" x2="52" y2="6" stroke="#4b5563" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="52" cy="6" r="6" fill="#4b5563"/>
+    </g>
+    <!-- speed -->
+    <rect x="392" y="278" width="34" height="20" rx="6" fill="#f2f4f7" stroke="#e4e7eb"/>
+    <text x="409" y="292" font-size="11" font-weight="700" fill="#4b5563" text-anchor="middle">1x</text>
+    <!-- fullscreen -->
+    <g transform="translate(446,280)" stroke="#4b5563" stroke-width="2.4" fill="none" stroke-linecap="round">
+      <path d="M0 6 V0 H6 M18 0 H24 V6 M24 12 V18 H18 M6 18 H0 V12"/>
+    </g>
+    <!-- PiP -->
+    <g transform="translate(492,279)">
+      <rect x="0" y="0" width="26" height="19" rx="3" fill="none" stroke="#4b5563" stroke-width="2.2"/>
+      <rect x="12" y="8" width="12" height="9" rx="2" fill="#4b5563"/>
+      <text x="13" y="30" font-size="9" font-weight="600" fill="#98a2b3" text-anchor="middle">PiP</text>
+    </g>
+  </g>
+</svg>
