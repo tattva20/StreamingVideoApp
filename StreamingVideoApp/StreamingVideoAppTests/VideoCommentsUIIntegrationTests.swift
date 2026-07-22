@@ -191,58 +191,24 @@ extension VideoCommentsUIIntegrationTests {
 
 	@MainActor
 	class LoaderSpy {
-		private var requests = [(
-			stream: AsyncThrowingStream<[VideoComment], Error>,
-			continuation: AsyncThrowingStream<[VideoComment], Error>.Continuation,
-			result: AsyncResult?
-		)]()
+		private let loader = StreamingVideoAppTests.LoaderSpy<Void, [VideoComment]>()
 
-		private struct NoResponse: Error {}
-
-		var loadCallCount: Int {
-			return requests.count
-		}
+		var loadCallCount: Int { loader.requests.count }
 
 		func load() async throws -> [VideoComment] {
-			let (stream, continuation) = AsyncThrowingStream<[VideoComment], Error>.makeStream()
-			let index = requests.count
-			requests.append((stream, continuation, nil))
-
-			do {
-				for try await result in stream {
-					try Task.checkCancellation()
-					requests[index].result = .success
-					return result
-				}
-
-				try Task.checkCancellation()
-
-				throw NoResponse()
-			} catch {
-				requests[index].result = Task.isCancelled ? .cancelled : .failure
-				throw error
-			}
+			try await loader.load(())
 		}
 
 		func completeLoading(with comments: [VideoComment] = [], at index: Int = 0) async {
-			requests[index].continuation.yield(comments)
-			requests[index].continuation.finish()
-
-			while requests[index].result == nil { RunLoop.current.run(until: Date()) }
+			loader.complete(with: comments, at: index)
 		}
 
 		func completeLoadingWithError(at index: Int = 0) async {
-			requests[index].continuation.finish(throwing: anyNSError())
-
-			while requests[index].result == nil { RunLoop.current.run(until: Date()) }
+			loader.fail(with: anyNSError(), at: index)
 		}
 
 		func cancelPendingRequests() {
-			for (index, request) in requests.enumerated() where request.result == nil {
-				request.continuation.finish(throwing: CancellationError())
-
-				while requests[index].result == nil { RunLoop.current.run(until: Date()) }
-			}
+			loader.cancelPendingRequests()
 		}
 	}
 }

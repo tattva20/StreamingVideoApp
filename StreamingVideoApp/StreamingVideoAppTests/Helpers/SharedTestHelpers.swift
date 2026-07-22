@@ -23,10 +23,12 @@ func uniqueVideos() -> [Video] {
 	return [Video(id: UUID(), title: "any", description: "any", url: anyURL(), thumbnailURL: anyURL(), duration: 100)]
 }
 
+@MainActor
 private class DummyView: ResourceView {
 	func display(_ viewModel: Any) {}
 }
 
+@MainActor
 var loadError: String {
 	LoadResourcePresenter<Any, DummyView>.loadError
 }
