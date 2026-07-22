@@ -6,12 +6,14 @@
 //
 import Foundation
 
+@MainActor
 public protocol ResourceView {
 	associatedtype ResourceViewModel
 
 	func display(_ viewModel: ResourceViewModel)
 }
 
+@MainActor
 public final class LoadResourcePresenter<Resource, View: ResourceView> {
 	public typealias Mapper = (Resource) throws -> View.ResourceViewModel
 

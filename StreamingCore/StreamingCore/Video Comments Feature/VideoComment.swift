@@ -6,7 +6,7 @@
 //
 import Foundation
 
-public struct VideoComment: Equatable {
+public struct VideoComment: Equatable, Sendable {
 	public let id: UUID
 	public let message: String
 	public let createdAt: Date
