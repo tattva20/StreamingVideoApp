@@ -457,18 +457,28 @@ func test_load_deliversNoVideosOnExpiredCache() throws {
 
 ### Separation of Concerns
 
-```
-Domain Layer (StreamingCore)
-├── LocalVideo (Cache model)
-├── VideoStore (Protocol)
-├── VideoImageDataStore (Protocol)
-├── LocalVideoLoader (Use case)
-└── VideoCachePolicy (Business rule)
+```mermaid
+flowchart TD
+    subgraph DL["Domain Layer · StreamingCore"]
+        direction TB
+        DL1["LocalVideo<br/><i>Cache model</i>"]
+        DL2["VideoStore<br/><i>Protocol</i>"]
+        DL3["VideoImageDataStore<br/><i>Protocol</i>"]
+        DL4["LocalVideoLoader<br/><i>Use case</i>"]
+        DL5["VideoCachePolicy<br/><i>Business rule</i>"]
+    end
 
-Infrastructure Layer (StreamingCore/Infrastructure)
-├── CoreDataVideoStore (Production)
-├── InMemoryVideoStore (Testing/Fallback)
-└── FileSystemVideoImageDataStore (File storage)
+    subgraph IL["Infrastructure Layer · StreamingCore/Infrastructure"]
+        direction TB
+        IL1["CoreDataVideoStore<br/><i>Production</i>"]
+        IL2["InMemoryVideoStore<br/><i>Testing / Fallback</i>"]
+        IL3["FileSystemVideoImageDataStore<br/><i>File storage</i>"]
+    end
+
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
+    class DL1,DL2,DL3,DL4,DL5 core
+    class IL1,IL2,IL3 impure
 ```
 
 ### Testability

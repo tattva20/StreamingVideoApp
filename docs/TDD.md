@@ -28,20 +28,9 @@ flowchart LR
 
 StreamingVideoApp follows the test pyramid with emphasis on unit tests:
 
-```mermaid
-flowchart TB
-    E2E["End-to-End Tests<br/><i>(Real API)</i>"]
-    INT["Integration Tests<br/><i>(Composed systems)</i>"]
-    UNIT["Unit Tests<br/><i>(Isolated components)</i>"]
-    E2E --- INT --- UNIT
-
-    classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
-    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
-    class E2E impure;
-    class INT neutral;
-    class UNIT core;
-```
+<p align="center">
+  <img src="images/test-pyramid.svg" alt="Test pyramid: ~1,039 unit tests (isolated components), ~113 integration (composed systems), ~2 end-to-end (real API)" width="520">
+</p>
 
 ### Test Categories
 

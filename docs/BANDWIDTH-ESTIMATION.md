@@ -594,20 +594,18 @@ func test_recommendedMaxBitrate_is70PercentOfMinimum() {
 
 ### Separation of Concerns
 
-```
-BandwidthSample              │  NetworkBandwidthEstimator
-─────────────────────────────│──────────────────────────
-• Raw measurement data       │  • Sample collection
-• Calculations (bps, mbps)   │  • Rolling window
-• Immutable value type       │  • Estimate calculation
-                             │  • Thread-safe
+| BandwidthSample | NetworkBandwidthEstimator |
+|---|---|
+| Raw measurement data | Sample collection |
+| Calculations (bps, mbps) | Rolling window |
+| Immutable value type | Estimate calculation |
+|  | Thread-safe |
 
-BandwidthEstimate            │  NetworkQualityMonitor
-─────────────────────────────│──────────────────────────
-• Aggregated statistics      │  • NWPathMonitor wrapper
-• Reliability assessment     │  • Connection type
-• Bitrate recommendations    │  • Quality determination
-```
+| BandwidthEstimate | NetworkQualityMonitor |
+|---|---|
+| Aggregated statistics | NWPathMonitor wrapper |
+| Reliability assessment | Connection type |
+| Bitrate recommendations | Quality determination |
 
 ### Integration with Adaptive Bitrate
 

@@ -26,26 +26,9 @@ StreamingCoreiOS provides UIKit-based view controllers, views, and iOS platform 
 
 ### Architecture
 
-```
-┌─────────────────────────────────────────┐
-│         StreamingCoreiOS                │
-│    (UIKit Views & Platform Adapters)    │
-├─────────────────────────────────────────┤
-│                  │                      │
-│   UI Components  │   Platform Adapters  │
-│   ─────────────  │   ─────────────────  │
-│   • ViewControllers  • AVPlayerStateAdapter
-│   • Custom Views     • NetworkQualityMonitor
-│   • Controls         • OSLogLogger         │
-│                                         │
-└─────────────────────────────────────────┘
-            │
-            ▼
-┌─────────────────────────────────────────┐
-│            StreamingCore                │
-│   (Platform-Agnostic Protocols)         │
-└─────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="../../../docs/images/coreios-architecture.svg" alt="StreamingCoreiOS architecture: UI Components and Platform Adapters, depending on StreamingCore" width="520">
+</p>
 
 ### Thread Safety
 

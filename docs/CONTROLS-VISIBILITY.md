@@ -413,15 +413,12 @@ func test_hide_cancelsTimer() {
 
 ### Separation of Concerns
 
-```
-ControlsVisibilityController    │    VideoPlayerViewController
-────────────────────────────────│────────────────────────────────
-• State management              │    • Timer implementation
-• Business logic                │    • UI animation
-• Event coordination            │    • User interaction
-                                │
-No UIKit dependencies           │    UIKit-specific code
-```
+| ControlsVisibilityController | VideoPlayerViewController |
+|---|---|
+| State management | Timer implementation |
+| Business logic | UI animation |
+| Event coordination | User interaction |
+| No UIKit dependencies | UIKit-specific code |
 
 ### Testability
 

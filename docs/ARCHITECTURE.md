@@ -52,33 +52,52 @@ flowchart TB
 
 The core module contains ALL business logic with ZERO framework dependencies:
 
-```
-StreamingCore/
-├── Video Feature/              # Domain models
-│   └── Video.swift             # Pure value type
-│
-├── Video API/                  # Remote data loading
-│   ├── HTTPClient.swift        # Protocol (abstraction)
-│   ├── VideoItemsMapper.swift  # Pure data transformation
-│   └── RemoteVideoLoader.swift # Use case implementation
-│
-├── Video Cache/                # Local persistence
-│   ├── VideoStore.swift        # Protocol (abstraction)
-│   ├── LocalVideo.swift        # Cache representation
-│   ├── VideoCachePolicy.swift  # Pure validation logic
-│   └── LocalVideoLoader.swift  # Use case implementation
-│
-├── Video Presentation/         # Presenters & ViewModels
-│   ├── VideoPresenter.swift    # Pure presentation logic
-│   └── VideoViewModel.swift    # View-ready data
-│
-├── Video Playback Feature/     # State machine
-│   ├── PlaybackState.swift     # Pure state enum
-│   ├── PlaybackAction.swift    # Pure action enum
-│   └── DefaultPlaybackStateMachine.swift
-│
-└── Shared Combine/             # Reactive helpers
-    └── CombineHelpers.swift    # Pure extensions
+```mermaid
+flowchart TD
+    Root["StreamingCore/"]
+
+    subgraph VF["Video Feature · Domain models"]
+        VF1["Video.swift<br/><i>Pure value type</i>"]
+    end
+
+    subgraph VA["Video API · Remote data loading"]
+        VA1["HTTPClient.swift<br/><i>Protocol · abstraction</i>"]
+        VA2["VideoItemsMapper.swift<br/><i>Pure data transformation</i>"]
+        VA3["RemoteVideoLoader.swift<br/><i>Use case implementation</i>"]
+    end
+
+    subgraph VC["Video Cache · Local persistence"]
+        VC1["VideoStore.swift<br/><i>Protocol · abstraction</i>"]
+        VC2["LocalVideo.swift<br/><i>Cache representation</i>"]
+        VC3["VideoCachePolicy.swift<br/><i>Pure validation logic</i>"]
+        VC4["LocalVideoLoader.swift<br/><i>Use case implementation</i>"]
+    end
+
+    subgraph VP["Video Presentation · Presenters &amp; ViewModels"]
+        VP1["VideoPresenter.swift<br/><i>Pure presentation logic</i>"]
+        VP2["VideoViewModel.swift<br/><i>View-ready data</i>"]
+    end
+
+    subgraph VPF["Video Playback Feature · State machine"]
+        VPF1["PlaybackState.swift<br/><i>Pure state enum</i>"]
+        VPF2["PlaybackAction.swift<br/><i>Pure action enum</i>"]
+        VPF3["DefaultPlaybackStateMachine.swift"]
+    end
+
+    subgraph SH["Shared Combine · Reactive helpers"]
+        SH1["CombineHelpers.swift<br/><i>Pure extensions</i>"]
+    end
+
+    Root --> VF
+    Root --> VA
+    Root --> VC
+    Root --> VP
+    Root --> VPF
+    Root --> SH
+
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class VF1,VA1,VA2,VA3,VC1,VC2,VC3,VC4,VP1,VP2,VPF1,VPF2,VPF3,SH1 core
+    class Root core
 ```
 
 **Key Constraint:** No `import UIKit` or `import AppKit` anywhere in StreamingCore.
@@ -87,39 +106,67 @@ StreamingCore/
 
 Contains all iOS-specific UI code:
 
-```
-StreamingCoreiOS/
-├── Video UI/
-│   ├── ListViewController.swift      # Generic list controller
-│   ├── VideoCell.swift               # Custom cell
-│   └── CellController.swift          # Cell configuration protocol
-│
-├── Video Player UI/
-│   ├── VideoPlayerControlsView.swift # Playback controls
-│   └── ProgressSlider.swift          # Seek slider
-│
-└── Video Playback iOS/
-    └── AVPlayerStateAdapter.swift    # AVPlayer → PlaybackAction
+```mermaid
+flowchart TD
+    Root["StreamingCoreiOS/"]
+
+    subgraph VUI["Video UI"]
+        VUI1["ListViewController.swift<br/><i>Generic list controller</i>"]
+        VUI2["VideoCell.swift<br/><i>Custom cell</i>"]
+        VUI3["CellController.swift<br/><i>Cell configuration protocol</i>"]
+    end
+
+    subgraph VPUI["Video Player UI"]
+        VPUI1["VideoPlayerControlsView.swift<br/><i>Playback controls</i>"]
+        VPUI2["ProgressSlider.swift<br/><i>Seek slider</i>"]
+    end
+
+    subgraph VPIOS["Video Playback iOS"]
+        VPIOS1["AVPlayerStateAdapter.swift<br/><i>AVPlayer → PlaybackAction</i>"]
+    end
+
+    Root --> VUI
+    Root --> VPUI
+    Root --> VPIOS
+
+    classDef ios fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    class VUI1,VUI2,VUI3,VPUI1,VPUI2,VPIOS1 ios
+    class Root ios
 ```
 
 ### StreamingVideoApp (Composition Root)
 
 Wires everything together:
 
-```
-StreamingVideoApp/
-├── SceneDelegate.swift           # Main composition
-├── AVPlayerVideoPlayer.swift     # VideoPlayer implementation
-├── URLSessionHTTPClient.swift    # HTTPClient implementation
-├── CoreDataVideoStore.swift      # VideoStore implementation
-│
-├── Composers/
-│   ├── VideosUIComposer.swift    # Video list composition
-│   └── VideoPlayerComposer.swift # Player composition
-│
-└── Decorators/
-    ├── LoggingVideoPlayerDecorator.swift
-    └── AnalyticsVideoPlayerDecorator.swift
+```mermaid
+flowchart TD
+    Root["StreamingVideoApp/"]
+
+    R1["SceneDelegate.swift<br/><i>Main composition</i>"]
+    R2["AVPlayerVideoPlayer.swift<br/><i>VideoPlayer implementation</i>"]
+    R3["URLSessionHTTPClient.swift<br/><i>HTTPClient implementation</i>"]
+    R4["CoreDataVideoStore.swift<br/><i>VideoStore implementation</i>"]
+
+    subgraph COMP["Composers"]
+        COMP1["VideosUIComposer.swift<br/><i>Video list composition</i>"]
+        COMP2["VideoPlayerComposer.swift<br/><i>Player composition</i>"]
+    end
+
+    subgraph DEC["Decorators"]
+        DEC1["LoggingVideoPlayerDecorator.swift"]
+        DEC2["AnalyticsVideoPlayerDecorator.swift"]
+    end
+
+    Root --> R1
+    Root --> R2
+    Root --> R3
+    Root --> R4
+    Root --> COMP
+    Root --> DEC
+
+    classDef app fill:#fce8e6,stroke:#ea4335,color:#202124;
+    class R1,R2,R3,R4,COMP1,COMP2,DEC1,DEC2 app
+    class Root app
 ```
 
 ---

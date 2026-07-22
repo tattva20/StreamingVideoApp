@@ -542,29 +542,50 @@ assertThatRetrieveDeliversEmpty(on: sut)
 
 ## Directory Structure
 
-```
-StreamingCoreTests/
-├── Helpers/
-│   ├── XCTestCase+MemoryLeakTracking.swift
-│   └── SharedTestHelpers.swift
-├── Video Cache/
-│   ├── Helpers/
-│   │   └── VideoStoreSpy.swift
-│   └── VideoStoreSpecs/
-│       └── XCTestCase+VideoStoreSpecs.swift
-├── Structured Logging Feature/
-│   └── Helpers/
-│       └── LoggerSpy.swift
-└── Resource Cleanup Feature/
-    └── Helpers/
-        ├── ResourceCleanerSpy.swift
-        └── MemoryMonitorSpy.swift
+```mermaid
+flowchart TD
+    subgraph SCT["StreamingCoreTests/"]
+        direction TB
+        H["Helpers/"]
+        H1["XCTestCase+MemoryLeakTracking.swift"]
+        H2["SharedTestHelpers.swift"]
+        H --> H1
+        H --> H2
 
-StreamingCoreiOSTests/
-├── Helpers/
-│   └── XCTestCase+Snapshot.swift
-└── snapshots/
-    └── *.png
+        VC["Video Cache/"]
+        VCH["Helpers/"]
+        VCH1["VideoStoreSpy.swift"]
+        VCS["VideoStoreSpecs/"]
+        VCS1["XCTestCase+VideoStoreSpecs.swift"]
+        VC --> VCH --> VCH1
+        VC --> VCS --> VCS1
+
+        SL["Structured Logging Feature/"]
+        SLH["Helpers/"]
+        SLH1["LoggerSpy.swift"]
+        SL --> SLH --> SLH1
+
+        RC["Resource Cleanup Feature/"]
+        RCH["Helpers/"]
+        RCH1["ResourceCleanerSpy.swift"]
+        RCH2["MemoryMonitorSpy.swift"]
+        RC --> RCH
+        RCH --> RCH1
+        RCH --> RCH2
+    end
+
+    subgraph SIOT["StreamingCoreiOSTests/"]
+        direction TB
+        IH["Helpers/"]
+        IH1["XCTestCase+Snapshot.swift"]
+        IH --> IH1
+        SN["snapshots/"]
+        SN1["*.png"]
+        SN --> SN1
+    end
+
+    classDef neutral fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    class H,H1,H2,VC,VCH,VCH1,VCS,VCS1,SL,SLH,SLH1,RC,RCH,RCH1,RCH2,IH,IH1,SN,SN1 neutral
 ```
 
 ---

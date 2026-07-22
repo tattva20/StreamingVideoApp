@@ -6,13 +6,9 @@ This document explains our test organization strategy, following Essential Feed 
 
 We follow a comprehensive testing approach with multiple test levels:
 
-```
-                    E2E Tests (Slowest, Most Integrated)
-                   /
-          Integration Tests (Medium Speed)
-         /
-    Unit Tests (Fast, Isolated)
-```
+<p align="center">
+  <img src="../docs/images/test-pyramid.svg" alt="Test pyramid: ~1,039 unit tests (isolated components), ~113 integration (composed systems), ~2 end-to-end (real API)" width="520">
+</p>
 
 ## Test Types
 

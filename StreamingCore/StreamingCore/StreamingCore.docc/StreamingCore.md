@@ -29,21 +29,9 @@ The framework follows several key architectural principles:
 
 ### Architecture Layers
 
-```
-┌─────────────────────────────────────────┐
-│         Presentation Layer              │
-│   (ViewModels, Presenters, Mappers)     │
-├─────────────────────────────────────────┤
-│          Use Case Layer                 │
-│  (Loaders, Services, Coordinators)      │
-├─────────────────────────────────────────┤
-│           Domain Layer                  │
-│    (Models, Protocols, Value Types)     │
-├─────────────────────────────────────────┤
-│        Infrastructure Layer             │
-│  (HTTP Client, CoreData, FileSystem)    │
-└─────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="../../../docs/images/core-architecture-layers.svg" alt="StreamingCore architecture layers: Presentation, Use Case, Domain, Infrastructure — dependencies point inward to the Domain" width="520">
+</p>
 
 ### Thread Safety
 

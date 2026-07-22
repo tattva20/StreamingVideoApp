@@ -1,0 +1,37 @@
+<svg viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Test Pyramid</title>
+
+  <rect x="0.5" y="0.5" width="639" height="479" rx="14" fill="#ffffff" stroke="#e8eaed" stroke-width="1"/>
+
+  <text x="320" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#202124">Test Pyramid</text>
+  <text x="320" y="56" text-anchor="middle" font-size="13" fill="#5f6368">~1,154 tests · unit-heavy by design</text>
+
+  <!-- Unit (widest base) -->
+  <polygon points="154,323 486,323 570,440 70,440" fill="#e6f4ea" stroke="#34a853" stroke-width="2.5"/>
+  <!-- Integration (middle) -->
+  <polygon points="236,207 404,207 486,323 154,323" fill="#fef7e0" stroke="#f9ab00" stroke-width="2.5"/>
+  <!-- End-to-End (apex) -->
+  <polygon points="320,92 236,207 404,207" fill="#fce8e6" stroke="#ea4335" stroke-width="2.5"/>
+
+  <!-- E2E labels -->
+  <text x="320" y="176" text-anchor="middle" font-size="13" font-weight="700" fill="#202124">E2E</text>
+  <text x="320" y="193" text-anchor="middle" font-size="10.5" fill="#5f6368">~2 · real API</text>
+
+  <!-- Integration labels -->
+  <text x="320" y="264" text-anchor="middle" font-size="15" font-weight="700" fill="#202124">Integration</text>
+  <text x="320" y="283" text-anchor="middle" font-size="11.5" fill="#5f6368">~113 · composed systems</text>
+
+  <!-- Unit labels -->
+  <text x="320" y="386" text-anchor="middle" font-size="17" font-weight="700" fill="#202124">Unit</text>
+  <text x="320" y="406" text-anchor="middle" font-size="11.5" fill="#5f6368">~1,039 · isolated components</text>
+
+  <!-- axis annotation -->
+  <defs>
+    <marker id="arrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#9aa0a6"/>
+    </marker>
+  </defs>
+  <line x1="612" y1="110" x2="612" y2="430" stroke="#9aa0a6" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="626" y="150" text-anchor="middle" font-size="10.5" fill="#9aa0a6" transform="rotate(90 626 150)">fewer · slower · costlier</text>
+  <text x="626" y="392" text-anchor="middle" font-size="10.5" fill="#9aa0a6" transform="rotate(90 626 392)">more · faster · cheaper</text>
+</svg>

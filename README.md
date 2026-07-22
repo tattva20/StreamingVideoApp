@@ -151,39 +151,77 @@ flowchart TB
 
 ### Module Structure
 
+```mermaid
+flowchart LR
+    App["StreamingVideoApp<br/><i>app · composition root</i>"] --> iOS["StreamingCoreiOS<br/><i>UI layer</i>"]
+    iOS --> Core["StreamingCore<br/><i>domain · no UIKit / AppKit</i>"]
+
+    classDef app fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef ios fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class App app
+    class iOS ios
+    class Core core
 ```
-StreamingVideoApp.xcworkspace/
-│
-├── StreamingCore/                      # Core business logic
-│   ├── StreamingCore/                  # Main framework
-│   │   ├── Video Feature/              # Domain models
-│   │   ├── Video API/                  # Remote data loading
-│   │   ├── Video Cache/                # Local persistence
-│   │   ├── Video Presentation/         # Presenters & ViewModels
-│   │   ├── Video Playback Feature/     # Player protocol
-│   │   └── Video Comments Feature/     # Comments domain
-│   │
-│   ├── StreamingCoreiOS/               # iOS UI layer
-│   │   ├── Video UI/                   # Video list components
-│   │   ├── Video Player UI/            # Player controls
-│   │   └── Video Comments UI/          # Comments UI
-│   │
-│   └── Tests/
-│       ├── StreamingCoreTests/
-│       ├── StreamingCoreiOSTests/
-│       ├── StreamingCoreAPIEndToEndTests/
-│       └── StreamingCoreCacheIntegrationTests/
-│
-├── StreamingVideoApp/                  # iOS App target
-│   ├── StreamingVideoApp/
-│   │   ├── SceneDelegate.swift         # Main composition
-│   │   ├── AVPlayerVideoPlayer.swift   # AVPlayer implementation
-│   │   └── Composers/                  # Feature composers
-│   │
-│   └── StreamingVideoAppTests/         # Integration tests
-│
-└── .github/workflows/                  # CI/CD
-    └── ci.yml                          # iOS + macOS test jobs
+
+```mermaid
+flowchart TD
+    WS["StreamingVideoApp.xcworkspace"]
+
+    subgraph SC["StreamingCore · framework"]
+        direction TB
+        SC1["Video Feature<br/><i>Domain models</i>"]
+        SC2["Video API<br/><i>Remote data loading</i>"]
+        SC3["Video Cache<br/><i>Local persistence</i>"]
+        SC4["Video Presentation<br/><i>Presenters &amp; ViewModels</i>"]
+        SC5["Video Playback Feature<br/><i>Player protocol</i>"]
+        SC6["Video Comments Feature<br/><i>Comments domain</i>"]
+    end
+
+    subgraph IOS["StreamingCoreiOS · iOS UI layer"]
+        direction TB
+        IOS1["Video UI<br/><i>Video list components</i>"]
+        IOS2["Video Player UI<br/><i>Player controls</i>"]
+        IOS3["Video Comments UI<br/><i>Comments UI</i>"]
+    end
+
+    subgraph TESTS["Tests"]
+        direction TB
+        T1["StreamingCoreTests"]
+        T2["StreamingCoreiOSTests"]
+        T3["StreamingCoreAPIEndToEndTests"]
+        T4["StreamingCoreCacheIntegrationTests"]
+    end
+
+    subgraph APP["StreamingVideoApp · iOS App target"]
+        direction TB
+        A1["SceneDelegate.swift<br/><i>Main composition</i>"]
+        A2["AVPlayerVideoPlayer.swift<br/><i>AVPlayer implementation</i>"]
+        A3["Composers<br/><i>Feature composers</i>"]
+        A4["StreamingVideoAppTests<br/><i>Integration tests</i>"]
+    end
+
+    subgraph CI[".github/workflows · CI/CD"]
+        direction TB
+        CI1["ci.yml<br/><i>iOS + macOS test jobs</i>"]
+    end
+
+    WS --> SC
+    WS --> IOS
+    WS --> TESTS
+    WS --> APP
+    WS --> CI
+
+    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef ios fill:#fef7e0,stroke:#f9ab00,color:#202124;
+    classDef app fill:#fce8e6,stroke:#ea4335,color:#202124;
+    classDef neutral fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    class SC1,SC2,SC3,SC4,SC5,SC6 core
+    class IOS1,IOS2,IOS3 ios
+    class A1,A2,A3,A4 app
+    class T1,T2,T3,T4 neutral
+    class CI1 neutral
+    class WS neutral
 ```
 
 ### Design Patterns
@@ -361,21 +399,9 @@ xcodebuild clean build test \
 
 ### Test Pyramid
 
-```mermaid
-flowchart BT
-    UNIT["Unit — isolated components<br/><i>presenters · use cases · mappers</i>"]
-    INT["Integration — composed systems<br/><i>UI + presenter + adapters</i>"]
-    E2E["End-to-End — real API"]
-
-    UNIT --> INT --> E2E
-
-    classDef unit fill:#e6f4ea,stroke:#34a853,color:#202124;
-    classDef int fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    classDef e2e fill:#fce8e6,stroke:#ea4335,color:#202124;
-    class UNIT unit
-    class INT int
-    class E2E e2e
-```
+<p align="center">
+  <img src="docs/images/test-pyramid.svg" alt="Test pyramid: ~1,039 unit tests (isolated components), ~113 integration (composed systems), ~2 end-to-end (real API)" width="520">
+</p>
 
 ### Test Categories
 
