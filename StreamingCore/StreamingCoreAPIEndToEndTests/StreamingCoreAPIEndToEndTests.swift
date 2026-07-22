@@ -135,16 +135,16 @@ class StreamingCoreAPIEndToEndTests: XCTestCase {
 
 	private func videoURL(at index: Int) -> URL {
 		return URL(string: [
-			"https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4",
-			"https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
-			"https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4",
-			"https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4",
-			"https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
-			"https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4",
-			"https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
-			"https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4",
-			"https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4",
-			"https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov"
+			"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+			"https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8",
+			"https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8",
+			"https://test-streams.mux.dev/pts_shift/master.m3u8",
+			"https://test-streams.mux.dev/tos_ismc/main.m3u8",
+			"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+			"https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8",
+			"https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8",
+			"https://test-streams.mux.dev/pts_shift/master.m3u8",
+			"https://test-streams.mux.dev/tos_ismc/main.m3u8"
 		][index])!
 	}
 
