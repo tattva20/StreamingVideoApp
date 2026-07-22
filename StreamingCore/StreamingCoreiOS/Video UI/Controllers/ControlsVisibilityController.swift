@@ -18,10 +18,12 @@ public final class ControlsVisibilityController {
 
 	private let hideDelay: TimeInterval
 	private weak var delegate: ControlsVisibilityDelegate?
+	private let isVoiceOverRunning: () -> Bool
 
-	public init(hideDelay: TimeInterval, delegate: ControlsVisibilityDelegate) {
+	public init(hideDelay: TimeInterval, delegate: ControlsVisibilityDelegate, isVoiceOverRunning: @escaping () -> Bool = { false }) {
 		self.hideDelay = hideDelay
 		self.delegate = delegate
+		self.isVoiceOverRunning = isVoiceOverRunning
 	}
 
 	public func show() {
@@ -46,6 +48,7 @@ public final class ControlsVisibilityController {
 
 	public func scheduleHide() {
 		delegate?.cancelTimer()
+		guard !isVoiceOverRunning() else { return }
 		delegate?.scheduleTimer(withDelay: hideDelay) { [weak self] in
 			self?.hide()
 		}

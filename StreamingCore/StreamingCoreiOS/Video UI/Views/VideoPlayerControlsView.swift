@@ -188,6 +188,19 @@ public final class VideoPlayerControlsView: UIView {
 		bottomControlsContainer.addSubview(volumeSlider)
 
 		setupTapGesture()
+		configureAccessibility()
+	}
+
+	private func configureAccessibility() {
+		playButton.accessibilityLabel = "Play"
+		seekForwardButton.accessibilityLabel = "Skip forward 10 seconds"
+		seekBackwardButton.accessibilityLabel = "Skip back 10 seconds"
+		muteButton.accessibilityLabel = "Mute"
+		playbackSpeedButton.accessibilityLabel = "Playback speed"
+		fullscreenButton.accessibilityLabel = "Enter full screen"
+		pipButton.accessibilityLabel = "Picture in Picture"
+		progressSlider.accessibilityLabel = "Playback position"
+		volumeSlider.accessibilityLabel = "Volume"
 	}
 
 	private func setupTapGesture() {
@@ -201,26 +214,31 @@ public final class VideoPlayerControlsView: UIView {
 	public func setPlayButtonPlaying(_ isPlaying: Bool) {
 		let icon = isPlaying ? "pause.fill" : "play.fill"
 		playButton.setImage(UIImage(systemName: icon), for: .normal)
+		playButton.accessibilityLabel = isPlaying ? "Pause" : "Play"
 	}
 
 	public func setMuteButtonMuted(_ isMuted: Bool) {
 		let icon = isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill"
 		muteButton.setImage(UIImage(systemName: icon), for: .normal)
+		muteButton.accessibilityLabel = isMuted ? "Unmute" : "Mute"
 	}
 
 	public func setFullscreenButtonExpanded(_ isExpanded: Bool) {
 		let icon = isExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
 		fullscreenButton.setImage(UIImage(systemName: icon), for: .normal)
+		fullscreenButton.accessibilityLabel = isExpanded ? "Exit full screen" : "Enter full screen"
 	}
 
 	public func setSpeedButtonTitle(_ title: String) {
 		playbackSpeedButton.setTitle(title, for: .normal)
+		playbackSpeedButton.accessibilityValue = title
 	}
 
 	public func updateTime(current: String, duration: String, progress: Float) {
 		currentTimeLabel.text = current
 		durationLabel.text = duration
 		progressSlider.value = progress
+		progressSlider.accessibilityValue = "\(current) of \(duration)"
 	}
 
 	public func setTitle(_ title: String) {

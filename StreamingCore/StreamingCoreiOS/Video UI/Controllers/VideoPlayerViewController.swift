@@ -187,7 +187,7 @@ public final class VideoPlayerViewController: UIViewController {
 	}
 
 	private func setupControlsVisibilityController() {
-		controlsVisibilityController = ControlsVisibilityController(hideDelay: 5.0, delegate: self)
+		controlsVisibilityController = ControlsVisibilityController(hideDelay: 5.0, delegate: self, isVoiceOverRunning: { UIAccessibility.isVoiceOverRunning })
 	}
 
 	private func configurePlayer() {

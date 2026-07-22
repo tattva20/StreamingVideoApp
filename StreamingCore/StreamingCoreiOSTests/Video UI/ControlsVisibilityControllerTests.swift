@@ -108,6 +108,17 @@ class ControlsVisibilityControllerTests: XCTestCase {
 
 	// MARK: - Helpers
 
+	func test_scheduleHide_doesNotScheduleWhenVoiceOverIsRunning() {
+		let delegate = ControlsVisibilityDelegateSpy()
+		let sut = ControlsVisibilityController(hideDelay: 5.0, delegate: delegate, isVoiceOverRunning: { true })
+		trackForMemoryLeaks(sut)
+		trackForMemoryLeaks(delegate)
+
+		sut.scheduleHide()
+
+		XCTAssertFalse(delegate.messages.contains(.didScheduleTimer(5.0)))
+	}
+
 	private func makeSUT(
 		delay: TimeInterval = 5.0,
 		file: StaticString = #filePath,

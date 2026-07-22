@@ -378,6 +378,37 @@ final class VideoPlayerControlsViewTests: XCTestCase {
 
 	// MARK: - Helpers
 
+	func test_configureAccessibility_setsControlLabels() {
+		let sut = makeSUT()
+
+		XCTAssertEqual(sut.playButton.accessibilityLabel, "Play")
+		XCTAssertEqual(sut.seekForwardButton.accessibilityLabel, "Skip forward 10 seconds")
+		XCTAssertEqual(sut.seekBackwardButton.accessibilityLabel, "Skip back 10 seconds")
+		XCTAssertEqual(sut.muteButton.accessibilityLabel, "Mute")
+		XCTAssertEqual(sut.fullscreenButton.accessibilityLabel, "Enter full screen")
+		XCTAssertEqual(sut.pipButton.accessibilityLabel, "Picture in Picture")
+		XCTAssertEqual(sut.progressSlider.accessibilityLabel, "Playback position")
+		XCTAssertEqual(sut.volumeSlider.accessibilityLabel, "Volume")
+	}
+
+	func test_setPlayButtonPlaying_updatesAccessibilityLabel() {
+		let sut = makeSUT()
+
+		sut.setPlayButtonPlaying(true)
+		XCTAssertEqual(sut.playButton.accessibilityLabel, "Pause")
+
+		sut.setPlayButtonPlaying(false)
+		XCTAssertEqual(sut.playButton.accessibilityLabel, "Play")
+	}
+
+	func test_updateTime_setsProgressSliderAccessibilityValue() {
+		let sut = makeSUT()
+
+		sut.updateTime(current: "0:30", duration: "2:00", progress: 0.25)
+
+		XCTAssertEqual(sut.progressSlider.accessibilityValue, "0:30 of 2:00")
+	}
+
 	private func makeSUT(file: StaticString = #filePath, line: UInt = #line) -> VideoPlayerControlsView {
 		let sut = VideoPlayerControlsView()
 		trackForMemoryLeaks(sut, file: file, line: line)
