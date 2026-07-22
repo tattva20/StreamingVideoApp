@@ -47,6 +47,7 @@ public final class AVPlayerPerformanceObserver: @unchecked Sendable {
 	private var itemObservers: [NSKeyValueObservation] = []
 	private var timeObserver: Any?
 	private var bufferingStartTime: Date?
+	private var itemNotificationTokens: [NSObjectProtocol] = []
 
 	private let playbackStateSubject = CurrentValueSubject<ObserverPlaybackState, Never>(.idle)
 	private let bufferingStateSubject = CurrentValueSubject<BufferingState, Never>(.unknown)
@@ -109,6 +110,8 @@ public final class AVPlayerPerformanceObserver: @unchecked Sendable {
 
 		itemObservers.forEach { $0.invalidate() }
 		itemObservers.removeAll()
+		itemNotificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
+		itemNotificationTokens.removeAll()
 
 		if let timeObserver = timeObserver, let player = player {
 			player.removeTimeObserver(timeObserver)
@@ -137,6 +140,8 @@ public final class AVPlayerPerformanceObserver: @unchecked Sendable {
 		// Clear existing item observers
 		itemObservers.forEach { $0.invalidate() }
 		itemObservers.removeAll()
+		itemNotificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
+		itemNotificationTokens.removeAll()
 
 		guard let item = item else {
 			bufferingStateSubject.send(.unknown)
@@ -167,8 +172,28 @@ public final class AVPlayerPerformanceObserver: @unchecked Sendable {
 		}
 		itemObservers.append(statusObserver)
 
+		let accessLogToken = NotificationCenter.default.addObserver(
+			forName: AVPlayerItem.newAccessLogEntryNotification,
+			object: item,
+			queue: .main
+		) { [weak self] notification in
+			guard let item = notification.object as? AVPlayerItem else { return }
+			self?.handleAccessLogEntry(item)
+		}
+		itemNotificationTokens.append(accessLogToken)
+
 		// Emit load started
 		performanceEventSubject.send(.loadStarted)
+	}
+
+	private func handleAccessLogEntry(_ item: AVPlayerItem) {
+		guard let event = item.accessLog()?.events.last else { return }
+		if event.observedBitrate > 0 {
+			performanceEventSubject.send(.bytesTransferred(bytes: Int64(event.observedBitrate / 8), duration: 1.0))
+		}
+		if event.indicatedBitrate > 0 {
+			performanceEventSubject.send(.qualityChanged(bitrate: Int(event.indicatedBitrate)))
+		}
 	}
 
 	private func handleBufferStateChange(_ item: AVPlayerItem) {
