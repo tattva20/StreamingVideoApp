@@ -56,7 +56,7 @@ class StreamingCoreAPIEndToEndTests: XCTestCase {
 
 	private func getVideoImageDataResult(file: StaticString = #filePath, line: UInt = #line) async -> Result<Data, Error>? {
 		let client = ephemeralClient()
-		let url = URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg")!
+		let url = URL(string: "https://picsum.photos/seed/blazes/640/360")!
 
 		do {
 			let (data, response) = try await client.get(from: url)
@@ -68,7 +68,7 @@ class StreamingCoreAPIEndToEndTests: XCTestCase {
 
 	private var videosTestServerURL: URL {
 		// Vercel API with pagination support
-		return URL(string: "https://streaming-videos-ejci3r0dw-financieraufc-5358s-projects.vercel.app/v1/videos?limit=10")!
+		return URL(string: "https://streaming-videos-api.vercel.app/v1/videos?limit=10")!
 	}
 
 	private func ephemeralClient(file: StaticString = #filePath, line: UInt = #line) -> HTTPClient {
@@ -135,16 +135,16 @@ class StreamingCoreAPIEndToEndTests: XCTestCase {
 
 	private func videoURL(at index: Int) -> URL {
 		return URL(string: [
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+			"https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4",
+			"https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+			"https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4",
+			"https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4",
+			"https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+			"https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4",
+			"https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+			"https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4",
+			"https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4",
+			"https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov"
 		][index])!
 	}
 
@@ -152,14 +152,14 @@ class StreamingCoreAPIEndToEndTests: XCTestCase {
 		return URL(string: [
 			"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/330px-Big_buck_bunny_poster_big.jpg",
 			"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Elephants_Dream_s5_both.jpg/330px-Elephants_Dream_s5_both.jpg",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg",
+			"https://picsum.photos/seed/blazes/640/360",
+			"https://picsum.photos/seed/sintel/640/360",
+			"https://picsum.photos/seed/tearsofsteel/640/360",
 			"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/330px-Big_buck_bunny_poster_big.jpg",
 			"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Elephants_Dream_s5_both.jpg/330px-Elephants_Dream_s5_both.jpg",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg",
-			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/TearsOfSteel.jpg"
+			"https://picsum.photos/seed/blazes/640/360",
+			"https://picsum.photos/seed/sintel/640/360",
+			"https://picsum.photos/seed/tearsofsteel/640/360"
 		][index])!
 	}
 
