@@ -8,16 +8,29 @@
 import Foundation
 import StreamingCore
 
-/// A decorator that adds analytics logging to any VideoPlayer implementation.
-/// Uses @MainActor isolation following Essential Feed patterns for thread-safety.
 @MainActor
 public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 	private let decoratee: VideoPlayer
 	private let analyticsLogger: PlaybackAnalyticsLogger
+	private let continuation: AsyncStream<LoggedEvent>.Continuation
+	private let processingTask: Task<Void, Never>
 
 	public init(decoratee: VideoPlayer, analyticsLogger: PlaybackAnalyticsLogger) {
 		self.decoratee = decoratee
 		self.analyticsLogger = analyticsLogger
+
+		let (stream, continuation) = AsyncStream<LoggedEvent>.makeStream()
+		self.continuation = continuation
+		self.processingTask = Task {
+			for await event in stream {
+				await analyticsLogger.log(event.type, position: event.position)
+			}
+		}
+	}
+
+	deinit {
+		continuation.finish()
+		processingTask.cancel()
 	}
 
 	// MARK: - VideoPlayer Properties
@@ -38,62 +51,57 @@ public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
 
 	public func play() {
 		decoratee.play()
-		let position = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.play, position: position) }
+		enqueue(.play, position: currentTime)
 	}
 
 	public func pause() {
 		decoratee.pause()
-		let position = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.pause, position: position) }
+		enqueue(.pause, position: currentTime)
 	}
 
 	public func seekForward(by seconds: TimeInterval) {
 		let fromPosition = currentTime
 		decoratee.seekForward(by: seconds)
 		let toPosition = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.seek(from: fromPosition, to: toPosition), position: toPosition) }
+		enqueue(.seek(from: fromPosition, to: toPosition), position: toPosition)
 	}
 
 	public func seekBackward(by seconds: TimeInterval) {
 		let fromPosition = currentTime
 		decoratee.seekBackward(by: seconds)
 		let toPosition = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.seek(from: fromPosition, to: toPosition), position: toPosition) }
+		enqueue(.seek(from: fromPosition, to: toPosition), position: toPosition)
 	}
 
 	public func seek(to time: TimeInterval) {
 		let fromPosition = currentTime
 		decoratee.seek(to: time)
-		let logger = analyticsLogger
-		Task { await logger.log(.seek(from: fromPosition, to: time), position: time) }
+		enqueue(.seek(from: fromPosition, to: time), position: time)
 	}
 
 	public func setVolume(_ volume: Float) {
 		let oldVolume = self.volume
 		decoratee.setVolume(volume)
-		let position = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.volumeChanged(from: oldVolume, to: volume), position: position) }
+		enqueue(.volumeChanged(from: oldVolume, to: volume), position: currentTime)
 	}
 
 	public func toggleMute() {
 		decoratee.toggleMute()
-		let isMuted = self.isMuted
-		let position = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.muteToggled(isMuted: isMuted), position: position) }
+		enqueue(.muteToggled(isMuted: isMuted), position: currentTime)
 	}
 
 	public func setPlaybackSpeed(_ speed: Float) {
 		let oldSpeed = playbackSpeed
 		decoratee.setPlaybackSpeed(speed)
-		let position = currentTime
-		let logger = analyticsLogger
-		Task { await logger.log(.speedChanged(from: oldSpeed, to: speed), position: position) }
+		enqueue(.speedChanged(from: oldSpeed, to: speed), position: currentTime)
 	}
+
+	private func enqueue(_ type: PlaybackEventType, position: TimeInterval) {
+		continuation.yield(LoggedEvent(type: type, position: position))
+	}
+}
+
+private struct LoggedEvent: Sendable {
+	let type: PlaybackEventType
+	let position: TimeInterval
 }

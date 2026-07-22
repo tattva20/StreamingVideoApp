@@ -165,6 +165,20 @@ final class AnalyticsVideoPlayerDecoratorTests: XCTestCase {
 		XCTAssertEqual(events.first?.type, .play)
 	}
 
+	func test_events_areLoggedInInvocationOrder() async {
+		let logger = PlaybackAnalyticsLoggerSpy()
+		let sut = makeSUT(logger: logger)
+
+		sut.play()
+		sut.pause()
+		sut.play()
+		await Task.yield()
+		try? await Task.sleep(nanoseconds: 200_000_000)
+
+		let types = logger.loggedEvents.map(\.type)
+		XCTAssertEqual(types, [.play, .pause, .play])
+	}
+
 	func test_pause_logsPauseEvent() async {
 		let decoratee = VideoPlayerSpy()
 		let logger = PlaybackAnalyticsLoggerSpy()
