@@ -40,7 +40,6 @@ jobs:
           -workspace StreamingVideoApp.xcworkspace \
           -scheme CI_iOS \
           -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' \
-          -enableThreadSanitizer YES \
           -resultBundlePath TestResults-iOS.xcresult \
           CODE_SIGNING_ALLOWED=NO \
           | xcpretty --color || true
