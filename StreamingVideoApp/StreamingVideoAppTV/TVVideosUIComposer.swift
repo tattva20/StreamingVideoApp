@@ -28,22 +28,14 @@ public enum TVVideosUIComposer {
 		selection: @escaping @MainActor (Video) -> Void
 	) -> TVVideoFeedViewController {
 		let feedViewController = TVVideoFeedViewController()
+		let adapter = TVFeedLoaderPresentationAdapter(
+			videoLoader: videoLoader,
+			imageLoader: imageLoader,
+			selection: selection)
+		adapter.feedViewController = feedViewController
 
-		feedViewController.onRefresh = { [weak feedViewController] in
-			Task.immediate { @MainActor in
-				guard let page = try? await videoLoader() else { return }
-
-				let controllers = page.items.map { video in
-					let cellController = TVVideoCellController(
-						viewModel: VideoViewModel(title: video.title, description: video.description),
-						imageLoader: imageLoader,
-						thumbnailURL: video.thumbnailURL,
-						selection: { selection(video) })
-					return TVCellController(id: video, cellController)
-				}
-				feedViewController?.display(controllers)
-			}
-		}
+		feedViewController.onRefresh = { adapter.loadFeed() }
+		feedViewController.onLoadMore = { adapter.loadMoreIfAvailable() }
 
 		return feedViewController
 	}
