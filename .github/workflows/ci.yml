@@ -87,3 +87,42 @@ jobs:
       with:
         name: macos-test-results
         path: TestResults-macOS.xcresult
+
+  build-tvos:
+    name: tvOS Tests
+    runs-on: macos-26
+    timeout-minutes: 40
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: |
+        if [ -d "/Applications/Xcode_26.5.app" ]; then
+          sudo xcode-select -s /Applications/Xcode_26.5.app
+        else
+          sudo xcode-select -s /Applications/Xcode.app
+        fi
+        xcodebuild -version
+
+    - name: List Available tvOS Simulators
+      run: xcrun simctl list devices available | grep -iE "Apple TV|tvOS" || xcrun simctl list devices available
+
+    - name: Run tvOS Tests
+      run: |
+        set -o pipefail
+        xcodebuild test \
+          -workspace StreamingVideoApp.xcworkspace \
+          -scheme CI_tvOS \
+          -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest' \
+          -resultBundlePath TestResults-tvOS.xcresult \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcpretty --color || true
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: tvos-test-results
+        path: TestResults-tvOS.xcresult
