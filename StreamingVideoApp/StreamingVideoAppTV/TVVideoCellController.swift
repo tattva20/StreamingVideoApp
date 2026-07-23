@@ -5,14 +5,14 @@ public final class TVVideoCellController: NSObject {
 	private let viewModel: VideoViewModel
 	private let imageLoader: (@Sendable (URL) async throws -> Data)?
 	private let thumbnailURL: URL?
-	private let selection: () -> Void
+	private let selection: @MainActor () -> Void
 	private var imageTask: Task<Void, Never>?
 
 	public init(
 		viewModel: VideoViewModel,
 		imageLoader: (@Sendable (URL) async throws -> Data)? = nil,
 		thumbnailURL: URL? = nil,
-		selection: @escaping () -> Void
+		selection: @escaping @MainActor () -> Void
 	) {
 		self.viewModel = viewModel
 		self.imageLoader = imageLoader
