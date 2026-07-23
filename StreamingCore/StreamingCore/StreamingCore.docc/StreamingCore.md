@@ -29,9 +29,17 @@ The framework follows several key architectural principles:
 
 ### Architecture Layers
 
-<p align="center">
-  <img src="../../../docs/images/core-architecture-layers.svg" alt="StreamingCore architecture layers: Presentation, Use Case, Domain, Infrastructure — dependencies point inward to the Domain" width="520">
-</p>
+```
+StreamingCore — Clean Architecture; dependencies point inward to the Domain
+
+Presentation    presenters · view-models · LoadResourcePresenter
+    │ depends on
+Use Case        VideoLoader · load / cache / validate use cases
+    │ depends on
+Domain          Video · PlaybackState — pure, no dependencies
+    ▲ implements (points inward)
+Infrastructure  URLSessionHTTPClient · CoreDataVideoStore · mappers
+```
 
 ### Thread Safety
 

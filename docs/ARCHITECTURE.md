@@ -8,19 +8,26 @@ This document explains how Clean Architecture is implemented in StreamingVideoAp
 
 StreamingVideoApp follows **Uncle Bob's Clean Architecture** with strict layer boundaries and dependency inversion. The architecture ensures that business logic is completely independent of frameworks, UI, and external agencies.
 
-```mermaid
-flowchart TB
-    classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
-    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
-    classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    app["StreamingVideoApp<br/><i>Composition Root</i><br/>Dependency injection & wiring<br/>Platform-specific implementations (AVPlayer, URLSession)<br/>App lifecycle management"]
-    ios["StreamingCoreiOS<br/><i>iOS UI Components</i><br/>UIKit view controllers<br/>Table/Collection view cells<br/>UI layout and animations"]
-    core["StreamingCore<br/><i>Platform-Agnostic Core</i><br/>Domain models (Video, VideoComment, PlaybackState)<br/>Use cases (Load, Cache, Validate)<br/>Presenters and ViewModels<br/>Network and storage abstractions (protocols only)<br/>NO UIKit/AppKit imports allowed"]
-    app --- ios --- core
-    class app app
-    class ios neutral
-    class core core
 ```
+StreamingVideoApp.xcworkspace — dependencies point inward; every arrow ends at StreamingCore
+
+apps · composition roots (platform-specific wiring)
+├── StreamingVideoApp      iOS app    → StreamingCore · StreamingCoreiOS · StreamingCorePlayback
+│                                        DI & wiring · AVPlayer + custom PlayerView · lifecycle
+└── StreamingVideoAppTV     tvOS app  → StreamingCore · StreamingCorePlayback   (not StreamingCoreiOS)
+                                         DI & wiring · AVPlayerViewController (native transport)
+
+frameworks
+├── StreamingCoreiOS       UIKit          → StreamingCore    iOS feed / player / comments UI
+├── StreamingCorePlayback  AVFoundation   → StreamingCore    AVPlayerVideoPlayer · logging/analytics
+│                                                            decorators · StatefulVideoPlayer ·
+│                                                            PlaybackCoordinator · bandwidth/perf
+└── StreamingCore          Foundation · Combine · CoreData   the stable core — NO UIKit / AVKit
+                                                             domain models · use cases ·
+                                                             presenters/view-models · protocols
+```
+
+Both apps compose the **same** playback stack from `StreamingCorePlayback`; only the UI layer differs (custom UIKit controls on iOS, native `AVPlayerViewController` on tvOS). `StreamingCore` imports no UI framework, so it — and the tests that cover it — build on macOS with no simulator.
 
 ---
 
@@ -52,121 +59,86 @@ flowchart TB
 
 The core module contains ALL business logic with ZERO framework dependencies:
 
-```mermaid
-flowchart TD
-    Root["StreamingCore/"]
-
-    subgraph VF["Video Feature · Domain models"]
-        VF1["Video.swift<br/><i>Pure value type</i>"]
-    end
-
-    subgraph VA["Video API · Remote data loading"]
-        VA1["HTTPClient.swift<br/><i>Protocol · abstraction</i>"]
-        VA2["VideoItemsMapper.swift<br/><i>Pure data transformation</i>"]
-        VA3["RemoteVideoLoader.swift<br/><i>Use case implementation</i>"]
-    end
-
-    subgraph VC["Video Cache · Local persistence"]
-        VC1["VideoStore.swift<br/><i>Protocol · abstraction</i>"]
-        VC2["LocalVideo.swift<br/><i>Cache representation</i>"]
-        VC3["VideoCachePolicy.swift<br/><i>Pure validation logic</i>"]
-        VC4["LocalVideoLoader.swift<br/><i>Use case implementation</i>"]
-    end
-
-    subgraph VP["Video Presentation · Presenters &amp; ViewModels"]
-        VP1["VideoPresenter.swift<br/><i>Pure presentation logic</i>"]
-        VP2["VideoViewModel.swift<br/><i>View-ready data</i>"]
-    end
-
-    subgraph VPF["Video Playback Feature · State machine"]
-        VPF1["PlaybackState.swift<br/><i>Pure state enum</i>"]
-        VPF2["PlaybackAction.swift<br/><i>Pure action enum</i>"]
-        VPF3["DefaultPlaybackStateMachine.swift"]
-    end
-
-    subgraph SH["Shared Combine · Reactive helpers"]
-        SH1["CombineHelpers.swift<br/><i>Pure extensions</i>"]
-    end
-
-    Root --> VF
-    Root --> VA
-    Root --> VC
-    Root --> VP
-    Root --> VPF
-    Root --> SH
-
-    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
-    class VF1,VA1,VA2,VA3,VC1,VC2,VC3,VC4,VP1,VP2,VPF1,VPF2,VPF3,SH1 core
-    class Root core
+```
+StreamingCore/  — Foundation · Combine · CoreData only (no UIKit / AppKit / AVKit)
+├── Video Feature/              Video (pure value type) · VideoLoader (protocol)
+├── Video API/                  HTTPClient · URLSessionHTTPClient · VideoItemsMapper · endpoints
+├── Video Cache/                VideoStore (protocol) · CoreDataVideoStore · InMemoryVideoStore
+│                               LocalVideoLoader · VideoCachePolicy
+├── Video Presentation/         VideoPresenter · VideoViewModel
+├── Video Playback Feature/     VideoPlayer (protocol) · PlaybackState · PlaybackAction
+│                               DefaultPlaybackStateMachine
+├── Video Comments Feature/     domain · Comments API · Comments Presentation
+├── Video Analytics Feature/    PlaybackAnalyticsLogger (protocol)
+├── Video Performance Feature/  PlaybackPerformanceService
+├── Structured Logging Feature/ Logger (protocol)
+├── Shared Presentation/        LoadResourcePresenter (generic) · resource-view protocols
+├── Shared API/                 Paginated
+└── Shared Combine/             CombineHelpers
 ```
 
+Concrete infrastructure (`URLSessionHTTPClient`, `CoreDataVideoStore`) lives here behind its protocol — the core owns its own persistence and networking implementations; only the *frameworks* they wrap are external.
+
 **Key Constraint:** No `import UIKit` or `import AppKit` anywhere in StreamingCore.
+
+### StreamingCorePlayback (Shared Playback — AVFoundation)
+
+The reused, UIKit-free playback stack. Extracted in Phase 1 so the tvOS app can import it without pulling in any iOS UI; consumed **unchanged** by both apps.
+
+```
+StreamingCorePlayback/  — AVFoundation (no UIKit)  → depends on StreamingCore
+├── AVPlayerVideoPlayer            VideoPlayer over AVPlayer; exposes .player for AVPlayerViewController
+├── LoggingVideoPlayerDecorator    ┐
+├── AnalyticsVideoPlayerDecorator  ┤ Decorator chain — each is-a VideoPlayer and wraps a VideoPlayer
+├── StatefulVideoPlayer            ┘ outer wrapper driving DefaultPlaybackStateMachine
+├── PlaybackCoordinator            AVPlayer KVO + periodic time → PlaybackAction; performance wiring
+├── AVPlayerStateAdapter           AVPlayer → PlaybackAction        (moved here in checkpoint 2)
+├── AVPlayerBufferAdapter · AVPlayerPerformanceObserver
+├── VideoPlayerPerformanceAdapter · BandwidthEstimate · BandwidthSample · NetworkBandwidthEstimator
+└── VideoService                   remote-with-local-fallback loading facade
+```
 
 ### StreamingCoreiOS (iOS UI Layer)
 
 Contains all iOS-specific UI code:
 
-```mermaid
-flowchart TD
-    Root["StreamingCoreiOS/"]
-
-    subgraph VUI["Video UI"]
-        VUI1["ListViewController.swift<br/><i>Generic list controller</i>"]
-        VUI2["VideoCell.swift<br/><i>Custom cell</i>"]
-        VUI3["CellController.swift<br/><i>Cell configuration protocol</i>"]
-    end
-
-    subgraph VPUI["Video Player UI"]
-        VPUI1["VideoPlayerControlsView.swift<br/><i>Playback controls</i>"]
-        VPUI2["ProgressSlider.swift<br/><i>Seek slider</i>"]
-    end
-
-    subgraph VPIOS["Video Playback iOS"]
-        VPIOS1["AVPlayerStateAdapter.swift<br/><i>AVPlayer → PlaybackAction</i>"]
-    end
-
-    Root --> VUI
-    Root --> VPUI
-    Root --> VPIOS
-
-    classDef ios fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    class VUI1,VUI2,VUI3,VPUI1,VPUI2,VPIOS1 ios
-    class Root ios
 ```
+StreamingCoreiOS/  — UIKit  → depends on StreamingCore
+├── Shared UI/             ListViewController (generic list) · shimmer/animation helpers
+├── Video UI/              VideoCell · PlayerView · VideoPlayerViewController ·
+│                          VideoPlayerControlsView · PictureInPictureController ·
+│                          ControlsVisibilityController · AVAudioSessionAdapter
+├── Video Comments UI/     VideoCommentCell · VideoCommentCellController
+└── Video Performance iOS/ NetworkQualityMonitor
+```
+
+`AVPlayerStateAdapter` used to live here; it was pure AVFoundation, so Phase 1 moved it into `StreamingCorePlayback` where the tvOS app can reuse it.
 
 ### StreamingVideoApp (Composition Root)
 
 Wires everything together:
 
-```mermaid
-flowchart TD
-    Root["StreamingVideoApp/"]
+```
+StreamingVideoApp/  (iOS composition root)  → StreamingCore · StreamingCoreiOS · StreamingCorePlayback
+├── SceneDelegate                    main composition: feed → tap → player
+├── AVPlayerVideoPlayer+PlayerView   iOS-only attach(to:) extension — the one UIKit coupling
+├── VideoPlayerUIComposer · VideosUIComposer · VideoCommentsUIComposer
+├── PerformanceMonitoringComposer · LoggingConfiguration
+└── LoadResourcePresentationAdapter · VideosViewAdapter · VideoCommentsViewAdapter · WeakRefVirtualProxy
+```
 
-    R1["SceneDelegate.swift<br/><i>Main composition</i>"]
-    R2["AVPlayerVideoPlayer.swift<br/><i>VideoPlayer implementation</i>"]
-    R3["URLSessionHTTPClient.swift<br/><i>HTTPClient implementation</i>"]
-    R4["CoreDataVideoStore.swift<br/><i>VideoStore implementation</i>"]
+`AVPlayerVideoPlayer` and the logging/analytics decorators no longer live here — they moved into `StreamingCorePlayback`. The app now composes them; the one iOS-only piece it still owns is the `attach(to: PlayerView)` extension (tvOS uses `AVPlayerViewController` instead and needs no equivalent).
 
-    subgraph COMP["Composers"]
-        COMP1["VideosUIComposer.swift<br/><i>Video list composition</i>"]
-        COMP2["VideoPlayerComposer.swift<br/><i>Player composition</i>"]
-    end
+### StreamingVideoAppTV (tvOS Composition Root)
 
-    subgraph DEC["Decorators"]
-        DEC1["LoggingVideoPlayerDecorator.swift"]
-        DEC2["AnalyticsVideoPlayerDecorator.swift"]
-    end
+Mirrors the iOS root, minus the custom UI. Depends on `StreamingCore` + `StreamingCorePlayback` only — **not** `StreamingCoreiOS`.
 
-    Root --> R1
-    Root --> R2
-    Root --> R3
-    Root --> R4
-    Root --> COMP
-    Root --> DEC
-
-    classDef app fill:#fce8e6,stroke:#ea4335,color:#202124;
-    class R1,R2,R3,R4,COMP1,COMP2,DEC1,DEC2 app
-    class Root app
+```
+StreamingVideoAppTV/  (tvOS composition root)  → StreamingCore · StreamingCorePlayback
+├── AppDelegate · SceneDelegate   composes VideoService; roots the player on the first remote video
+├── TVPlayerComposer              builds AVPlayerVideoPlayer → Logging → Analytics →
+│                                 StatefulVideoPlayer + PlaybackCoordinator (the reused chain)
+└── TVPlayerViewController        subclasses AVPlayerViewController (native 10-foot transport)
 ```
 
 ---
@@ -213,22 +185,50 @@ final class CoreDataVideoStore: VideoStore {
 
 ```swift
 // StreamingCore defines the abstraction
-@MainActor
 public protocol VideoPlayer: AnyObject {
-    var statePublisher: AnyPublisher<PlaybackState, Never> { get }
+    var isPlaying: Bool { get }
+    var currentTime: TimeInterval { get }
+    var duration: TimeInterval { get }
     func load(url: URL)
     func play()
     func pause()
     func seek(to time: TimeInterval)
-    func stop()
+    func setPlaybackSpeed(_ speed: Float)
+    // volume, mute, seekForward/Backward … elided
 }
 
-// StreamingVideoApp provides AVPlayer implementation
-@MainActor
-final class AVPlayerVideoPlayer: VideoPlayer {
-    private let player: AVPlayer
+// StreamingCorePlayback provides the AVPlayer implementation
+public final class AVPlayerVideoPlayer: VideoPlayer {
+    public let player: AVPlayer   // handed straight to AVPlayerViewController on tvOS
     // ...
 }
+```
+
+Behaviour is layered onto that single protocol with the **Decorator** pattern — each wrapper *is* a `VideoPlayer` and *holds* a `VideoPlayer`, so features compose without the base player knowing they exist. Both apps build the same chain:
+
+```mermaid
+classDiagram
+    class VideoPlayer {
+        <<protocol>>
+        +load(url) +play() +pause() +seek(to)
+    }
+    class AVPlayerVideoPlayer {
+        +player: AVPlayer
+    }
+    class LoggingVideoPlayerDecorator
+    class AnalyticsVideoPlayerDecorator
+    class StatefulVideoPlayer
+    class PlaybackCoordinator {
+        +start() +stop()
+    }
+    VideoPlayer <|.. AVPlayerVideoPlayer
+    VideoPlayer <|.. LoggingVideoPlayerDecorator
+    VideoPlayer <|.. AnalyticsVideoPlayerDecorator
+    VideoPlayer <|.. StatefulVideoPlayer
+    LoggingVideoPlayerDecorator o--> VideoPlayer : decoratee
+    AnalyticsVideoPlayerDecorator o--> VideoPlayer : decoratee
+    StatefulVideoPlayer o--> VideoPlayer : decoratee
+    PlaybackCoordinator --> AVPlayerVideoPlayer : observes player
 ```
 
 ---
