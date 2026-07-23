@@ -26,9 +26,17 @@ StreamingCoreiOS provides UIKit-based view controllers, views, and iOS platform 
 
 ### Architecture
 
-<p align="center">
-  <img src="../../../docs/images/coreios-architecture.svg" alt="StreamingCoreiOS architecture: UI Components and Platform Adapters, depending on StreamingCore" width="520">
-</p>
+```
+StreamingCoreiOS — UIKit UI; depends inward on StreamingCore
+
+UI Components     ListViewController · VideoCell · PlayerView ·
+                  VideoPlayerViewController · VideoPlayerControlsView ·
+                  PictureInPictureController · comment cells
+    │ depends on
+Platform Adapters AVAudioSessionAdapter · NetworkQualityMonitor
+    │ depends on
+StreamingCore     domain · use cases · presenters · protocols  (no UIKit)
+```
 
 ### Thread Safety
 
