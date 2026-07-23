@@ -270,7 +270,7 @@ class VideosUIIntegrationTests: XCTestCase {
 		trackForMemoryLeaks(sut, file: file, line: line)
 
 		addTeardownBlock { [weak loader] in
-			loader?.cancelPendingRequests()
+			await loader?.cancelPendingRequests()
 		}
 
 		return (sut, loader)

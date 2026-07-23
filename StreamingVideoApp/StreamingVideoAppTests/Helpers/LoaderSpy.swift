@@ -45,20 +45,33 @@ class LoaderSpy<Param, Resource: Sendable> {
 		}
 	}
 
-	func complete(with resource: Resource, at index: Int) {
+	func complete(with resource: Resource, at index: Int, timeout: TimeInterval = 1) async {
 		requests[index].continuation.yield(resource)
 		requests[index].continuation.finish()
 
-		while requests[index].result == nil { RunLoop.current.run(until: Date()) }
+		_ = try? await waitForResult(at: index, timeout: timeout)
 	}
 
-	func fail(with error: Error, at index: Int) {
+	func fail(with error: Error, at index: Int, timeout: TimeInterval = 1) async {
 		requests[index].continuation.finish(throwing: error)
 
-		while requests[index].result == nil { RunLoop.current.run(until: Date()) }
+		_ = try? await waitForResult(at: index, timeout: timeout)
 	}
 
+	@discardableResult
 	func result(at index: Int, timeout: TimeInterval = 1) async throws -> AsyncResult {
+		try await waitForResult(at: index, timeout: timeout)
+	}
+
+	func cancelPendingRequests(timeout: TimeInterval = 1) async {
+		for (index, request) in requests.enumerated() where request.result == nil {
+			request.continuation.finish(throwing: CancellationError())
+
+			_ = try? await waitForResult(at: index, timeout: timeout)
+		}
+	}
+
+	private func waitForResult(at index: Int, timeout: TimeInterval) async throws -> AsyncResult {
 		let maxDate = Date() + timeout
 
 		while Date() <= maxDate {
@@ -70,13 +83,5 @@ class LoaderSpy<Param, Resource: Sendable> {
 		}
 
 		throw Timeout()
-	}
-
-	func cancelPendingRequests() {
-		for (index, request) in requests.enumerated() where request.result == nil {
-			request.continuation.finish(throwing: CancellationError())
-
-			while requests[index].result == nil { RunLoop.current.run(until: Date()) }
-		}
 	}
 }

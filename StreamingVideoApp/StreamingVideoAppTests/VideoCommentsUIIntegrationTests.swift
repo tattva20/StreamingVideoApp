@@ -141,7 +141,7 @@ class VideoCommentsUIIntegrationTests: XCTestCase {
 		trackForMemoryLeaks(sut, file: file, line: line)
 
 		addTeardownBlock { [weak loader] in
-			loader?.cancelPendingRequests()
+			await loader?.cancelPendingRequests()
 		}
 
 		return (sut, loader)
@@ -200,15 +200,15 @@ extension VideoCommentsUIIntegrationTests {
 		}
 
 		func completeLoading(with comments: [VideoComment] = [], at index: Int = 0) async {
-			loader.complete(with: comments, at: index)
+			await loader.complete(with: comments, at: index)
 		}
 
 		func completeLoadingWithError(at index: Int = 0) async {
-			loader.fail(with: anyNSError(), at: index)
+			await loader.fail(with: anyNSError(), at: index)
 		}
 
-		func cancelPendingRequests() {
-			loader.cancelPendingRequests()
+		func cancelPendingRequests() async {
+			await loader.cancelPendingRequests()
 		}
 	}
 }
