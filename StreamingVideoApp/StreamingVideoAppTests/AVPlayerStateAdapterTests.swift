@@ -9,7 +9,7 @@ import XCTest
 import AVFoundation
 import Combine
 import StreamingCore
-@testable import StreamingCoreiOS
+@testable import StreamingCorePlayback
 
 @MainActor
 final class AVPlayerStateAdapterTests: XCTestCase {

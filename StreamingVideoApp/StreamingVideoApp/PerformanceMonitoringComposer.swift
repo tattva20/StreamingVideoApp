@@ -9,6 +9,7 @@ import AVFoundation
 import Combine
 import StreamingCore
 import StreamingCoreiOS
+import StreamingCorePlayback
 
 /// Factory that composes all performance monitoring components
 @MainActor

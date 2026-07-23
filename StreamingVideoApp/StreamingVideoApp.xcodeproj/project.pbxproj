@@ -13,6 +13,8 @@
 		6E7F87C42EDE3A6B007B5AF8 /* StreamingCoreiOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		3F4F84FC3EDBB955D2AEB998 /* StreamingCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */; };
 		EDF312360AA7B7DBDC8284D9 /* StreamingCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DCB00000000000000000102 /* StreamingCorePlayback.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCB00000000000000000101 /* StreamingCorePlayback.framework */; };
+		7DCB00000000000000000103 /* StreamingCorePlayback.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCB00000000000000000101 /* StreamingCorePlayback.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +43,7 @@
 			files = (
 				6E7F87C12EDE3A6B007B5AF8 /* StreamingCore.framework in Embed Frameworks */,
 				6E7F87C42EDE3A6B007B5AF8 /* StreamingCoreiOS.framework in Embed Frameworks */,
+				7DCB00000000000000000103 /* StreamingCorePlayback.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -65,6 +68,7 @@
 		6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = StreamingCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		84A970BFE35B46A62485324E /* StreamingVideoAppTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StreamingVideoAppTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9E11A8CF9488B2DA8A23051 /* StreamingVideoAppTVTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamingVideoAppTVTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7DCB00000000000000000101 /* StreamingCorePlayback.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = StreamingCorePlayback.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -120,6 +124,7 @@
 			files = (
 				6E7F87C02EDE3A6B007B5AF8 /* StreamingCore.framework in Frameworks */,
 				6E7F87C32EDE3A6B007B5AF8 /* StreamingCoreiOS.framework in Frameworks */,
+				7DCB00000000000000000102 /* StreamingCorePlayback.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,6 +181,7 @@
 			children = (
 				6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */,
 				6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */,
+				7DCB00000000000000000101 /* StreamingCorePlayback.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";

@@ -10,6 +10,7 @@ import XCTest
 import StreamingCore
 import StreamingCoreiOS
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 @MainActor
 final class ProductionIntegrationTests: XCTestCase {

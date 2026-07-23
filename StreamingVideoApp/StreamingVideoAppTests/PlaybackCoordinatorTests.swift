@@ -9,6 +9,7 @@ import StreamingCore
 import StreamingCoreiOS
 import XCTest
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 @MainActor
 final class PlaybackCoordinatorTests: XCTestCase {

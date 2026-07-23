@@ -1,12 +1,11 @@
 //
 //  AVPlayerVideoPlayer.swift
-//  StreamingVideoApp
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas all rights reserved.
 //
 import AVFoundation
 import StreamingCore
-import StreamingCoreiOS
 
 public final class AVPlayerVideoPlayer: VideoPlayer {
 	public let player: AVPlayer
@@ -78,9 +77,5 @@ public final class AVPlayerVideoPlayer: VideoPlayer {
 	public func setPlaybackSpeed(_ speed: Float) {
 		playbackSpeed = speed
 		player.rate = speed
-	}
-
-	public func attach(to playerView: PlayerView) {
-		playerView.playerLayer.player = player
 	}
 }

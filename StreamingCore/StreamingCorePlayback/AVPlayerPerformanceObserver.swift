@@ -1,6 +1,6 @@
 //
 //  AVPlayerPerformanceObserver.swift
-//  StreamingCoreiOS
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas. All rights reserved.
 //

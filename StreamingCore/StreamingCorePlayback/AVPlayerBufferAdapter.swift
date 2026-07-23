@@ -1,6 +1,6 @@
 //
 //  AVPlayerBufferAdapter.swift
-//  StreamingVideoApp
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas. All rights reserved.
 //

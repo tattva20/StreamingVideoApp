@@ -1,6 +1,6 @@
 //
 //  AVPlayerStateAdapter.swift
-//  StreamingCoreiOS
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas. All rights reserved.
 //
@@ -57,7 +57,9 @@ public final class AVPlayerStateAdapter: @unchecked Sendable {
 			observePlayerItem(currentItem)
 		}
 
+		#if !os(macOS)
 		setupNotificationObservers()
+		#endif
 	}
 
 	public func stopObserving() {
@@ -146,6 +148,7 @@ public final class AVPlayerStateAdapter: @unchecked Sendable {
 
 	// MARK: - Notification Observers
 
+	#if !os(macOS)
 	private func setupNotificationObservers() {
 		NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)
 			.sink { [weak self] notification in
@@ -175,6 +178,7 @@ public final class AVPlayerStateAdapter: @unchecked Sendable {
 			break
 		}
 	}
+	#endif
 
 	// MARK: - Action Sending
 

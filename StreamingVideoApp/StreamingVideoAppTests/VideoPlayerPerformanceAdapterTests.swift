@@ -10,6 +10,7 @@ import Combine
 import StreamingCore
 import StreamingCoreiOS
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 // Tests re-enabled for nonisolated actor isolation experiment
 

@@ -9,7 +9,7 @@ import AVFoundation
 import Combine
 import XCTest
 @testable import StreamingCore
-@testable import StreamingCoreiOS
+@testable import StreamingCorePlayback
 
 final class AVPlayerPerformanceObserverTests: XCTestCase {
 

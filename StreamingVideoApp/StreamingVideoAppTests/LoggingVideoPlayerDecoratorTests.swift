@@ -8,6 +8,7 @@
 import XCTest
 import StreamingCore
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 // Tests re-enabled for nonisolated actor isolation experiment
 

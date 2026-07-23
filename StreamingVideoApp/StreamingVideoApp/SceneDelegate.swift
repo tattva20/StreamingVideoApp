@@ -9,6 +9,7 @@ import UIKit
 import CoreData
 import StreamingCore
 import StreamingCoreiOS
+import StreamingCorePlayback
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	var window: UIWindow?

@@ -1,15 +1,14 @@
 //
 //  PlaybackCoordinator.swift
-//  StreamingVideoApp
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas all rights reserved.
 //
 import AVFoundation
 import StreamingCore
-import StreamingCoreiOS
 
 @MainActor
-final class PlaybackCoordinator {
+public final class PlaybackCoordinator {
 	private let player: AVPlayer
 	private let stateMachine: DefaultPlaybackStateMachine
 	private let performanceAdapter: VideoPlayerPerformanceAdapter
@@ -19,11 +18,11 @@ final class PlaybackCoordinator {
 	private var performanceObserver: AVPlayerPerformanceObserver?
 	private var timeObserverToken: Any?
 
-	var isObserving: Bool {
+	public var isObserving: Bool {
 		stateAdapter?.isObserving ?? false
 	}
 
-	init(
+	public init(
 		player: AVPlayer,
 		stateMachine: DefaultPlaybackStateMachine,
 		performanceAdapter: VideoPlayerPerformanceAdapter,
@@ -35,7 +34,7 @@ final class PlaybackCoordinator {
 		self.onTimeUpdate = onTimeUpdate
 	}
 
-	func start() {
+	public func start() {
 		guard stateAdapter == nil else { return }
 
 		let stateMachine = self.stateMachine
@@ -57,7 +56,7 @@ final class PlaybackCoordinator {
 		}
 	}
 
-	func stop() {
+	public func stop() {
 		if let timeObserverToken {
 			player.removeTimeObserver(timeObserverToken)
 			self.timeObserverToken = nil
@@ -68,7 +67,7 @@ final class PlaybackCoordinator {
 		performanceObserver = nil
 	}
 
-	func setPreferredPeakBitRate(_ bitsPerSecond: Double) {
+	public func setPreferredPeakBitRate(_ bitsPerSecond: Double) {
 		player.currentItem?.preferredPeakBitRate = max(0, bitsPerSecond)
 	}
 }

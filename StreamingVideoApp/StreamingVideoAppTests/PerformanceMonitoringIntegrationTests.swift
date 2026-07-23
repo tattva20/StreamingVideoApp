@@ -10,6 +10,7 @@ import Combine
 import StreamingCore
 import StreamingCoreiOS
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 @MainActor
 final class PerformanceMonitoringIntegrationTests: XCTestCase {

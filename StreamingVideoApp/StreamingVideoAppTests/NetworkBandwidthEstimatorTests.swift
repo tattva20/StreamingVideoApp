@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import StreamingCoreiOS
+@testable import StreamingCorePlayback
 
 @MainActor
 final class NetworkBandwidthEstimatorTests: XCTestCase {

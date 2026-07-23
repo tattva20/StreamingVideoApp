@@ -7,6 +7,7 @@
 import AVFoundation
 import XCTest
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 @MainActor
 final class AVPlayerVideoPlayerTests: XCTestCase {

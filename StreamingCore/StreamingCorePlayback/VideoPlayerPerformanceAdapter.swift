@@ -1,6 +1,6 @@
 //
 //  VideoPlayerPerformanceAdapter.swift
-//  StreamingVideoApp
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas. All rights reserved.
 //
@@ -8,7 +8,6 @@
 import AVFoundation
 import Combine
 import StreamingCore
-import StreamingCoreiOS
 
 /// Bridges AVPlayer performance observations to the platform-agnostic PerformanceMonitor
 /// Coordinates bandwidth estimation with network quality monitoring

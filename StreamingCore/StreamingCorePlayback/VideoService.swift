@@ -1,6 +1,6 @@
 //
 //  VideoService.swift
-//  StreamingVideoApp
+//  StreamingCorePlayback
 //
 //  Copyright by Octavio Rojas all rights reserved.
 //
@@ -10,7 +10,7 @@ import Foundation
 import StreamingCore
 
 @MainActor
-final class VideoService {
+public final class VideoService {
 	private let httpClient: HTTPClient
 	private let store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable
 	private let logger: os.Logger
@@ -21,7 +21,7 @@ final class VideoService {
 
 	private lazy var baseURL = URL(string: "https://streaming-videos-api.vercel.app")!
 
-	init(
+	public init(
 		httpClient: HTTPClient,
 		store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable,
 		logger: os.Logger = os.Logger(subsystem: "com.streamingvideoapp.StreamingVideoApp", category: "main")
@@ -31,7 +31,7 @@ final class VideoService {
 		self.logger = logger
 	}
 
-	func validateCache() {
+	public func validateCache() {
 		Task.immediate { @MainActor in
 			await store.schedule { [store, logger] in
 				do {
@@ -44,7 +44,7 @@ final class VideoService {
 		}
 	}
 
-	func loadComments(for video: Video) -> @MainActor @Sendable () async throws -> [VideoComment] {
+	public func loadComments(for video: Video) -> @MainActor @Sendable () async throws -> [VideoComment] {
 		return { @MainActor @Sendable [httpClient, baseURL] in
 			let url = VideoCommentsEndpoint.get(video.id).url(baseURL: baseURL)
 			let (data, response) = try await httpClient.get(from: url)
@@ -52,7 +52,7 @@ final class VideoService {
 		}
 	}
 
-	func loadRemoteVideosWithLocalFallback() async throws -> Paginated<Video> {
+	public func loadRemoteVideosWithLocalFallback() async throws -> Paginated<Video> {
 		do {
 			let items = try await loadRemoteVideos()
 			try? localVideoLoader.save(items)
@@ -87,7 +87,7 @@ final class VideoService {
 		})
 	}
 
-	func loadLocalImageWithRemoteFallback(url: URL) async throws -> Data {
+	public func loadLocalImageWithRemoteFallback(url: URL) async throws -> Data {
 		do {
 			return try await loadLocalImage(url: url)
 		} catch {
@@ -113,14 +113,14 @@ final class VideoService {
 	}
 }
 
-protocol StoreScheduler {
+public protocol StoreScheduler {
 	@MainActor
 	func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T
 }
 
 extension CoreDataVideoStore: StoreScheduler {
 	@MainActor
-	func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T {
+	public func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T {
 		if contextQueue == .main {
 			return try action()
 		} else {
@@ -131,7 +131,7 @@ extension CoreDataVideoStore: StoreScheduler {
 
 extension InMemoryVideoStore: StoreScheduler {
 	@MainActor
-	func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T {
+	public func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T {
 		try action()
 	}
 }

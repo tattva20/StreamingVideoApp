@@ -9,6 +9,7 @@ import Combine
 import XCTest
 @testable import StreamingCore
 @testable import StreamingVideoApp
+@testable import StreamingCorePlayback
 
 // MARK: - ALL TESTS COMMENTED
 // These tests crash at memory address 0x262c5a6f0 during teardown with:

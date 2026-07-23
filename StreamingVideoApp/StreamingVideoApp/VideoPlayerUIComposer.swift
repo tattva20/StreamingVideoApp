@@ -7,6 +7,7 @@
 import UIKit
 import StreamingCore
 import StreamingCoreiOS
+import StreamingCorePlayback
 
 // MARK: - Associated Object Extension for Performance Adapter
 
