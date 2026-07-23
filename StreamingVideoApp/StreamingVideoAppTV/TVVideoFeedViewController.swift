@@ -2,6 +2,7 @@ import UIKit
 
 public final class TVVideoFeedViewController: UICollectionViewController {
 	public var onRefresh: (() -> Void)?
+	public var onLoadMore: (() -> Void)?
 
 	private lazy var dataSource: UICollectionViewDiffableDataSource<Int, TVCellController> = {
 		UICollectionViewDiffableDataSource(collectionView: collectionView) { collectionView, indexPath, controller in
@@ -35,6 +36,17 @@ public final class TVVideoFeedViewController: UICollectionViewController {
 	public override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let controller = dataSource.itemIdentifier(for: indexPath)
 		controller?.delegate?.collectionView?(collectionView, didSelectItemAt: indexPath)
+	}
+
+	public override func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		if indexPath.item == dataSource.snapshot().numberOfItems - 1 {
+			onLoadMore?()
+		}
+	}
+
+	public override func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		let controller = dataSource.itemIdentifier(for: indexPath)
+		controller?.delegate?.collectionView?(collectionView, didEndDisplaying: cell, forItemAt: indexPath)
 	}
 
 	private static func makeLayout() -> UICollectionViewLayout {
