@@ -15,6 +15,8 @@
 		EDF312360AA7B7DBDC8284D9 /* StreamingCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7DCB00000000000000000102 /* StreamingCorePlayback.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCB00000000000000000101 /* StreamingCorePlayback.framework */; };
 		7DCB00000000000000000103 /* StreamingCorePlayback.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCB00000000000000000101 /* StreamingCorePlayback.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DCB00000000000000000104 /* StreamingCorePlayback.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCB00000000000000000101 /* StreamingCorePlayback.framework */; };
+		7DCB00000000000000000105 /* StreamingCorePlayback.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCB00000000000000000101 /* StreamingCorePlayback.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +57,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				EDF312360AA7B7DBDC8284D9 /* StreamingCore.framework in Embed Frameworks */,
+				7DCB00000000000000000105 /* StreamingCorePlayback.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -140,6 +143,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3F4F84FC3EDBB955D2AEB998 /* StreamingCore.framework in Frameworks */,
+				7DCB00000000000000000104 /* StreamingCorePlayback.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
