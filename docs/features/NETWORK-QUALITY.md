@@ -125,7 +125,7 @@ public final class NetworkQualityMonitor {
 
 ### BandwidthEstimator
 
-**File:** `StreamingCoreiOS/Video Performance iOS/NetworkBandwidthEstimator.swift`
+**File:** `StreamingCore/StreamingCorePlayback/NetworkBandwidthEstimator.swift`
 
 ```swift
 @MainActor
@@ -198,7 +198,7 @@ public final class NetworkBandwidthEstimator {
 
 ### BandwidthSample
 
-**File:** `StreamingCoreiOS/Video Performance iOS/BandwidthSample.swift`
+**File:** `StreamingCore/StreamingCorePlayback/BandwidthSample.swift`
 
 ```swift
 public struct BandwidthSample: Sendable {
@@ -223,7 +223,7 @@ public struct BandwidthSample: Sendable {
 
 ## AVPlayer Performance Observer
 
-**File:** `StreamingCoreiOS/Video Performance iOS/AVPlayerPerformanceObserver.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerPerformanceObserver.swift`
 
 ```swift
 @MainActor

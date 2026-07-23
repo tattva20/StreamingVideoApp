@@ -330,7 +330,7 @@ flowchart TB
         protocol["HTTPClient<br/><i>Protocol</i>"]
         loader --> protocol
     end
-    subgraph low["Low-Level Module — StreamingVideoApp"]
+    subgraph low["Low-Level Module — StreamingCore"]
         impl["URLSessionHTTPClient"]
     end
     impl -->|implements| protocol

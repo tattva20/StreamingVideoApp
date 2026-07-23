@@ -318,34 +318,33 @@ public enum NetworkQuality: Comparable, Sendable {
 }
 ```
 
-### BandwidthEstimator
+### NetworkBandwidthEstimator
 
 ```swift
-public final class BandwidthEstimator {
+public final class NetworkBandwidthEstimator {
     private var samples: [BandwidthSample] = []
 
-    public func recordSample(bytes: UInt64, duration: TimeInterval) {
-        let bitsPerSecond = Double(bytes * 8) / duration
-        samples.append(BandwidthSample(bandwidth: bitsPerSecond, timestamp: Date()))
-        trimOldSamples()
+    public init(maxSamples: Int = 30) { /* retains a rolling window of samples */ }
+
+    // A sample carries the raw transfer; `bitsPerSecond` is computed from it.
+    public func recordSample(_ sample: BandwidthSample) {
+        samples.append(sample)
+        // drop the oldest beyond maxSamples
     }
 
-    public func estimatedBandwidth() -> Double {
-        guard !samples.isEmpty else { return 0 }
-        return samples.map(\.bandwidth).reduce(0, +) / Double(samples.count)
+    // Rolling throughput estimate over the retained window.
+    public var currentEstimate: BandwidthEstimate {
+        // averages sample.bitsPerSecond across the window
     }
 
-    public func networkQuality() -> NetworkQuality {
-        let bandwidth = estimatedBandwidth()
-        switch bandwidth {
-        case 0: return .offline
-        case ..<500_000: return .poor
-        case ..<2_000_000: return .fair
-        case ..<5_000_000: return .good
-        default: return .excellent
-        }
-    }
+    public func clear() { samples.removeAll() }
 }
+
+// Recording a sample from a completed transfer:
+let sample = BandwidthSample(bytesTransferred: bytes, duration: elapsed, timestamp: Date())
+
+// Mapping an estimate to a coarse quality tier lives in NetworkQualityMonitor
+// (StreamingCoreiOS), not in the estimator.
 ```
 
 ---

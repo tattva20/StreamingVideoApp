@@ -197,8 +197,7 @@ public final class VideoPlayerUIComposer {
         // Decorate with analytics
         let analyticsDecorator = AnalyticsVideoPlayerDecorator(
             decoratee: basePlayer,
-            logger: analyticsLogger,
-            sessionID: UUID()
+            analyticsLogger: analyticsLogger
         )
 
         // Decorate with structured logging

@@ -8,8 +8,8 @@ The Startup Performance feature tracks Time-to-First-Frame (TTFF), the critical 
 
 ```mermaid
 flowchart LR
-    LC["load()<br/>called"] -->|recordLoadStart()| STT["StartupTimeTracker"]
-    FFR["First frame<br/>rendered"] -->|recordFirstFrame()| STT
+    LC["load()<br/>called"] -->|"recordLoadStart()"| STT["StartupTimeTracker"]
+    FFR["First frame<br/>rendered"] -->|"recordFirstFrame()"| STT
     STT --> MEAS["Measurement<br/><i>loadStartTime<br/>firstFrameTime<br/>timeToFirstFrame</i>"]
     STT -.-> TL["Timeline: load() → firstFrame<br/><i>TTFF (ms)</i>"]
 ```

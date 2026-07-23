@@ -133,95 +133,52 @@ StreamingVideoApp follows a **modular Clean Architecture** with strict layer bou
 
 ```mermaid
 flowchart TB
-    App["StreamingVideoApp — Composition Root<br/><i>DI &amp; wiring · AVPlayer · app lifecycle</i>"]
-    iOS["StreamingCoreiOS — iOS UI Components<br/><i>UIKit view controllers · cells · layout &amp; animation</i>"]
-    Core["StreamingCore — Platform-Agnostic Core<br/><i>domain models · use cases · presenters · network &amp; storage abstractions</i><br/>🚫 No UIKit / AppKit imports"]
+    iOSApp["StreamingVideoApp<br/><i>iOS app · composition root</i>"]
+    tvApp["StreamingVideoAppTV<br/><i>tvOS app · composition root</i>"]
+    iOS["StreamingCoreiOS<br/><i>UIKit UI</i>"]
+    Playback["StreamingCorePlayback<br/><i>AVFoundation · reused playback stack</i>"]
+    Core["StreamingCore<br/><i>domain · use cases · presenters · protocols</i><br/>🚫 No UIKit / AVKit"]
 
-    App -->|depends on| iOS
-    App -->|depends on| Core
-    iOS -->|depends on| Core
+    iOSApp --> iOS
+    iOSApp --> Playback
+    tvApp --> Playback
+    iOS --> Core
+    Playback --> Core
+    iOSApp --> Core
+    tvApp --> Core
 
     classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
     classDef ios fill:#e6f4ea,stroke:#34a853,color:#202124;
+    classDef pb fill:#f3e8fd,stroke:#a142f4,color:#202124;
     classDef core fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    class App app
+    class iOSApp,tvApp app
     class iOS ios
+    class Playback pb
     class Core core
 ```
 
 ### Module Structure
 
-```mermaid
-flowchart LR
-    App["StreamingVideoApp<br/><i>app · composition root</i>"] --> iOS["StreamingCoreiOS<br/><i>UI layer</i>"]
-    iOS --> Core["StreamingCore<br/><i>domain · no UIKit / AppKit</i>"]
-
-    classDef app fill:#fce8e6,stroke:#ea4335,color:#202124;
-    classDef ios fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
-    class App app
-    class iOS ios
-    class Core core
 ```
+StreamingVideoApp.xcworkspace — dependencies point inward to StreamingCore
 
-```mermaid
-flowchart TD
-    WS["StreamingVideoApp.xcworkspace"]
+apps · composition roots
+├── StreamingVideoApp      iOS app    → Core · CoreiOS · CorePlayback   (custom UIKit player)
+└── StreamingVideoAppTV    tvOS app   → Core · CorePlayback             (native AVPlayerViewController)
 
-    subgraph SC["StreamingCore · framework"]
-        direction TB
-        SC1["Video Feature<br/><i>Domain models</i>"]
-        SC2["Video API<br/><i>Remote data loading</i>"]
-        SC3["Video Cache<br/><i>Local persistence</i>"]
-        SC4["Video Presentation<br/><i>Presenters &amp; ViewModels</i>"]
-        SC5["Video Playback Feature<br/><i>Player protocol</i>"]
-        SC6["Video Comments Feature<br/><i>Comments domain</i>"]
-    end
+frameworks
+├── StreamingCoreiOS       UIKit          → Core   iOS feed / player / comments UI
+├── StreamingCorePlayback  AVFoundation   → Core   AVPlayerVideoPlayer · logging/analytics decorators ·
+│                                                  StatefulVideoPlayer · PlaybackCoordinator · bandwidth/perf
+└── StreamingCore          Foundation · Combine · CoreData   domain · use cases · presenters · protocols
+                                                             (🚫 no UIKit / AVKit)
 
-    subgraph IOS["StreamingCoreiOS · iOS UI layer"]
-        direction TB
-        IOS1["Video UI<br/><i>Video list components</i>"]
-        IOS2["Video Player UI<br/><i>Player controls</i>"]
-        IOS3["Video Comments UI<br/><i>Comments UI</i>"]
-    end
+tests
+└── StreamingCoreTests · StreamingCoreiOSTests · StreamingCoreAPIEndToEndTests ·
+    StreamingCoreCacheIntegrationTests · StreamingVideoAppTests · StreamingVideoAppTVTests
 
-    subgraph TESTS["Tests"]
-        direction TB
-        T1["StreamingCoreTests"]
-        T2["StreamingCoreiOSTests"]
-        T3["StreamingCoreAPIEndToEndTests"]
-        T4["StreamingCoreCacheIntegrationTests"]
-    end
-
-    subgraph APP["StreamingVideoApp · iOS App target"]
-        direction TB
-        A1["SceneDelegate.swift<br/><i>Main composition</i>"]
-        A2["AVPlayerVideoPlayer.swift<br/><i>AVPlayer implementation</i>"]
-        A3["Composers<br/><i>Feature composers</i>"]
-        A4["StreamingVideoAppTests<br/><i>Integration tests</i>"]
-    end
-
-    subgraph CI[".github/workflows · CI/CD"]
-        direction TB
-        CI1["ci.yml<br/><i>iOS + macOS test jobs</i>"]
-    end
-
-    WS --> SC
-    WS --> IOS
-    WS --> TESTS
-    WS --> APP
-    WS --> CI
-
-    classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
-    classDef ios fill:#fef7e0,stroke:#f9ab00,color:#202124;
-    classDef app fill:#fce8e6,stroke:#ea4335,color:#202124;
-    classDef neutral fill:#e8f0fe,stroke:#4285f4,color:#202124;
-    class SC1,SC2,SC3,SC4,SC5,SC6 core
-    class IOS1,IOS2,IOS3 ios
-    class A1,A2,A3,A4 app
-    class T1,T2,T3,T4 neutral
-    class CI1 neutral
-    class WS neutral
+CI · .github/workflows/ci.yml
+└── build-ios · build-macos          (build-tvos planned)
 ```
 
 ### Design Patterns

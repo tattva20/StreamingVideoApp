@@ -7,7 +7,7 @@ The Video Preloading feature anticipates user navigation and preloads upcoming v
 ## Overview
 
 ```mermaid
-flowchart LR
+flowchart TB
     CVI["Current Video<br/>Index"]
     PL["Playlist"]
     NQ["Network<br/>Quality"]

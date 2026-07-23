@@ -186,29 +186,34 @@ public final class AdaptiveBufferManager: BufferManager {
 
 ### AVPlayerBufferAdapter
 
-**File:** `StreamingVideoApp/AVPlayerBufferAdapter.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerBufferAdapter.swift`
 
 ```swift
 @MainActor
-public final class AVPlayerBufferAdapter {
-    private weak var playerItem: AVPlayerItem?
+public final class AVPlayerBufferAdapter<Player: BufferConfigurablePlayer> {
+    private let player: Player
     private var cancellables = Set<AnyCancellable>()
 
-    public init(playerItem: AVPlayerItem, bufferManager: BufferManager) {
-        self.playerItem = playerItem
+    public init(player: Player, bufferManager: any BufferManager, observeChanges: Bool = true) {
+        self.player = player
 
+        guard observeChanges else { return }
         bufferManager.configurationPublisher
             .removeDuplicates()
             .sink { [weak self] configuration in
-                self?.applyConfiguration(configuration)
+                self?.apply(configuration)
             }
             .store(in: &cancellables)
     }
 
-    private func applyConfiguration(_ configuration: BufferConfiguration) {
-        playerItem?.preferredForwardBufferDuration = configuration.preferredForwardBufferDuration
+    /// Applies the current buffer configuration to a newly created player item.
+    public func applyToNewItem(_ item: Player.Item) {
+        // item.preferredForwardBufferDuration = <current configuration>
     }
 }
+
+// Concrete specialization used with AVPlayer.
+public typealias AVPlayerBufferAdapterConcrete = AVPlayerBufferAdapter<AVPlayer>
 ```
 
 ---

@@ -475,6 +475,10 @@ flowchart TD
         IL3["FileSystemVideoImageDataStore<br/><i>File storage</i>"]
     end
 
+    IL1 -.->|implements| DL2
+    IL2 -.->|implements| DL2
+    IL3 -.->|implements| DL3
+
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
     class DL1,DL2,DL3,DL4,DL5 core

@@ -6,21 +6,25 @@ The Offline Support feature enables the app to work without network connectivity
 
 ## Overview
 
+**Online mode** — try remote, display, and save to the local cache in the background:
+
 ```mermaid
-flowchart TB
-    subgraph Online["Online Mode"]
-        direction LR
-        RA["Remote API"] --> Ca["Cache"] --> Di["Display"]
-        Ca --> SL["Save to Local"]
-    end
-    subgraph Offline["Offline Mode"]
-        direction LR
-        RA2["Remote API ✗"] --> FB["Fallback"] --> LC["Local Cache"] --> Di2["Display"]
-    end
+flowchart LR
+    RA["Remote API"] --> Ca["Cache"] --> Di["Display"]
+    Ca --> SL["Save to Local"]
+
+    classDef ok fill:#e6f4ea,stroke:#34a853,color:#202124;
+    class RA,Ca,Di,SL ok;
+```
+
+**Offline mode** — remote fails, fall back to the local cache:
+
+```mermaid
+flowchart LR
+    RA2["Remote API ✗"] --> FB["Fallback"] --> LC["Local Cache"] --> Di2["Display"]
 
     classDef ok fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef bad fill:#fce8e6,stroke:#ea4335,color:#202124;
-    class RA,Ca,Di,SL ok;
     class RA2 bad;
     class FB,LC,Di2 ok;
 ```
