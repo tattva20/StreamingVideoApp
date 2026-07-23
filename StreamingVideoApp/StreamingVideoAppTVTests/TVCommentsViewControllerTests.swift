@@ -26,11 +26,34 @@ final class TVCommentsViewControllerTests: XCTestCase {
 		XCTAssertEqual(sut.commentUsername(at: 1), "bob")
 	}
 
+	func test_emptyComments_showsEmptyMessage() async {
+		let sut = makeSUT(comments: [])
+
+		sut.simulateAppearance()
+
+		await eventually { sut.messageText() != nil }
+		XCTAssertEqual(sut.messageText(), "No comments yet")
+		XCTAssertEqual(sut.numberOfRenderedComments(), 0)
+	}
+
+	func test_loadFailure_showsErrorMessage() async {
+		let sut = TVCommentsUIComposer.commentsComposedWith(commentsLoader: { throw AnyError() })
+
+		sut.simulateAppearance()
+
+		await eventually { sut.messageText() != nil }
+		XCTAssertNotNil(sut.messageText(), "Expected an error message when comments loading fails")
+		XCTAssertNotEqual(sut.messageText(), "No comments yet", "Expected the error message, not the empty message")
+	}
+
 	// MARK: - Helpers
 
 	private func makeSUT(comments: [VideoComment]) -> TVCommentsViewController {
 		TVCommentsUIComposer.commentsComposedWith(commentsLoader: { comments })
 	}
+
+	private struct AnyError: Error {}
+	private func anyError() -> Error { AnyError() }
 
 	private func eventually(_ condition: () -> Bool, iterations: Int = 100) async {
 		for _ in 0..<iterations {
@@ -67,5 +90,9 @@ extension TVCommentsViewController {
 
 	func commentUsername(at index: Int) -> String? {
 		commentCell(at: index)?.usernameText
+	}
+
+	func messageText() -> String? {
+		view.subviews.compactMap { $0 as? UILabel }.first(where: { $0.text?.isEmpty == false })?.text
 	}
 }

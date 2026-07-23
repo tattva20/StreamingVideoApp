@@ -8,10 +8,20 @@ public enum TVCommentsUIComposer {
 	) -> TVCommentsViewController {
 		let commentsViewController = TVCommentsViewController()
 
-		commentsViewController.onRefresh = { [weak commentsViewController] in
+		let presenter = LoadResourcePresenter(
+			resourceView: TVWeakRefVirtualProxy(commentsViewController),
+			loadingView: TVWeakRefVirtualProxy(commentsViewController),
+			errorView: TVWeakRefVirtualProxy(commentsViewController),
+			mapper: { VideoCommentsPresenter.map($0) })
+
+		commentsViewController.onRefresh = {
+			presenter.didStartLoading()
 			Task.immediate { @MainActor in
-				guard let comments = try? await commentsLoader() else { return }
-				commentsViewController?.display(VideoCommentsPresenter.map(comments))
+				do {
+					presenter.didFinishLoading(with: try await commentsLoader())
+				} catch {
+					presenter.didFinishLoading(with: error)
+				}
 			}
 		}
 
