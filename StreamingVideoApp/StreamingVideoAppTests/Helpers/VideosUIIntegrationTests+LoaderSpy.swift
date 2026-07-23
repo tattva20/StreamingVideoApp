@@ -26,11 +26,11 @@ extension VideosUIIntegrationTests {
 		}
 
 		func completeLoadingWithError(at index: Int = 0) async {
-			videoLoader.fail(with: anyNSError(), at: index)
+			await videoLoader.fail(with: anyNSError(), at: index)
 		}
 
 		func completeLoading(with videos: [Video] = [], at index: Int = 0) async {
-			videoLoader.complete(
+			await videoLoader.complete(
 				with: Paginated(
 					items: videos,
 					loadMore: { @MainActor [weak self] in
@@ -56,7 +56,7 @@ extension VideosUIIntegrationTests {
 				try await self?.loadMore() ?? Paginated(items: [])
 			}
 
-			loadMoreLoader.complete(
+			await loadMoreLoader.complete(
 				with: Paginated(
 					items: videos,
 					loadMore: lastPage ? nil : loadMore),
@@ -64,7 +64,7 @@ extension VideosUIIntegrationTests {
 		}
 
 		func completeLoadMoreWithError(at index: Int = 0) async {
-			loadMoreLoader.fail(with: anyNSError(), at: index)
+			await loadMoreLoader.fail(with: anyNSError(), at: index)
 		}
 
 		// MARK: - VideoImageDataLoader
@@ -83,22 +83,22 @@ extension VideosUIIntegrationTests {
 			try await imageLoader.load(url)
 		}
 
-		func completeImageLoading(with imageData: Data = Data(), at index: Int = 0) {
-			imageLoader.complete(with: imageData, at: index)
+		func completeImageLoading(with imageData: Data = Data(), at index: Int = 0) async {
+			await imageLoader.complete(with: imageData, at: index)
 		}
 
-		func completeImageLoadingWithError(at index: Int = 0) {
-			imageLoader.fail(with: anyNSError(), at: index)
+		func completeImageLoadingWithError(at index: Int = 0) async {
+			await imageLoader.fail(with: anyNSError(), at: index)
 		}
 
 		func imageResult(at index: Int, timeout: TimeInterval = 1) async throws -> AsyncResult {
 			try await imageLoader.result(at: index, timeout: timeout)
 		}
 
-		func cancelPendingRequests() {
-			imageLoader.cancelPendingRequests()
-			videoLoader.cancelPendingRequests()
-			loadMoreLoader.cancelPendingRequests()
+		func cancelPendingRequests() async {
+			await imageLoader.cancelPendingRequests()
+			await videoLoader.cancelPendingRequests()
+			await loadMoreLoader.cancelPendingRequests()
 		}
 	}
 
