@@ -66,10 +66,6 @@ public final class LoggingVideoPlayerDecorator: VideoPlayer {
     private let logger: Logger
     private let correlationID: UUID
 
-    public var statePublisher: AnyPublisher<PlaybackState, Never> {
-        decoratee.statePublisher
-    }
-
     public func play() {
         log("Play requested")
         decoratee.play()

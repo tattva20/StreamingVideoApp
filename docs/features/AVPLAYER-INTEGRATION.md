@@ -46,7 +46,7 @@ flowchart TB
 
 ### AVPlayerStateAdapter
 
-**File:** `StreamingCoreiOS/Video Playback iOS/AVPlayerStateAdapter.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`
 
 Bridges AVPlayer KVO observations to PlaybackAction events.
 
@@ -185,7 +185,7 @@ private func observePlayerItem(_ item: AVPlayerItem?) {
 
 ## AVPlayerPerformanceObserver
 
-**File:** `StreamingCoreiOS/Video Performance iOS/AVPlayerPerformanceObserver.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerPerformanceObserver.swift`
 
 Observes AVPlayer for performance metrics and emits events.
 

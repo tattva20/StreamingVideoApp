@@ -271,17 +271,13 @@ public final class PerformanceTracker {
 
 ## Analytics Decorator
 
-**File:** `StreamingVideoApp/AnalyticsVideoPlayerDecorator.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AnalyticsVideoPlayerDecorator.swift`
 
 ```swift
 @MainActor
 public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
     private let decoratee: VideoPlayer
     private let analyticsLogger: PlaybackAnalyticsLogger
-
-    public var statePublisher: AnyPublisher<PlaybackState, Never> {
-        decoratee.statePublisher
-    }
 
     public func play() {
         Task { [weak self] in

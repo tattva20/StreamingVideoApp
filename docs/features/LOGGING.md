@@ -226,7 +226,7 @@ public final class NullLogger: Logger, Sendable {
 
 ## Logging Decorator
 
-**File:** `StreamingVideoApp/LoggingVideoPlayerDecorator.swift`
+**File:** `StreamingCore/StreamingCorePlayback/LoggingVideoPlayerDecorator.swift`
 
 ```swift
 @MainActor

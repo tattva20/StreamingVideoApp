@@ -34,7 +34,6 @@ The Video Playback feature provides a full-featured video player with state mana
 ```swift
 @MainActor
 public protocol VideoPlayer: AnyObject {
-    var statePublisher: AnyPublisher<PlaybackState, Never> { get }
     var isPlaying: Bool { get }
     var currentTime: TimeInterval { get }
     var duration: TimeInterval { get }
@@ -246,17 +245,12 @@ public final class ControlsVisibilityController {
 
 ### AVPlayerVideoPlayer
 
-**File:** `StreamingVideoApp/AVPlayerVideoPlayer.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerVideoPlayer.swift`
 
 ```swift
 @MainActor
 public final class AVPlayerVideoPlayer: VideoPlayer {
     private let player: AVPlayer
-    private let stateMachine: DefaultPlaybackStateMachine
-
-    public var statePublisher: AnyPublisher<PlaybackState, Never> {
-        stateMachine.statePublisher
-    }
 
     public func load(url: URL) {
         let item = AVPlayerItem(url: url)
@@ -288,7 +282,7 @@ public final class AVPlayerVideoPlayer: VideoPlayer {
 
 ### AVPlayerStateAdapter
 
-**File:** `StreamingCoreiOS/Video Playback iOS/AVPlayerStateAdapter.swift`
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`
 
 Bridges AVPlayer KVO to state machine:
 
@@ -398,7 +392,7 @@ flowchart LR
 
 ### StatefulVideoPlayer
 
-**File:** `StreamingVideoApp/StatefulVideoPlayer.swift`
+**File:** `StreamingCore/StreamingCorePlayback/StatefulVideoPlayer.swift`
 
 Wraps VideoPlayer with state machine:
 

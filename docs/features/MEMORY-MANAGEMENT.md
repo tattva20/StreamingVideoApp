@@ -362,7 +362,7 @@ public final class ImageCacheCleaner: ResourceCleaner, @unchecked Sendable {
 ## Cleanup Strategy
 
 ```mermaid
-flowchart LR
+flowchart TB
     N["Memory Pressure: Normal"] --> N2["No cleanup"]
     W["Memory Pressure: Warning"] --> W2["Clean low priority <i>(images)</i><br/>Clean medium priority <i>(video metadata)</i>"]
     C["Memory Pressure: Critical"] --> C2["Clean ALL priorities:<br/>Low <i>(images)</i><br/>Medium <i>(video metadata)</i><br/>High <i>(active buffers)</i>"]

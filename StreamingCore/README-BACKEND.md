@@ -7,8 +7,7 @@ This document explains how to set up the backend for the Streaming Video App.
 The app uses:
 - **RemoteVideoLoader**: Fetches videos from an HTTP API
 - **LocalVideoLoader**: Caches videos in CoreData
-- **VideoLoaderComposite**: Tries remote first, falls back to cache
-- **VideoLoaderCacheDecorator**: Automatically saves successful remote loads to cache
+- **VideoService**: Coordinates remote-with-local-fallback loading (`loadRemoteVideosWithLocalFallback()`) and saves successful remote loads to the cache
 
 ## Option 1: Local Development Server (Fastest)
 

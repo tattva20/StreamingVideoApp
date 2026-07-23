@@ -44,7 +44,7 @@ flowchart TB
 
 ### BandwidthSample
 
-**File:** `StreamingCoreiOS/Video Performance iOS/BandwidthSample.swift`
+**File:** `StreamingCore/StreamingCorePlayback/BandwidthSample.swift`
 
 Represents a single bandwidth measurement.
 
@@ -80,7 +80,7 @@ public struct BandwidthSample: Equatable, Sendable {
 
 ### BandwidthEstimate
 
-**File:** `StreamingCoreiOS/Video Performance iOS/BandwidthEstimate.swift`
+**File:** `StreamingCore/StreamingCorePlayback/BandwidthEstimate.swift`
 
 Calculated estimate based on multiple samples.
 
@@ -134,7 +134,7 @@ public struct BandwidthEstimate: Equatable, Sendable {
 
 ### NetworkBandwidthEstimator
 
-**File:** `StreamingCoreiOS/Video Performance iOS/NetworkBandwidthEstimator.swift`
+**File:** `StreamingCore/StreamingCorePlayback/NetworkBandwidthEstimator.swift`
 
 Thread-safe estimator that collects samples and calculates estimates.
 

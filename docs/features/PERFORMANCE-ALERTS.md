@@ -7,7 +7,7 @@ The Performance Alerts feature monitors streaming quality metrics and generates 
 ## Overview
 
 ```mermaid
-flowchart LR
+flowchart TB
     ST["Startup Time"] --> PT
     RB["Rebuffering"] --> PT
     MEM["Memory"] --> PT

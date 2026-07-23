@@ -314,7 +314,7 @@ public protocol VideoStore {
     func retrieve() throws -> CachedVideos?
 }
 
-// StreamingVideoApp provides implementations (low-level)
+// StreamingCore provides implementations (low-level)
 final class URLSessionHTTPClient: HTTPClient { ... }
 final class CoreDataVideoStore: VideoStore { ... }
 ```
@@ -330,11 +330,11 @@ flowchart TB
         RVL -->|depends on| VL
         RVL -->|depends on| HC
     end
-    subgraph App["StreamingVideoApp · App"]
+    subgraph App["StreamingCore · Infrastructure"]
         US["URLSessionHTTPClient<br/><i>implementation</i>"]
         CD["CoreDataVideoStore<br/><i>implementation</i>"]
     end
-    App -.->|implements Core protocols| Core
+    App -.->|implements domain protocols| Core
 
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
@@ -397,7 +397,7 @@ protocol VideoCache { func save(_ videos: [Video]) throws }
 // D - Dependency Inversion
 // Core defines protocols, App provides implementations
 public protocol HTTPClient { ... }  // In StreamingCore
-final class URLSessionHTTPClient: HTTPClient { ... }  // In StreamingVideoApp
+final class URLSessionHTTPClient: HTTPClient { ... }  // In StreamingCore
 ```
 
 ---
