@@ -11,6 +11,8 @@
 		6E7F87C12EDE3A6B007B5AF8 /* StreamingCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E7F87C32EDE3A6B007B5AF8 /* StreamingCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */; };
 		6E7F87C42EDE3A6B007B5AF8 /* StreamingCoreiOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		3F4F84FC3EDBB955D2AEB998 /* StreamingCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */; };
+		EDF312360AA7B7DBDC8284D9 /* StreamingCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,6 +22,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 6E7F878A2EDE3A6A007B5AF8;
 			remoteInfo = StreamingVideoApp;
+		};
+		2255D5E38A29E10791766EA3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E7F87832EDE3A6A007B5AF8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D7EF84BD9F4D067BE003885;
+			remoteInfo = StreamingVideoAppTV;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -36,6 +45,17 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F7C2B5B15BA06AC70AD99133 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				EDF312360AA7B7DBDC8284D9 /* StreamingCore.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +63,8 @@
 		6E7F87A12EDE3A6B007B5AF8 /* StreamingVideoAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamingVideoAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7F87BF2EDE3A6B007B5AF8 /* StreamingCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = StreamingCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E7F87C22EDE3A6B007B5AF8 /* StreamingCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = StreamingCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		84A970BFE35B46A62485324E /* StreamingVideoAppTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StreamingVideoAppTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9E11A8CF9488B2DA8A23051 /* StreamingVideoAppTVTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamingVideoAppTVTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -52,6 +74,13 @@
 				Info.plist,
 			);
 			target = 6E7F878A2EDE3A6A007B5AF8 /* StreamingVideoApp */;
+		};
+		76A97AAC1047589AD6B034B5 /* Exceptions for "StreamingVideoAppTV" folder in "StreamingVideoAppTV" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7D7EF84BD9F4D067BE003885 /* StreamingVideoAppTV */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -67,6 +96,19 @@
 		6E7F87A42EDE3A6B007B5AF8 /* StreamingVideoAppTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = StreamingVideoAppTests;
+			sourceTree = "<group>";
+		};
+		62D714186305E3F1DC1EBB9D /* StreamingVideoAppTV */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				76A97AAC1047589AD6B034B5 /* Exceptions for "StreamingVideoAppTV" folder in "StreamingVideoAppTV" target */,
+			);
+			path = StreamingVideoAppTV;
+			sourceTree = "<group>";
+		};
+		94D7DE77C76CB53D28712AC8 /* StreamingVideoAppTVTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = StreamingVideoAppTVTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -88,6 +130,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5353A3B6797829D5B50D1611 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F4F84FC3EDBB955D2AEB998 /* StreamingCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C87649217E051BB5F44593D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -96,6 +153,8 @@
 			children = (
 				6E7F878D2EDE3A6A007B5AF8 /* StreamingVideoApp */,
 				6E7F87A42EDE3A6B007B5AF8 /* StreamingVideoAppTests */,
+				62D714186305E3F1DC1EBB9D /* StreamingVideoAppTV */,
+				94D7DE77C76CB53D28712AC8 /* StreamingVideoAppTVTests */,
 				6E7F878C2EDE3A6A007B5AF8 /* Products */,
 				6E7F87CF2EDE3A6B007B5AF8 /* Frameworks */,
 			);
@@ -106,6 +165,8 @@
 			children = (
 				6E7F878B2EDE3A6A007B5AF8 /* StreamingVideoApp.app */,
 				6E7F87A12EDE3A6B007B5AF8 /* StreamingVideoAppTests.xctest */,
+				84A970BFE35B46A62485324E /* StreamingVideoAppTV.app */,
+				F9E11A8CF9488B2DA8A23051 /* StreamingVideoAppTVTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -168,6 +229,52 @@
 			productReference = 6E7F87A12EDE3A6B007B5AF8 /* StreamingVideoAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		7D7EF84BD9F4D067BE003885 /* StreamingVideoAppTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FEA1197E4A400ECDF58EB2F3 /* Build configuration list for PBXNativeTarget "StreamingVideoAppTV" */;
+			buildPhases = (
+				EACD8D2B3F830C0AEE614576 /* Sources */,
+				5353A3B6797829D5B50D1611 /* Frameworks */,
+				FAA0071857727395EC53EA4D /* Resources */,
+				F7C2B5B15BA06AC70AD99133 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				62D714186305E3F1DC1EBB9D /* StreamingVideoAppTV */,
+			);
+			name = StreamingVideoAppTV;
+			packageProductDependencies = (
+			);
+			productName = StreamingVideoAppTV;
+			productReference = 84A970BFE35B46A62485324E /* StreamingVideoAppTV.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4DF0D310A9843BB72F8536F3 /* StreamingVideoAppTVTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C5F8D315134FC6F061911998 /* Build configuration list for PBXNativeTarget "StreamingVideoAppTVTests" */;
+			buildPhases = (
+				80615F899D3DCAEAF8EB52F5 /* Sources */,
+				C87649217E051BB5F44593D8 /* Frameworks */,
+				7A2E4AAA3A7CA86BDE1CC0B9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2641DDE88DAA7F6CCF83C17B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				94D7DE77C76CB53D28712AC8 /* StreamingVideoAppTVTests */,
+			);
+			name = StreamingVideoAppTVTests;
+			packageProductDependencies = (
+			);
+			productName = StreamingVideoAppTVTests;
+			productReference = F9E11A8CF9488B2DA8A23051 /* StreamingVideoAppTVTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +291,13 @@
 					6E7F87A02EDE3A6B007B5AF8 = {
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = 6E7F878A2EDE3A6A007B5AF8;
+					};
+					7D7EF84BD9F4D067BE003885 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					4DF0D310A9843BB72F8536F3 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 7D7EF84BD9F4D067BE003885;
 					};
 				};
 			};
@@ -203,6 +317,8 @@
 			targets = (
 				6E7F878A2EDE3A6A007B5AF8 /* StreamingVideoApp */,
 				6E7F87A02EDE3A6B007B5AF8 /* StreamingVideoAppTests */,
+				7D7EF84BD9F4D067BE003885 /* StreamingVideoAppTV */,
+				4DF0D310A9843BB72F8536F3 /* StreamingVideoAppTVTests */,
 			);
 		};
 /* End PBXProject section */
@@ -216,6 +332,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6E7F879F2EDE3A6B007B5AF8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAA0071857727395EC53EA4D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A2E4AAA3A7CA86BDE1CC0B9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -239,6 +369,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EACD8D2B3F830C0AEE614576 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80615F899D3DCAEAF8EB52F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -246,6 +390,11 @@
 			isa = PBXTargetDependency;
 			target = 6E7F878A2EDE3A6A007B5AF8 /* StreamingVideoApp */;
 			targetProxy = 6E7F87A22EDE3A6B007B5AF8 /* PBXContainerItemProxy */;
+		};
+		2641DDE88DAA7F6CCF83C17B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D7EF84BD9F4D067BE003885 /* StreamingVideoAppTV */;
+			targetProxy = 2255D5E38A29E10791766EA3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -481,6 +630,112 @@
 			};
 			name = Release;
 		};
+		0210F8587CCFABE7D27EB635 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2WC8M782W7;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StreamingVideoAppTV/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.octavio.rojas.StreamingVideoAppTV;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		AEE9CE12958CB2D03C984AD0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2WC8M782W7;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StreamingVideoAppTV/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.octavio.rojas.StreamingVideoAppTV;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		C54F0627FC5818418C6DD93F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2WC8M782W7;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.octavio.rojas.StreamingVideoAppTVTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StreamingVideoAppTV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StreamingVideoAppTV";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		CD9AC3AE7AAD7AFB708C0BF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2WC8M782W7;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.octavio.rojas.StreamingVideoAppTVTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StreamingVideoAppTV.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StreamingVideoAppTV";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -507,6 +762,24 @@
 			buildConfigurations = (
 				6E7F87BA2EDE3A6B007B5AF8 /* Debug */,
 				6E7F87BB2EDE3A6B007B5AF8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FEA1197E4A400ECDF58EB2F3 /* Build configuration list for PBXNativeTarget "StreamingVideoAppTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0210F8587CCFABE7D27EB635 /* Debug */,
+				AEE9CE12958CB2D03C984AD0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C5F8D315134FC6F061911998 /* Build configuration list for PBXNativeTarget "StreamingVideoAppTVTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C54F0627FC5818418C6DD93F /* Debug */,
+				CD9AC3AE7AAD7AFB708C0BF2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
