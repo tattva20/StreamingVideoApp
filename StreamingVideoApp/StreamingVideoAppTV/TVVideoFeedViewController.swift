@@ -40,14 +40,14 @@ public final class TVVideoFeedViewController: UICollectionViewController {
 	private static func makeLayout() -> UICollectionViewLayout {
 		let item = NSCollectionLayoutItem(
 			layoutSize: NSCollectionLayoutSize(
-				widthDimension: .fractionalWidth(1.0),
+				widthDimension: .fractionalWidth(0.2),
 				heightDimension: .fractionalHeight(1.0)))
-		item.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+		item.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20)
 
 		let group = NSCollectionLayoutGroup.horizontal(
 			layoutSize: NSCollectionLayoutSize(
-				widthDimension: .fractionalWidth(0.2),
-				heightDimension: .absolute(360)),
+				widthDimension: .fractionalWidth(1.0),
+				heightDimension: .absolute(400)),
 			subitems: [item])
 
 		let section = NSCollectionLayoutSection(group: group)

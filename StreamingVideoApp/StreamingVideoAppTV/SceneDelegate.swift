@@ -25,6 +25,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 	private lazy var videoService = VideoService(httpClient: httpClient, store: store, logger: logger)
 
+	private lazy var navigationController = UINavigationController(
+		rootViewController: TVVideosUIComposer.feedComposedWith(
+			videoLoader: videoService.loadRemoteVideosWithLocalFallback,
+			imageLoader: videoService.loadLocalImageWithRemoteFallback,
+			selection: showPlayer))
+
 	func scene(
 		_ scene: UIScene,
 		willConnectTo session: UISceneSession,
@@ -32,43 +38,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	) {
 		guard let windowScene = scene as? UIWindowScene else { return }
 		let window = UIWindow(windowScene: windowScene)
-		window.rootViewController = makeMessageViewController("Loading…")
+		window.rootViewController = navigationController
 		self.window = window
 		window.makeKeyAndVisible()
-
-		presentFirstVideoPlayer()
 	}
 
-	private func presentFirstVideoPlayer() {
-		Task { @MainActor in
-			do {
-				let page = try await videoService.loadRemoteVideosWithLocalFallback()
-				guard let video = page.items.first else {
-					window?.rootViewController = makeMessageViewController("No videos available")
-					return
-				}
-				window?.rootViewController = TVPlayerViewController(video: video)
-			} catch {
-				logger.error("Failed to load videos: \(error.localizedDescription)")
-				window?.rootViewController = makeMessageViewController("Failed to load videos")
-			}
-		}
-	}
-
-	private func makeMessageViewController(_ message: String) -> UIViewController {
-		let viewController = UIViewController()
-		viewController.view.backgroundColor = .black
-
-		let label = UILabel()
-		label.text = message
-		label.font = .preferredFont(forTextStyle: .title1)
-		label.textColor = .label
-		label.translatesAutoresizingMaskIntoConstraints = false
-		viewController.view.addSubview(label)
-		NSLayoutConstraint.activate([
-			label.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
-			label.centerYAnchor.constraint(equalTo: viewController.view.centerYAnchor)
-		])
-		return viewController
+	private func showPlayer(for video: Video) {
+		let playerViewController = TVPlayerViewController(video: video)
+		navigationController.pushViewController(playerViewController, animated: true)
 	}
 }

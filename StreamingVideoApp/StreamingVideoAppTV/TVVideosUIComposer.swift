@@ -5,7 +5,7 @@ import StreamingCore
 public enum TVVideosUIComposer {
 	public static func feedComposedWith(
 		videos: [Video],
-		selection: @escaping (Video) -> Void
+		selection: @escaping @MainActor (Video) -> Void
 	) -> TVVideoFeedViewController {
 		let feedViewController = TVVideoFeedViewController()
 
@@ -25,7 +25,7 @@ public enum TVVideosUIComposer {
 	public static func feedComposedWith(
 		videoLoader: @escaping () async throws -> Paginated<Video>,
 		imageLoader: @escaping @Sendable (URL) async throws -> Data,
-		selection: @escaping (Video) -> Void
+		selection: @escaping @MainActor (Video) -> Void
 	) -> TVVideoFeedViewController {
 		let feedViewController = TVVideoFeedViewController()
 

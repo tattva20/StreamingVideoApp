@@ -35,7 +35,7 @@ final class TVVideoFeedViewControllerTests: XCTestCase {
 
 	private func makeSUT(
 		videos: [Video],
-		selection: @escaping (Video) -> Void = { _ in },
+		selection: @escaping @MainActor (Video) -> Void = { _ in },
 		file: StaticString = #filePath,
 		line: UInt = #line
 	) -> TVVideoFeedViewController {
