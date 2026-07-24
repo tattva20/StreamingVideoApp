@@ -1,4 +1,4 @@
-# StreamingVideoApp
+# TATTVA TV
 
 <p align="center">
   <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml">
