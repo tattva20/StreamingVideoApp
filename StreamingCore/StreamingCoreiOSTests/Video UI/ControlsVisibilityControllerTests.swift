@@ -146,7 +146,7 @@ class ControlsVisibilityControllerTests: XCTestCase {
 
 		var messages = [Message]()
 		private(set) var cancelTimerCallCount = 0
-		var timerCallback: (() -> Void)?
+		var timerCallback: (@MainActor () -> Void)?
 
 		func controlsDidShow() {
 			messages.append(.didShow)
@@ -156,7 +156,7 @@ class ControlsVisibilityControllerTests: XCTestCase {
 			messages.append(.didHide)
 		}
 
-		func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping () -> Void) {
+		func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping @MainActor () -> Void) {
 			messages.append(.didScheduleTimer(delay))
 			timerCallback = callback
 		}

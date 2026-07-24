@@ -559,10 +559,12 @@ extension VideoPlayerViewController: ControlsVisibilityDelegate {
 		}
 	}
 
-	public func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping () -> Void) {
+	public func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping @MainActor () -> Void) {
 		hideControlsTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-			guard self?.player.isPlaying == true else { return }
-			callback()
+			MainActor.assumeIsolated {
+				guard self?.player.isPlaying == true else { return }
+				callback()
+			}
 		}
 	}
 
