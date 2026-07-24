@@ -1,4 +1,4 @@
-# StreamingVideoApp
+# TATTVA TV
 
 <p align="center">
   <img src="docs/images/brand/tattva-tv-hero.jpg" alt="TATTVA TV — Meaningful stories. Beautifully streamed." width="760">
