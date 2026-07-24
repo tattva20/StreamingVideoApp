@@ -41,7 +41,7 @@ flowchart TB
 **File:** `StreamingCore/StreamingCore/Video API/HTTPClient.swift`
 
 ```swift
-public protocol HTTPClient {
+public protocol HTTPClient: Sendable {
     func get(from url: URL) async throws -> (Data, HTTPURLResponse)
 }
 ```
@@ -238,18 +238,27 @@ extension HTTPURLResponse {
 
 ## Usage in Composition Root
 
+Both the iOS (`Tattva/SceneDelegate.swift`) and tvOS (`TattvaTV/SceneDelegate.swift`) composition roots wire the same `HTTPClient` and inject it into a `VideoService` (in the `StreamingCorePlayback` framework), which owns the remote get + map pipeline:
+
 ```swift
-// SceneDelegate.swift
+// SceneDelegate.swift (iOS and tvOS)
 private lazy var httpClient: HTTPClient = {
     URLSessionHTTPClient(session: URLSession(configuration: .ephemeral))
 }()
 
-private func makeRemoteVideoLoader(after: Video? = nil) async throws -> [Video] {
+private lazy var videoService = VideoService(httpClient: httpClient, store: store, logger: logger)
+```
+
+```swift
+// StreamingCorePlayback/VideoService.swift
+private func loadRemoteVideos(after: Video? = nil) async throws -> [Video] {
     let url = VideoEndpoint.get(after: after).url(baseURL: baseURL)
     let (data, response) = try await httpClient.get(from: url)
     return try VideoItemsMapper.map(data, from: response)
 }
 ```
+
+See [Apple TV](features/APPLE-TV.md) for the tvOS composition details.
 
 ---
 

@@ -138,6 +138,8 @@ public static let strictStreaming = PerformanceThresholds(
 
 ## Usage Example
 
+> The `VideoPlayerCoordinator` and hand-rolled KVO below are illustrative. For the real in-app wiring, see [Production Integration](#production-integration).
+
 ### Basic Tracking
 
 ```swift
@@ -226,6 +228,18 @@ func evaluateStartupPerformance(_ ttff: TimeInterval) {
     ))
 }
 ```
+
+---
+
+## Production Integration
+
+In the shipped app, `StartupTimeTracker` is not driven by the pseudo-code above. It is owned by `PlaybackPerformanceService` and fed through `PerformanceEvent`s emitted by the `StreamingCorePlayback` framework:
+
+- **`StreamingCorePlayback/AVPlayerPerformanceObserver.swift`** — observes `AVPlayer` and emits `PerformanceEvent.loadStarted` (line 186) on its `performanceEventPublisher`.
+- **`StreamingCorePlayback/VideoPlayerPerformanceAdapter.swift`** — forwards `.loadStarted` (line 53) and records `.firstFrameRendered` (lines 56, 136) into the performance service.
+- **`StreamingCore/Video Performance Feature/PlaybackPerformanceService.swift`** — the real consumer. In `recordEvent(_:)` it calls `startupTracker.recordLoadStart` (line 83) and `startupTracker.recordFirstFrame` (line 86), then `checkStartupTime` (line 162) emits a `PerformanceAlert` when TTFF crosses the warning/critical thresholds.
+
+Because `StartupTimeTracker` lives in the platform-agnostic `StreamingCore` framework and the AVFoundation plumbing lives in `StreamingCorePlayback`, TTFF tracking applies to both shipped surfaces — the iOS app and the tvOS `TattvaTV` target. See [Apple TV](APPLE-TV.md).
 
 ---
 

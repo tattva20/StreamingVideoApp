@@ -1,6 +1,6 @@
-# SOLID Principles in StreamingVideoApp
+# SOLID Principles in Tattva
 
-This document demonstrates how each SOLID principle is applied throughout the StreamingVideoApp codebase with concrete examples.
+This document demonstrates how each SOLID principle is applied throughout the Tattva codebase with concrete examples.
 
 ---
 
@@ -29,9 +29,8 @@ Each class handles exactly ONE concern:
 ```swift
 RemoteVideoLoader       // ONLY fetches from network
 LocalVideoLoader        // ONLY fetches from cache
-VideoLoaderCacheDecorator // ONLY handles caching logic
 VideoItemsMapper        // ONLY transforms JSON to domain models
-VideoPresenter          // ONLY formats data for display
+VideosPresenter         // ONLY formats data for display
 ```
 
 ### Bad Example (Violation):
@@ -80,50 +79,18 @@ final class LocalVideoLoader {
 
 > *"Software entities should be open for extension, but closed for modification."*
 
-### Example: Adding Caching Without Modifying Remote Loader
+### Example: Adding Logging and Analytics to the Video Player
 
-The `VideoLoaderCacheDecorator` adds caching behavior without changing `RemoteVideoLoader`:
-
-```swift
-// Original loader - NEVER modified
-final class RemoteVideoLoader: VideoLoader {
-    func load() async throws -> [Video] {
-        // Network fetching logic
-    }
-}
-
-// Extend behavior with decorator - NO modification needed
-final class VideoLoaderCacheDecorator: VideoLoader {
-    private let decoratee: VideoLoader
-    private let cache: VideoCache
-
-    init(decoratee: VideoLoader, cache: VideoCache) {
-        self.decoratee = decoratee
-        self.cache = cache
-    }
-
-    func load() async throws -> [Video] {
-        let videos = try await decoratee.load()
-        try cache.save(videos)  // Added behavior
-        return videos
-    }
-}
-
-// Usage - compose behaviors
-let loader = VideoLoaderCacheDecorator(
-    decoratee: RemoteVideoLoader(client: httpClient, url: url),
-    cache: localCache
-)
-```
-
-### Example: Adding Logging to Video Player
+The player and its decorators live in the platform-agnostic `StreamingCorePlayback`
+framework and are composed in `VideoPlayerUIComposer` without ever modifying
+`AVPlayerVideoPlayer`:
 
 ```swift
 // Original player - NEVER modified
-final class AVPlayerVideoPlayer: VideoPlayer { ... }
+public final class AVPlayerVideoPlayer: VideoPlayer { ... }
 
 // Add logging via decorator
-final class LoggingVideoPlayerDecorator: VideoPlayer {
+public final class LoggingVideoPlayerDecorator: VideoPlayer {
     private let decoratee: VideoPlayer
     private let logger: Logger
 
@@ -139,7 +106,7 @@ final class LoggingVideoPlayerDecorator: VideoPlayer {
 }
 
 // Add analytics via another decorator
-final class AnalyticsVideoPlayerDecorator: VideoPlayer {
+public final class AnalyticsVideoPlayerDecorator: VideoPlayer {
     private let decoratee: VideoPlayer
     private let analytics: PlaybackAnalyticsLogger
 
@@ -175,7 +142,6 @@ protocol VideoLoader {
 // All implementations are interchangeable:
 let loader: VideoLoader = RemoteVideoLoader(...)      // Production
 let loader: VideoLoader = LocalVideoLoader(...)       // Offline
-let loader: VideoLoader = VideoLoaderCacheDecorator(...)  // Cached
 let loader: VideoLoader = VideoLoaderSpy()            // Testing
 ```
 
@@ -256,9 +222,9 @@ protocol VideoService {
 }
 ```
 
-### Example: VideoStore Triple Conformance
+### Example: VideoStore Multiple Conformance
 
-The `CoreDataVideoStore` conforms to THREE separate protocols:
+The `CoreDataVideoStore` conforms to TWO separate protocols, each added via its own extension:
 
 ```swift
 protocol VideoStore {
@@ -272,14 +238,13 @@ protocol VideoImageDataStore {
     func retrieve(dataForURL url: URL) throws -> Data?
 }
 
-protocol VideoFeedStore {
-    func retrieve() throws -> LocalVideoFeed?
-}
-
-// One class, multiple focused interfaces
-final class CoreDataVideoStore: VideoStore, VideoImageDataStore, VideoFeedStore {
+// One class, multiple focused interfaces - conformances kept in separate files
+public final class CoreDataVideoStore: Sendable {
     // Implementation
 }
+
+extension CoreDataVideoStore: VideoStore { ... }
+extension CoreDataVideoStore: VideoImageDataStore { ... }
 ```
 
 Clients only depend on what they need:
@@ -300,7 +265,7 @@ final class LocalVideoImageDataLoader {
 
 > *"High-level modules should not depend on low-level modules. Both should depend on abstractions."*
 
-### Example: Protocol Definitions in Core, Implementations in App
+### Example: Protocol Definitions and Implementations in Core
 
 ```swift
 // StreamingCore defines abstractions (high-level)
@@ -376,10 +341,10 @@ final class LocalVideoLoader { ... }                 // Fetches from cache
 final class VideoItemsMapper { ... }                 // Maps JSON to models
 
 // O - Open/Closed
-// Add caching without modifying RemoteVideoLoader
-let cachedLoader = VideoLoaderCacheDecorator(
-    decoratee: remoteLoader,
-    cache: localCache
+// Add logging/analytics without modifying AVPlayerVideoPlayer
+let player = LoggingVideoPlayerDecorator(
+    decoratee: AVPlayerVideoPlayer(),
+    logger: logger
 )
 
 // L - Liskov Substitution

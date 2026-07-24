@@ -1,6 +1,6 @@
-# Dependency Rejection Pattern in StreamingVideoApp
+# Dependency Rejection Pattern in Tattva
 
-This document explains how StreamingVideoApp implements **Mark Seemann's Dependency Rejection pattern** - a functional programming approach that eliminates dependency injection in favor of pure functions.
+This document explains how Tattva implements **Mark Seemann's Dependency Rejection pattern** - a functional programming approach that eliminates dependency injection in favor of pure functions.
 
 ---
 
@@ -23,7 +23,7 @@ This creates the "**Impure → Pure → Impure**" sandwich architecture.
 flowchart TB
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
-    impureTop["IMPURE — iOS/System Layer<br/>AVPlayerStateAdapter<br/><i>Observes AVPlayer KVO</i><br/><i>Translates to PlaybackAction</i>"]
+    impureTop["IMPURE — Playback/AVFoundation Layer (StreamingCorePlayback)<br/>AVPlayerStateAdapter<br/><i>Observes AVPlayer KVO</i><br/><i>Translates to PlaybackAction</i>"]
     pure["PURE — Core Domain<br/>DefaultPlaybackStateMachine<br/><i>nextState(action, state) → PURE</i><br/><i>Emits PlaybackTransition</i>"]
     impureBottom["IMPURE — Side Effects & Subscribers<br/><i>UI Updates, Logging, Caching</i>"]
     impureTop -->|"send(PlaybackAction)"| pure
@@ -350,7 +350,7 @@ class VideoCommentsPresenter {
 }
 ```
 
-### Dependency Rejection (Used in StreamingVideoApp):
+### Dependency Rejection (Used in Tattva):
 
 ```swift
 // Better - Reject dependencies, accept parameters:

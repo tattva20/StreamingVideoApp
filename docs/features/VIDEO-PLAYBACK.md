@@ -27,6 +27,8 @@ The Video Playback feature provides a full-featured video player with state mana
 
 ## Architecture
 
+> **Platform scope:** The playback core is platform-agnostic. The state machine (`StreamingCore/Video Playback Feature`) and AVPlayer plumbing (`StreamingCorePlayback`: `AVPlayerVideoPlayer`, `StatefulVideoPlayer`, adapters) are shared by both the iOS and tvOS apps. Only the **UI Components** section below (`StreamingCoreiOS`) is iOS-specific; the tvOS app has its own player UI. See [Apple TV](APPLE-TV.md).
+
 ### VideoPlayer Protocol
 
 **File:** `StreamingCore/StreamingCore/Video Playback Feature/VideoPlayer.swift`
@@ -37,17 +39,19 @@ public protocol VideoPlayer: AnyObject {
     var isPlaying: Bool { get }
     var currentTime: TimeInterval { get }
     var duration: TimeInterval { get }
-    var volume: Float { get set }
-    var isMuted: Bool { get set }
-    var playbackSpeed: Float { get set }
+    var volume: Float { get }
+    var isMuted: Bool { get }
+    var playbackSpeed: Float { get }
 
     func load(url: URL)
     func play()
     func pause()
-    func seek(to time: TimeInterval)
     func seekForward(by seconds: TimeInterval)
     func seekBackward(by seconds: TimeInterval)
-    func stop()
+    func seek(to time: TimeInterval)
+    func setVolume(_ volume: Float)
+    func toggleMute()
+    func setPlaybackSpeed(_ speed: Float)
 }
 ```
 
@@ -75,7 +79,6 @@ public enum PlaybackState: Equatable, Sendable {
     public var isActive: Bool { ... }
     public var canPlay: Bool { ... }
     public var canPause: Bool { ... }
-    public var canSeek: Bool { ... }
 }
 ```
 
@@ -248,34 +251,27 @@ public final class ControlsVisibilityController {
 **File:** `StreamingCore/StreamingCorePlayback/AVPlayerVideoPlayer.swift`
 
 ```swift
-@MainActor
 public final class AVPlayerVideoPlayer: VideoPlayer {
-    private let player: AVPlayer
+    public let player: AVPlayer
 
     public func load(url: URL) {
-        let item = AVPlayerItem(url: url)
-        player.replaceCurrentItem(with: item)
-        stateMachine.send(.load(url))
+        let playerItem = AVPlayerItem(url: url)
+        player.replaceCurrentItem(with: playerItem)
     }
 
     public func play() {
-        guard stateMachine.canPerform(.play) else { return }
         player.play()
-        stateMachine.send(.play)
+        isPlaying = true
     }
 
     public func pause() {
-        guard stateMachine.canPerform(.pause) else { return }
         player.pause()
-        stateMachine.send(.pause)
+        isPlaying = false
     }
 
     public func seek(to time: TimeInterval) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
-        stateMachine.send(.seek(to: time))
-        player.seek(to: cmTime) { [weak self] _ in
-            self?.stateMachine.send(.didFinishSeeking)
-        }
+        player.seek(to: cmTime)
     }
 }
 ```
@@ -335,14 +331,11 @@ Available speeds:
 | 2.0x | Fast forward |
 
 ```swift
-public var playbackSpeed: Float {
-    get { player.rate != 0 ? player.rate : _playbackSpeed }
-    set {
-        _playbackSpeed = newValue
-        if isPlaying {
-            player.rate = newValue
-        }
-    }
+public var playbackSpeed: Float = 1.0
+
+public func setPlaybackSpeed(_ speed: Float) {
+    playbackSpeed = speed
+    player.rate = speed
 }
 ```
 

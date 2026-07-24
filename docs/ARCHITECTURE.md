@@ -1,20 +1,20 @@
-# Clean Architecture in StreamingVideoApp
+# Clean Architecture in Tattva
 
-This document explains how Clean Architecture is implemented in StreamingVideoApp, providing a platform-agnostic core that enables maximum testability and reusability.
+This document explains how Clean Architecture is implemented in Tattva, providing a platform-agnostic core that enables maximum testability and reusability.
 
 ---
 
 ## Overview
 
-StreamingVideoApp follows **Uncle Bob's Clean Architecture** with strict layer boundaries and dependency inversion. The architecture ensures that business logic is completely independent of frameworks, UI, and external agencies.
+Tattva follows **Uncle Bob's Clean Architecture** with strict layer boundaries and dependency inversion. The architecture ensures that business logic is completely independent of frameworks, UI, and external agencies.
 
 ```
-StreamingVideoApp.xcworkspace — dependencies point inward; every arrow ends at StreamingCore
+Tattva.xcworkspace — dependencies point inward; every arrow ends at StreamingCore
 
 apps · composition roots (platform-specific wiring)
-├── StreamingVideoApp      iOS app    → StreamingCore · StreamingCoreiOS · StreamingCorePlayback
+├── Tattva      iOS app    → StreamingCore · StreamingCoreiOS · StreamingCorePlayback
 │                                        DI & wiring · AVPlayer + custom PlayerView · lifecycle
-└── StreamingVideoAppTV     tvOS app  → StreamingCore · StreamingCorePlayback   (not StreamingCoreiOS)
+└── TattvaTV     tvOS app  → StreamingCore · StreamingCorePlayback   (not StreamingCoreiOS)
                                          DI & wiring · AVPlayerViewController (native transport)
 
 frameworks
@@ -114,12 +114,12 @@ StreamingCoreiOS/  — UIKit  → depends on StreamingCore
 
 `AVPlayerStateAdapter` used to live here; it was pure AVFoundation, so Phase 1 moved it into `StreamingCorePlayback` where the tvOS app can reuse it.
 
-### StreamingVideoApp (Composition Root)
+### Tattva (Composition Root)
 
 Wires everything together:
 
 ```
-StreamingVideoApp/  (iOS composition root)  → StreamingCore · StreamingCoreiOS · StreamingCorePlayback
+Tattva/  (iOS composition root)  → StreamingCore · StreamingCoreiOS · StreamingCorePlayback
 ├── SceneDelegate                    main composition: feed → tap → player
 ├── AVPlayerVideoPlayer+PlayerView   iOS-only attach(to:) extension — the one UIKit coupling
 ├── VideoPlayerUIComposer · VideosUIComposer · VideoCommentsUIComposer
@@ -129,17 +129,23 @@ StreamingVideoApp/  (iOS composition root)  → StreamingCore · StreamingCoreiO
 
 `AVPlayerVideoPlayer` and the logging/analytics decorators no longer live here — they moved into `StreamingCorePlayback`. The app now composes them; the one iOS-only piece it still owns is the `attach(to: PlayerView)` extension (tvOS uses `AVPlayerViewController` instead and needs no equivalent).
 
-### StreamingVideoAppTV (tvOS Composition Root)
+### TattvaTV (tvOS Composition Root)
 
 Mirrors the iOS root, minus the custom UI. Depends on `StreamingCore` + `StreamingCorePlayback` only — **not** `StreamingCoreiOS`.
 
 ```
-StreamingVideoAppTV/  (tvOS composition root)  → StreamingCore · StreamingCorePlayback
-├── AppDelegate · SceneDelegate   composes VideoService; roots the player on the first remote video
+TattvaTV/  (tvOS composition root)  → StreamingCore · StreamingCorePlayback
+├── AppDelegate · SceneDelegate   composes VideoService into the tvOS feed (TVVideosUIComposer);
+│                                 presents the player on video selection
+├── TVVideoFeedViewController · TVVideosUIComposer · TVVideoPosterCell ·
+│   TVVideoCellController · TVFeedLoaderPresentationAdapter   feed + load-more pagination
+├── TVCommentsViewController · TVCommentsUIComposer · TVCommentCell   comments beside the player
 ├── TVPlayerComposer              builds AVPlayerVideoPlayer → Logging → Analytics →
 │                                 StatefulVideoPlayer + PlaybackCoordinator (the reused chain)
 └── TVPlayerViewController        subclasses AVPlayerViewController (native 10-foot transport)
 ```
+
+See [Apple TV](features/APPLE-TV.md) for the full tvOS surface.
 
 ---
 
@@ -153,7 +159,7 @@ public protocol HTTPClient {
     func get(from url: URL) async throws -> (Data, HTTPURLResponse)
 }
 
-// StreamingVideoApp provides the implementation
+// StreamingCore provides the implementation (Video API/)
 final class URLSessionHTTPClient: HTTPClient {
     private let session: URLSession
 
@@ -174,7 +180,7 @@ public protocol VideoStore {
     func retrieve() throws -> CachedVideos?
 }
 
-// StreamingVideoApp provides CoreData implementation
+// StreamingCore provides the CoreData implementation (Video Cache/)
 final class CoreDataVideoStore: VideoStore {
     private let container: NSPersistentContainer
     // ...
@@ -398,7 +404,7 @@ func test_viewDidLoad_displaysVideos() {
 }
 ```
 
-### Integration Tests (StreamingVideoAppTests)
+### Integration Tests (TattvaTests)
 
 ```swift
 // Tests with real implementations composed together

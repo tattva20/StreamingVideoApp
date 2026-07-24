@@ -24,7 +24,7 @@ public final class VideoService {
 	public init(
 		httpClient: HTTPClient,
 		store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable,
-		logger: os.Logger = os.Logger(subsystem: "com.streamingvideoapp.StreamingVideoApp", category: "main")
+		logger: os.Logger = os.Logger(subsystem: "com.tattva.Tattva", category: "main")
 	) {
 		self.httpClient = httpClient
 		self.store = store

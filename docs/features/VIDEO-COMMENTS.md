@@ -101,6 +101,8 @@ public final class VideoCommentsMapper {
 
 **File:** `StreamingCore/StreamingCore/Video Comments Presentation/VideoCommentsPresenter.swift`
 
+`VideoCommentsPresenter`, `VideoCommentsViewModel`, and `VideoCommentViewModel` live in `StreamingCore` and are platform-agnostic - the iOS `VideoCommentCell` path and the tvOS `TVCommentsViewController`/`TVCommentCell` path share this same presentation layer.
+
 Uses **Dependency Rejection** - calendar and locale as parameters, not injected:
 
 ```swift
@@ -193,7 +195,7 @@ public final class VideoCommentCellController: NSObject {
 
 ## Integration with Video Player
 
-Comments are displayed below the video player:
+Comments are embedded below the video player in portrait. The container is hidden in landscape/fullscreen (constraints are only activated when `!isLandscape`):
 
 <p align="center">
   <img src="../images/video-comments-layout.svg" alt="Player over comments layout mockup" width="340">
@@ -201,51 +203,69 @@ Comments are displayed below the video player:
 
 ### VideoPlayerViewController Integration
 
-```swift
-final class VideoPlayerViewController: UIViewController {
-    private let commentsContainerView: UIView
+`VideoPlayerViewController` accepts a pre-composed comments controller via `setCommentsController(_:)` and embeds it below the player (`embedCommentsController(_:)`, private):
 
-    func setupComments(for videoId: UUID) {
-        let commentsController = VideoCommentsUIComposer.commentsComposedWith(
-            videoId: videoId,
-            commentsLoader: makeCommentsLoader(for: videoId)
-        )
-        addChild(commentsController)
-        commentsContainerView.addSubview(commentsController.view)
-        commentsController.didMove(toParent: self)
+```swift
+public func setCommentsController(_ controller: UIViewController) {
+    embeddedCommentsController = controller
+    if isViewLoaded {
+        embedCommentsController(controller)
     }
 }
 ```
+
+The comments controller is built and injected during composition (see below), not by the player itself.
 
 ---
 
 ## Composition
 
-**File:** `StreamingVideoApp/VideoCommentsUIComposer.swift`
+**File:** `Tattva/VideoCommentsUIComposer.swift`
 
 ```swift
+@MainActor
 public enum VideoCommentsUIComposer {
+    private typealias CommentsPresentationAdapter = AsyncLoadResourcePresentationAdapter<[VideoComment], VideoCommentsViewAdapter>
+
     public static func commentsComposedWith(
-        videoId: UUID,
         commentsLoader: @MainActor @escaping () async throws -> [VideoComment]
     ) -> ListViewController {
-        let controller = ListViewController()
+        let presentationAdapter = CommentsPresentationAdapter(loader: commentsLoader)
 
-        let presentationAdapter = AsyncLoadResourcePresentationAdapter(
-            loader: commentsLoader
-        )
-        controller.onRefresh = presentationAdapter.loadResource
+        let commentsController = makeCommentsViewController()
+        commentsController.onRefresh = presentationAdapter.loadResource
 
         presentationAdapter.presenter = LoadResourcePresenter(
-            resourceView: VideoCommentsViewAdapter(controller: controller),
-            loadingView: WeakRefVirtualProxy(controller),
-            errorView: WeakRefVirtualProxy(controller),
-            mapper: VideoCommentsPresenter.map
-        )
+            resourceView: VideoCommentsViewAdapter(controller: commentsController),
+            loadingView: WeakRefVirtualProxy(commentsController),
+            errorView: WeakRefVirtualProxy(commentsController),
+            mapper: { VideoCommentsPresenter.map($0) })
 
-        return controller
+        return commentsController
+    }
+
+    private static func makeCommentsViewController() -> ListViewController {
+        let bundle = Bundle(for: ListViewController.self)
+        let storyboard = UIStoryboard(name: "VideoComments", bundle: bundle)
+        let commentsController = storyboard.instantiateInitialViewController() as! ListViewController
+        commentsController.title = VideoCommentsPresenter.title
+        return commentsController
     }
 }
+```
+
+The `videoId` is bound earlier, at the call site in `SceneDelegate.showVideoPlayer`, which passes `videoService.loadComments(for:)` as the loader and injects the composed controller into the player:
+
+```swift
+let commentsController = VideoCommentsUIComposer.commentsComposedWith(
+    commentsLoader: videoService.loadComments(for: video))
+
+let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(
+    video: video,
+    player: player,
+    commentsController: commentsController,
+    analyticsLogger: analyticsLogger,
+    structuredLogger: structuredLogger)
 ```
 
 ---
@@ -335,6 +355,20 @@ func test_map_deliversCommentsOn200HTTPResponse() throws {
     XCTAssertEqual(result, [comment1.model, comment2.model])
 }
 ```
+
+---
+
+## tvOS
+
+The tvOS app renders comments through a separate UI layer that reuses the shared `StreamingCore` presentation (see above):
+
+- **`TVCommentsViewController`** - `UICollectionViewController` backed by an `NSDiffableDataSourceSnapshot`, with a loading `UIActivityIndicatorView`, an empty state (`"No comments yet"`), and a `ResourceErrorView` error state.
+- **`TVCommentsUIComposer`** / **`TVCommentCell`** - composition and cell for the tvOS surface.
+- Wired via `TVPlayerViewController`, which surfaces comments as an `AVPlayerViewController` info panel (`customInfoViewControllers`) alongside the player rather than below it.
+
+**Files:** `Tattva/TattvaTV/TVCommentsViewController.swift`, `TVCommentsUIComposer.swift`, `TVCommentCell.swift`
+
+See [Apple TV](APPLE-TV.md) for the full tvOS surface.
 
 ---
 

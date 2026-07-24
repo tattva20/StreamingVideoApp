@@ -137,6 +137,8 @@ public func eventsInLastMinute() -> Int {
 
 ## Usage Example
 
+> **Note:** The example below is illustrative. In the shipped app, `AVPlayerPerformanceObserver` (in `StreamingCorePlayback`) emits `PerformanceEvent` values, and `PlaybackPerformanceService` (`StreamingCore/StreamingCore/Video Performance Feature/PlaybackPerformanceService.swift`) owns the `RebufferingMonitor` instance and drives `bufferingStarted()`/`bufferingEnded()` from `recordEvent(_:)`. See that file for the real integration site.
+
 ### Basic Monitoring
 
 ```swift
@@ -328,7 +330,8 @@ func test_reset_clearsAllState() {
 
 ```mermaid
 flowchart TB
-    APO["AVPlayerPerformanceObserver"] -->|bufferingStarted/Ended| RM["RebufferingMonitor"]
+    APO["AVPlayerPerformanceObserver<br/><i>StreamingCorePlayback</i>"] -->|"PerformanceEvent<br/>(.bufferingStarted / .bufferingEnded)"| PPS["PlaybackPerformanceService<br/><i>Video Performance Feature</i>"]
+    PPS -->|bufferingStarted/Ended| RM["RebufferingMonitor"]
     RM --> BS["BitrateStrategy<br/><i>rebufferingRatio</i>"]
     RM --> PA["PerformanceAlerts<br/><i>threshold checks</i>"]
     RM --> AN["Analytics<br/><i>event tracking</i>"]

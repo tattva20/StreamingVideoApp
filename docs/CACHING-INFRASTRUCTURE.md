@@ -12,7 +12,7 @@ flowchart TB
     classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
     classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
     loader["LocalVideoLoader<br/><i>Use Case</i>"]
-    imageLoader["LocalVideoImageLoader<br/><i>Use Case</i>"]
+    imageLoader["LocalVideoImageDataLoader<br/><i>Use Case</i>"]
     videoStore["VideoStore<br/><i>Protocol</i>"]
     imageStore["VideoImageDataStore<br/><i>Protocol</i>"]
     subgraph infra["Infrastructure Layer"]
@@ -73,6 +73,19 @@ public protocol VideoImageDataStore {
     func retrieve(dataForURL url: URL) throws -> Data?
 }
 ```
+
+### StoreScheduler
+
+**File:** `StreamingCore/StreamingCorePlayback/VideoService.swift`
+
+```swift
+public protocol StoreScheduler {
+    @MainActor
+    func schedule<T>(_ action: @escaping @Sendable () throws -> T) async rethrows -> T
+}
+```
+
+Runs a store operation on the store's appropriate context — the main queue for `InMemoryVideoStore`, the background context for `CoreDataVideoStore`. `VideoService` calls `store.schedule { ... }` to drive background-scheduled cache validation and image load/save. Both `CoreDataVideoStore` and `InMemoryVideoStore` conform. The store wired in the composition root is typed `VideoStore & VideoImageDataStore & StoreScheduler & Sendable`.
 
 ---
 
@@ -273,9 +286,10 @@ class ManagedVideo: NSManagedObject {
 **File:** `StreamingCore/StreamingCore/Video Cache/Infrastructure/InMemory/InMemoryVideoStore.swift`
 
 ```swift
-public final class InMemoryVideoStore: VideoStore, VideoImageDataStore, @unchecked Sendable {
+@MainActor
+public final class InMemoryVideoStore: VideoStore {
     private var cache: CachedVideos?
-    private var imageDataStore: [URL: Data] = [:]
+    private var videoImageDataCache = NSCache<NSURL, NSData>()
 
     public init() {}
 
@@ -290,13 +304,15 @@ public final class InMemoryVideoStore: VideoStore, VideoImageDataStore, @uncheck
     public func retrieve() throws -> CachedVideos? {
         return cache
     }
+}
 
+extension InMemoryVideoStore: VideoImageDataStore {
     public func insert(_ data: Data, for url: URL) throws {
-        imageDataStore[url] = data
+        videoImageDataCache.setObject(data as NSData, forKey: url as NSURL)
     }
 
     public func retrieve(dataForURL url: URL) throws -> Data? {
-        return imageDataStore[url]
+        videoImageDataCache.object(forKey: url as NSURL) as Data?
     }
 }
 ```
@@ -343,6 +359,8 @@ public final class FileSystemVideoImageDataStore: VideoImageDataStore {
 
 ## Usage in Composition Root
 
+The caching infrastructure is platform-agnostic and is wired identically by both composition roots — iOS (`Tattva/SceneDelegate.swift`) and tvOS (`TattvaTV/SceneDelegate.swift`) — each building the same store type and a `VideoService`. See [Apple TV Support](features/APPLE-TV.md) for the tvOS wiring.
+
 ```swift
 // SceneDelegate.swift
 private lazy var store: VideoStore & VideoImageDataStore & StoreScheduler & Sendable = {
@@ -357,21 +375,22 @@ private lazy var store: VideoStore & VideoImageDataStore & StoreScheduler & Send
     }
 }()
 
-private lazy var localVideoLoader: LocalVideoLoader = {
-    LocalVideoLoader(store: store, currentDate: Date.init)
-}()
+private lazy var videoService = VideoService(httpClient: httpClient, store: store, logger: logger)
 ```
+
+The `LocalVideoLoader` itself is no longer built in the composition root — it lives inside `VideoService`, which the composition root passes to the UI composers (`videoLoader: videoService.loadRemoteVideosWithLocalFallback`, `imageLoader: videoService.loadLocalImageWithRemoteFallback`).
 
 ---
 
 ## Cache-First Strategy
 
-The composition root implements cache-first with remote fallback:
+`VideoService` (in the `StreamingCorePlayback` framework) implements cache-first with remote fallback; the composition root only instantiates it and wires its methods:
 
 ```swift
-private func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
+// StreamingCorePlayback/VideoService.swift
+public func loadRemoteVideosWithLocalFallback() async throws -> Paginated<Video> {
     do {
-        let items = try await makeRemoteVideoLoader()
+        let items = try await loadRemoteVideos()
         try? localVideoLoader.save(items)
         return makeFirstPage(items: items)
     } catch {
@@ -385,9 +404,13 @@ Flow:
 2. On success: cache results, return data
 3. On failure: fallback to cached data
 
+Pagination follows the same pattern: `loadMoreRemoteVideos(last:)` merges cached items with the newly fetched page and re-saves the combined list. Background cache validation runs through `validateCache()`, which uses `store.schedule { ... }` to run `LocalVideoLoader.validateCache()` off the main path.
+
 ---
 
 ## Testing
+
+The unit spies below exercise the use cases in isolation. A separate `StreamingCoreCacheIntegrationTests` target (`StreamingCore/StreamingCoreCacheIntegrationTests`) exercises real CoreData persistence end-to-end.
 
 ### VideoStoreSpy
 

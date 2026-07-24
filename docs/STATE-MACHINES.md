@@ -1,4 +1,4 @@
-# State Machine Design in StreamingVideoApp
+# State Machine Design in Tattva
 
 This document explains the pure state machine implementation used for video playback control, demonstrating how functional programming principles create predictable, testable state management.
 
@@ -84,7 +84,7 @@ extension PlaybackState {
 
     public var canPause: Bool {
         switch self {
-        case .playing, .buffering(.playing), .seeking(_, .playing):
+        case .playing, .buffering(.playing):
             return true
         default:
             return false
@@ -262,6 +262,8 @@ private func nextState(for action: PlaybackAction, from state: PlaybackState) ->
         return .idle
     case (.paused, .load(let url)):
         return .loading(url)
+    case (.paused, .audioSessionResumed):
+        return .playing
 
     // MARK: - Buffering State
     case (.buffering(let previous), .didFinishBuffering):
@@ -290,6 +292,8 @@ private func nextState(for action: PlaybackAction, from state: PlaybackState) ->
     // MARK: - Ended State
     case (.ended, .play):
         return .playing
+    case (.ended, .seek(let time)):
+        return .seeking(to: time, previousState: .paused)
     case (.ended, .stop):
         return .idle
     case (.ended, .load(let url)):
@@ -465,11 +469,11 @@ final class DefaultPlaybackStateMachineTests: XCTestCase {
 
 ---
 
-## Integration with iOS Layer
+## Integration with the Playback Layer (StreamingCorePlayback)
 
 ### AVPlayerStateAdapter
 
-The adapter bridges AVPlayer observations to pure state machine actions:
+The adapter bridges AVPlayer observations to pure state machine actions. It lives in the platform-agnostic `StreamingCorePlayback` framework (`StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`, guarded with `#if !os(macOS)`) and is wired up by `PlaybackCoordinator`. Because it is platform-agnostic, both the iOS app and the tvOS app (`TattvaTV/TVPlayerComposer.swift`, `TVPlayerViewController.swift`) drive the same state machine through it — see [Apple TV](features/APPLE-TV.md).
 
 ```swift
 public final class AVPlayerStateAdapter {
@@ -502,7 +506,7 @@ public final class AVPlayerStateAdapter {
 
 ```mermaid
 flowchart TB
-    A["IMPURE · iOS Layer<br/><b>AVPlayerStateAdapter</b><br/><i>observes AVPlayer KVO · translates to PlaybackAction</i>"]
+    A["IMPURE · Playback Layer (StreamingCorePlayback)<br/><b>AVPlayerStateAdapter</b><br/><i>observes AVPlayer KVO · translates to PlaybackAction</i>"]
     P["PURE · Core Domain<br/><b>DefaultPlaybackStateMachine</b><br/><i>nextState(action, state) → pure · emits PlaybackTransition</i>"]
     S["IMPURE · Subscribers<br/><i>UI updates · logging · analytics</i>"]
 
@@ -521,7 +525,7 @@ flowchart TB
 ## Benefits of This Design
 
 1. **Predictable** - Same action + state always produces same result
-2. **Testable** - 60+ transition tests with no mocks
+2. **Testable** - 50+ transition tests with no mocks
 3. **Debuggable** - Transitions are logged with timestamps
 4. **Type-Safe** - Invalid states are impossible to represent
 5. **Decoupled** - State machine knows nothing about AVPlayer

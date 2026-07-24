@@ -1,6 +1,6 @@
-# Design Patterns in StreamingVideoApp
+# Design Patterns in Tattva
 
-This document explains the key design patterns used throughout the StreamingVideoApp codebase with concrete implementation examples.
+This document explains the key design patterns used throughout the Tattva codebase with concrete implementation examples.
 
 ---
 
@@ -8,7 +8,7 @@ This document explains the key design patterns used throughout the StreamingVide
 
 | Pattern | Purpose | Example |
 |---------|---------|---------|
-| **Decorator** | Add behavior without modifying existing code | `VideoLoaderCacheDecorator` |
+| **Decorator** | Add behavior without modifying existing code | `LoggingVideoPlayerDecorator` |
 | **Composite** | Treat groups uniformly with individuals | `CompositeLogger` |
 | **Adapter** | Convert one interface to another | `AVPlayerStateAdapter` |
 | **Factory** | Encapsulate object creation | `VideosUIComposer` |
@@ -21,39 +21,7 @@ This document explains the key design patterns used throughout the StreamingVide
 
 > *"Attach additional responsibilities to an object dynamically."*
 
-The Decorator pattern is extensively used to add cross-cutting concerns without modifying existing classes.
-
-### VideoLoaderCacheDecorator
-
-Adds caching behavior to any `VideoLoader`:
-
-```swift
-public final class VideoLoaderCacheDecorator: VideoLoader {
-    private let decoratee: VideoLoader
-    private let cache: VideoCache
-
-    public init(decoratee: VideoLoader, cache: VideoCache) {
-        self.decoratee = decoratee
-        self.cache = cache
-    }
-
-    public func load() async throws -> [Video] {
-        let videos = try await decoratee.load()
-        try cache.save(videos)  // Added behavior
-        return videos
-    }
-}
-```
-
-**Usage:**
-```swift
-let remoteLoader = RemoteVideoLoader(client: httpClient, url: url)
-let cachedLoader = VideoLoaderCacheDecorator(
-    decoratee: remoteLoader,
-    cache: localCache
-)
-// cachedLoader now saves to cache after every load
-```
+The Decorator pattern is extensively used to add cross-cutting concerns without modifying existing classes. The concrete player decorators below live in the `StreamingCorePlayback` framework.
 
 ### LoggingVideoPlayerDecorator
 
@@ -175,38 +143,6 @@ let compositeLogger = CompositeLogger(loggers: [
 
 // Single call logs to console, os_log, AND remote server
 compositeLogger.log(entry)
-```
-
-### VideoLoaderComposite (Fallback Loading)
-
-Tries primary loader, falls back to secondary on failure:
-
-```swift
-public final class VideoLoaderWithFallbackComposite: VideoLoader {
-    private let primary: VideoLoader
-    private let fallback: VideoLoader
-
-    public init(primary: VideoLoader, fallback: VideoLoader) {
-        self.primary = primary
-        self.fallback = fallback
-    }
-
-    public func load() async throws -> [Video] {
-        do {
-            return try await primary.load()
-        } catch {
-            return try await fallback.load()
-        }
-    }
-}
-```
-
-**Usage:**
-```swift
-let loader = VideoLoaderWithFallbackComposite(
-    primary: remoteLoader,      // Try network first
-    fallback: localCacheLoader  // Fall back to cache
-)
 ```
 
 ---
@@ -372,41 +308,39 @@ public enum VideosUIComposer {
 }
 ```
 
-### VideoPlayerComposer
+### VideoPlayerUIComposer
 
-Creates the complete video player with decorators:
+Creates the complete video player, stacking decorators over the base player and wrapping the result in a `StatefulVideoPlayer` for state-machine control. The tvOS target has a parallel `TVPlayerComposer.playerComposedWith(...)`.
 
 ```swift
-public enum VideoPlayerComposer {
-    public static func compose(
+public enum VideoPlayerUIComposer {
+    public static func videoPlayerComposedWith(
         video: Video,
-        player: AVPlayer,
-        logger: Logger,
-        analytics: PlaybackAnalyticsLogger
+        player: VideoPlayer? = nil,
+        commentsController: UIViewController? = nil,
+        analyticsLogger: PlaybackAnalyticsLogger? = nil,
+        structuredLogger: (any StreamingCore.Logger)? = nil
     ) -> VideoPlayerViewController {
-        let stateMachine = DefaultPlaybackStateMachine()
+        let viewModel = VideoPlayerPresenter.map(video)
+        let basePlayer = player ?? AVPlayerVideoPlayer()
 
-        let adapter = AVPlayerStateAdapter(player: player) { action in
-            stateMachine.send(action)
+        // Decorator chain: base player -> logging -> analytics
+        var videoPlayer: VideoPlayer = basePlayer
+
+        if let logger = structuredLogger {
+            videoPlayer = LoggingVideoPlayerDecorator(decoratee: videoPlayer, logger: logger)
         }
 
-        let basePlayer = AVPlayerVideoPlayer(player: player, stateMachine: stateMachine)
+        if let analytics = analyticsLogger {
+            videoPlayer = AnalyticsVideoPlayerDecorator(decoratee: videoPlayer, analyticsLogger: analytics)
+        }
 
-        let decoratedPlayer = LoggingVideoPlayerDecorator(
-            decoratee: AnalyticsVideoPlayerDecorator(
-                decoratee: basePlayer,
-                analyticsLogger: analytics
-            ),
-            logger: logger,
-            correlationID: UUID()
-        )
+        // Wrap with stateful player for state machine control
+        let stateMachine = DefaultPlaybackStateMachine()
+        let statefulPlayer = StatefulVideoPlayer(decoratee: videoPlayer, stateMachine: stateMachine)
 
-        let controller = VideoPlayerViewController(
-            player: decoratedPlayer,
-            video: video
-        )
-
-        adapter.startObserving()
+        let controller = VideoPlayerViewController(viewModel: viewModel, player: statefulPlayer)
+        controller.statefulPlayer = statefulPlayer
 
         return controller
     }
@@ -511,12 +445,12 @@ if userPrefersHighQuality {
 }
 ```
 
-### PreloadStrategy
+### PredictivePreloadStrategy
 
 Another strategy family for video preloading:
 
 ```swift
-public protocol PreloadStrategy: Sendable {
+public protocol PredictivePreloadStrategy: Sendable {
     func videosToPreload(
         currentVideoIndex: Int,
         playlist: [PreloadableVideo],
@@ -525,16 +459,9 @@ public protocol PreloadStrategy: Sendable {
 }
 
 // Adjacent video preloading
-public struct AdjacentVideoPreloadStrategy: PreloadStrategy {
+public struct AdjacentVideoPreloadStrategy: PredictivePreloadStrategy, Sendable {
     public func videosToPreload(...) -> [PreloadableVideo] {
         // Preload next 1-2 videos based on network
-    }
-}
-
-// Predictive preloading based on user behavior
-public struct PredictivePreloadStrategy: PreloadStrategy {
-    public func videosToPreload(...) -> [PreloadableVideo] {
-        // Use ML model to predict next video
     }
 }
 ```
@@ -545,51 +472,29 @@ public struct PredictivePreloadStrategy: PreloadStrategy {
 
 > *"Compose the object graph in a single location near the entry point."*
 
-All dependency wiring happens in `SceneDelegate`:
+There are two composition roots — the iOS `Tattva/SceneDelegate.swift` and the tvOS `TattvaTV/SceneDelegate.swift`. Both wire their object graph through a `VideoService`, which encapsulates the remote-then-local fallback and cache behavior:
 
 ```swift
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-    var window: UIWindow?
+    private lazy var logger = CompositeLogger(loggers: [ConsoleLogger(), OSLogLogger()])
+    private lazy var videoService = VideoService(httpClient: httpClient, store: store, logger: logger)
+
+    private lazy var navigationController = UINavigationController(
+        rootViewController: VideosUIComposer.videosComposedWith(
+            videoLoader: videoService.loadRemoteVideosWithLocalFallback,
+            imageLoader: videoService.loadLocalImageWithRemoteFallback,
+            selection: showVideoPlayer))
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
-
-        // Create all infrastructure
-        let httpClient = URLSessionHTTPClient()
-        let store = CoreDataVideoStore(storeURL: storeURL)
-        let logger = CompositeLogger(loggers: [ConsoleLogger(), OSLogLogger()])
-
-        // Create loaders
-        let remoteLoader = RemoteVideoLoader(client: httpClient, url: videosURL)
-        let localLoader = LocalVideoLoader(store: store)
-
-        // Compose with decorators
-        let cachedLoader = VideoLoaderCacheDecorator(
-            decoratee: remoteLoader,
-            cache: localLoader
-        )
-
-        let loaderWithFallback = VideoLoaderWithFallbackComposite(
-            primary: cachedLoader,
-            fallback: localLoader
-        )
-
-        // Create UI
-        let videosController = VideosUIComposer.videosComposedWith(
-            videoLoader: { Paginated(items: try await loaderWithFallback.load()) },
-            imageLoader: makeImageLoader,
-            selection: { [weak self] video in
-                self?.showVideoPlayer(video)
-            }
-        )
-
-        // Setup window
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = UINavigationController(rootViewController: videosController)
+        window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
     }
 }
 ```
+
+The tvOS `SceneDelegate` mirrors this, wiring the same `VideoService` through the dedicated `TVVideosUIComposer`, `TVPlayerComposer`, and `TVCommentsUIComposer` (see [Apple TV](features/APPLE-TV.md)).
 
 **Benefits:**
 - Single source of truth for object graph

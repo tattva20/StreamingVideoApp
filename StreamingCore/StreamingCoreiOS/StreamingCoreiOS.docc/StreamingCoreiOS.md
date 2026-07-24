@@ -6,6 +6,8 @@ iOS-specific UI components and platform adapters for video streaming application
 
 StreamingCoreiOS provides UIKit-based view controllers, views, and iOS platform adapters that implement the protocols defined in StreamingCore. It serves as the bridge between the platform-agnostic business logic and iOS-specific frameworks like AVFoundation and UIKit.
 
+StreamingCoreiOS is purely the UIKit UI layer and imports only StreamingCore. The AVFoundation playback engine and its state, buffer, and bandwidth adapters live in the separate StreamingCorePlayback framework; StreamingCoreiOS retains only the AVFoundation UI glue (Picture-in-Picture, audio session, and the AVPlayerLayer-backed display view).
+
 ### Design Principles
 
 - **Adapter Pattern**: Platform adapters implement StreamingCore protocols using iOS frameworks
@@ -18,7 +20,7 @@ StreamingCoreiOS provides UIKit-based view controllers, views, and iOS platform 
 | Feature | Description |
 |---------|-------------|
 | Video Player UI | Full-featured player with controls, gestures, and fullscreen support |
-| AVPlayer Integration | Seamless wrapper around AVFoundation for playback |
+| AVFoundation UI Glue | PiP, audio session, and an AVPlayerLayer-backed display view (the playback engine itself lives in StreamingCorePlayback) |
 | Picture-in-Picture | Native PiP support for background playback |
 | Network Monitoring | Real-time network quality detection using NWPathMonitor |
 | Lazy Image Loading | Efficient thumbnail loading with caching |
@@ -44,48 +46,44 @@ All view controllers and UI components are annotated with `@MainActor` to ensure
 
 ## Topics
 
-### Essentials
-
-- <doc:GettingStartediOS>
-
 ### Video Player UI
 
 Complete video player implementation with controls.
 
 - ``VideoPlayerViewController``
-- ``VideoPlayerView``
-- ``VideoControlsView``
-- ``VideoProgressView``
+- ``PlayerView``
+- ``VideoPlayerControlsView``
+- ``ControlsVisibilityController``
 
 ### Video List UI
 
-Components for displaying video collections.
+Components for displaying video collections. The feed is rendered by the generic ``ListViewController`` driven by these cell controllers.
 
-- ``VideosViewController``
 - ``VideoCell``
 - ``VideoCellController``
-- ``VideoImageView``
-
-### AVPlayer Integration
-
-Adapters bridging AVFoundation to StreamingCore protocols.
-
-- ``AVPlayerStateAdapter``
-- ``AVPlayerBufferAdapter``
+- ``LoadMoreCell``
+- ``LoadMoreCellController``
 
 ### Picture-in-Picture
 
 Background playback support.
 
 - ``PictureInPictureController``
-- ``PictureInPictureDelegate``
+- ``PictureInPictureControlling``
+
+### Audio Session
+
+AVFoundation audio session configuration.
+
+- ``AVAudioSessionAdapter``
+- ``AudioSessionConfiguring``
+- ``AudioSessionProtocol``
 
 ### Network Monitoring
 
 Real-time network quality tracking.
 
 - ``NetworkQualityMonitor``
-- ``NetworkBandwidthEstimator``
 
 ### Comments UI
 
@@ -101,7 +99,6 @@ Reusable UI building blocks.
 - ``ListViewController``
 - ``CellController``
 - ``ErrorView``
-- ``LoadingView``
 
 ### Logging
 

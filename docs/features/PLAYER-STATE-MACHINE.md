@@ -14,7 +14,7 @@ stateDiagram-v2
     ready --> playing: play
     playing --> paused: pause
     playing --> buffering: buffer
-    ended --> paused: end
+    playing --> ended: end
     failed --> idle: stop
 ```
 
@@ -357,7 +357,7 @@ func setupPlayer() {
 
 ## Integration with AVPlayer
 
-The `AVPlayerStateAdapter` bridges AVPlayer events to state machine actions:
+The `AVPlayerStateAdapter` (in the `StreamingCorePlayback` framework — `StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`) bridges AVPlayer events to state machine actions:
 
 ```swift
 let adapter = AVPlayerStateAdapter(player: avPlayer) { action in

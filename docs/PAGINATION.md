@@ -96,13 +96,11 @@ next page:
 
 ```swift
 // StreamingCore/Shared API/Paginated.swift
-public struct Paginated<Item> {
-    public typealias LoadMoreCompletion = (Result<Self, Error>) -> Void
-
+public struct Paginated<Item: Sendable>: Sendable {
     public let items: [Item]
-    public let loadMore: ((@escaping LoadMoreCompletion) -> Void)?
+    public let loadMore: (@Sendable () async throws -> Self)?
 
-    public init(items: [Item], loadMore: ((@escaping LoadMoreCompletion) -> Void)? = nil) {
+    public init(items: [Item], loadMore: (@Sendable () async throws -> Self)? = nil) {
         self.items = items
         self.loadMore = loadMore
     }
@@ -122,13 +120,14 @@ self-perpetuating chain: each page knows how to produce the next one, and the la
 
 ## How "load more" is composed
 
-The composition root wires the cursor into a fresh remote request and merges it with the cache,
-using structured concurrency:
+The load-more composition lives in the shared `VideoService` (StreamingCorePlayback framework),
+which each composition root — both the iOS and tvOS `SceneDelegate` — merely instantiates. It wires
+the cursor into a fresh remote request and merges it with the cache, using structured concurrency:
 
 ```swift
-// StreamingVideoApp/SceneDelegate.swift (abridged)
-private func makeRemoteLoadMoreLoader(last: Video?) async throws -> Paginated<Video> {
-    async let remote = makeRemoteVideoLoader(after: last)   // next remote page…
+// StreamingCore/StreamingCorePlayback/VideoService.swift (abridged)
+private func loadMoreRemoteVideos(last: Video?) async throws -> Paginated<Video> {
+    async let remote = loadRemoteVideos(after: last)        // next remote page…
     let cachedItems = try localVideoLoader.load()           // …concurrent with the cache read
     let newItems = try await remote
     let items = cachedItems + newItems
@@ -136,7 +135,7 @@ private func makeRemoteLoadMoreLoader(last: Video?) async throws -> Paginated<Vi
     return makePage(items: items, last: newItems.last)      // cursor = last NEW item
 }
 
-private func makeRemoteVideoLoader(after: Video? = nil) async throws -> [Video] {
+private func loadRemoteVideos(after: Video? = nil) async throws -> [Video] {
     let url = VideoEndpoint.get(after: after).url(baseURL: baseURL)
     let (data, response) = try await httpClient.get(from: url)
     return try VideoItemsMapper.map(data, from: response)
@@ -144,10 +143,14 @@ private func makeRemoteVideoLoader(after: Video? = nil) async throws -> [Video] 
 
 private func makePage(items: [Video], last: Video?) -> Paginated<Video> {
     Paginated(items: items, loadMore: last.map { last in
-        { @MainActor @Sendable in try await self.makeRemoteLoadMoreLoader(last: last) }
+        { @MainActor @Sendable in try await self.loadMoreRemoteVideos(last: last) }
     })
 }
 ```
+
+The same `VideoService` and `Paginated` chain drive pagination on both platforms: the iOS feed and
+the tvOS feed (whose `TVFeedLoaderPresentationAdapter.loadMoreIfAvailable()` is wired through
+`TVVideosUIComposer.onLoadMore`). See [Apple TV](features/APPLE-TV.md) for the tvOS surface.
 
 Key points:
 - The cursor threaded into the next page is `newItems.last` — the last item of the **newly fetched**
@@ -165,7 +168,7 @@ Integration tests drive pagination through an `AsyncThrowingStream`-backed `Load
 `async` test methods:
 
 ```swift
-// StreamingVideoAppTests/Helpers/VideosUIIntegrationTests+LoaderSpy.swift (abridged)
+// TattvaTests/Helpers/VideosUIIntegrationTests+LoaderSpy.swift (abridged)
 @MainActor
 final class LoaderSpy {
     var loadCallCount: Int { /* pending first-load requests */ }
@@ -196,7 +199,7 @@ public struct Paginated<Item: Sendable>: Sendable {
 }
 ```
 
-`makeRemoteLoadMoreLoader` is an `async throws` method that fetches the cache and the next remote
+`loadMoreRemoteVideos` is an `async throws` method that fetches the cache and the next remote
 page concurrently with `async let`; cancellation is owned by the presentation adapter's stored
 `Task`, cancelled in `deinit`. The **cursor scheme (`after_id` + `limit`) is orthogonal to
 concurrency** — it is the same keyset design used by the Essential Feed reference in its async form.

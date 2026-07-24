@@ -49,6 +49,10 @@ flowchart TB
 - **Decorator Chains** - Layered functionality via decoration
 - **Testable Design** - Convenience init for test injection
 
+> The iOS `SceneDelegate` described here has a parallel composition root in the
+> `TattvaTV` target (its own `SceneDelegate` plus `TVVideosUIComposer`,
+> `TVPlayerComposer`, and `TVCommentsUIComposer`). See [Apple TV](features/APPLE-TV.md).
+
 ---
 
 ## SceneDelegate Structure
@@ -58,7 +62,6 @@ flowchart TB
 ```swift
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
-    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - HTTP Layer
     private lazy var httpClient: HTTPClient = {
@@ -76,11 +79,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             assertionFailure("Failed to instantiate CoreData store")
             return InMemoryVideoStore()
         }
-    }()
-
-    // MARK: - Cache Layer
-    private lazy var localVideoLoader: LocalVideoLoader = {
-        LocalVideoLoader(store: store, currentDate: Date.init)
     }()
 
     // MARK: - Memory Management
@@ -117,14 +115,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         LoggingConfiguration.makeLogger()
     }()
 
-    // MARK: - Scheduling
-    private lazy var scheduler: AnyDispatchQueueScheduler = {
-        if let store = store as? CoreDataVideoStore {
-            return .scheduler(for: store)
-        }
-        return DispatchQueue(label: "com.streamingvideoapp.infra.queue", qos: .userInitiated)
-            .eraseToAnyScheduler()
-    }()
+    // MARK: - Data Loading
+    private lazy var videoService = VideoService(
+        httpClient: httpClient,
+        store: store,
+        logger: logger
+    )
 }
 ```
 
@@ -134,7 +130,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 ### VideosUIComposer
 
-**File:** `StreamingVideoApp/VideosUIComposer.swift`
+**File:** `Tattva/Tattva/VideosUIComposer.swift`
 
 ```swift
 @MainActor
@@ -175,42 +171,55 @@ public final class VideosUIComposer {
 }
 ```
 
-### VideoPlayerUIComposer
+**File:** `Tattva/Tattva/VideoPlayerUIComposer.swift`
+
+`AVPlayerVideoPlayer` and the playback stack (decorators, `StatefulVideoPlayer`,
+`PlaybackCoordinator`, `NetworkBandwidthEstimator`, `VideoPlayerPerformanceAdapter`,
+`PictureInPictureController`) live in the `StreamingCorePlayback` framework, which the
+composer imports.
 
 ```swift
 @MainActor
-public final class VideoPlayerUIComposer {
-    private init() {}
-
+public enum VideoPlayerUIComposer {
     public static func videoPlayerComposedWith(
         video: Video,
         player: VideoPlayer? = nil,
-        commentsController: UIViewController,
-        analyticsLogger: PlaybackAnalyticsLogger,
-        structuredLogger: any StreamingCore.Logger
+        commentsController: UIViewController? = nil,
+        analyticsLogger: PlaybackAnalyticsLogger? = nil,
+        structuredLogger: (any StreamingCore.Logger)? = nil
     ) -> VideoPlayerViewController {
-        let viewModel = VideoPlayerViewModel(video: video)
-
-        // Create base player or use injected one
+        let viewModel = VideoPlayerPresenter.map(video)
         let basePlayer = player ?? AVPlayerVideoPlayer()
 
-        // Decorate with analytics
-        let analyticsDecorator = AnalyticsVideoPlayerDecorator(
-            decoratee: basePlayer,
-            analyticsLogger: analyticsLogger
-        )
+        // Decorator chain: base -> logging -> analytics (each optional)
+        var videoPlayer: VideoPlayer = basePlayer
+        if let logger = structuredLogger {
+            videoPlayer = LoggingVideoPlayerDecorator(decoratee: videoPlayer, logger: logger)
+        }
+        if let analytics = analyticsLogger {
+            videoPlayer = AnalyticsVideoPlayerDecorator(decoratee: videoPlayer, analyticsLogger: analytics)
+        }
 
-        // Decorate with structured logging
-        let loggingDecorator = LoggingVideoPlayerDecorator(
-            decoratee: analyticsDecorator,
-            logger: structuredLogger
-        )
+        // Wrap the chain in a state-machine-driven player
+        let stateMachine = DefaultPlaybackStateMachine()
+        let statefulPlayer = StatefulVideoPlayer(decoratee: videoPlayer, stateMachine: stateMachine)
 
-        let controller = VideoPlayerViewController(
-            viewModel: viewModel,
-            player: loggingDecorator
+        let controller = VideoPlayerViewController(viewModel: viewModel, player: statefulPlayer)
+        controller.statefulPlayer = statefulPlayer
+
+        // Wire performance monitoring, a PlaybackCoordinator, and PiP
+        let performanceAdapter = VideoPlayerPerformanceAdapter(
+            performanceService: PlaybackPerformanceService(),
+            bandwidthEstimator: NetworkBandwidthEstimator()
         )
-        controller.commentsController = commentsController
+        performanceAdapter.startMonitoring(sessionID: UUID())
+        controller.performanceAdapter = performanceAdapter
+
+        if let commentsController {
+            controller.setCommentsController(commentsController)
+        }
+
+        // ...fullscreen wiring, PlaybackCoordinator.start(), PictureInPictureController setup...
 
         return controller
     }
@@ -225,18 +234,15 @@ public final class VideoPlayerUIComposer {
 
 ```swift
 private func showVideoPlayer(for video: Video) {
-    // Compose comments controller
+    // Compose comments controller (loader supplied by VideoService)
     let commentsController = VideoCommentsUIComposer.commentsComposedWith(
-        commentsLoader: { [httpClient, baseURL] in
-            let url = VideoCommentsEndpoint.get(video.id).url(baseURL: baseURL)
-            let (data, response) = try await httpClient.get(from: url)
-            return try VideoCommentsMapper.map(data, from: response)
-        })
+        commentsLoader: videoService.loadComments(for: video))
 
     // Compose video player controller
+    let player = videoPlayerFactory?(video)
     let videoPlayerController = VideoPlayerUIComposer.videoPlayerComposedWith(
         video: video,
-        player: videoPlayerFactory?(video),
+        player: player,
         commentsController: commentsController,
         analyticsLogger: analyticsLogger,
         structuredLogger: structuredLogger)
@@ -249,77 +255,24 @@ private func showVideoPlayer(for video: Video) {
 
 ## Data Loading Composition
 
-### Remote with Local Fallback
+Remote/local fallback, pagination, image loading, comments loading, and cache
+validation are no longer methods on `SceneDelegate`. They live in `VideoService`
+(`StreamingCore/StreamingCorePlayback/VideoService.swift`), which the composition
+root constructs (`private lazy var videoService = VideoService(...)`) and delegates
+to when wiring the composers.
 
 ```swift
-private func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
-    do {
-        let items = try await makeRemoteVideoLoader()
-        try? localVideoLoader.save(items)
-        return makeFirstPage(items: items)
-    } catch {
-        return makeFirstPage(items: try localVideoLoader.load())
-    }
-}
-
-private func makeRemoteVideoLoader(after: Video? = nil) async throws -> [Video] {
-    let url = VideoEndpoint.get(after: after).url(baseURL: baseURL)
-    let (data, response) = try await httpClient.get(from: url)
-    return try VideoItemsMapper.map(data, from: response)
-}
+// SceneDelegate wires the videos list to VideoService methods:
+VideosUIComposer.videosComposedWith(
+    videoLoader: videoService.loadRemoteVideosWithLocalFallback,
+    imageLoader: videoService.loadLocalImageWithRemoteFallback,
+    selection: showVideoPlayer)
 ```
 
-### Pagination
-
-```swift
-private func makeRemoteLoadMoreLoader(last: Video?) async throws -> Paginated<Video> {
-    async let remote = makeRemoteVideoLoader(after: last)
-    let cachedItems = try localVideoLoader.load()
-    let newItems = try await remote
-    let items = cachedItems + newItems
-    try? localVideoLoader.save(items)
-    return makePage(items: items, last: newItems.last)
-}
-
-private func makeFirstPage(items: [Video]) -> Paginated<Video> {
-    makePage(items: items, last: items.last)
-}
-
-private func makePage(items: [Video], last: Video?) -> Paginated<Video> {
-    Paginated(items: items, loadMore: last.map { last in
-        { @MainActor @Sendable in try await self.makeRemoteLoadMoreLoader(last: last) }
-    })
-}
-```
-
-### Image Loading
-
-```swift
-private func loadLocalImageWithRemoteFallback(url: URL) async throws -> Data {
-    do {
-        return try await loadLocalImage(url: url)
-    } catch {
-        return try await loadAndCacheRemoteImage(url: url)
-    }
-}
-
-private func loadLocalImage(url: URL) async throws -> Data {
-    try await store.schedule { [store] in
-        let localImageLoader = LocalVideoImageDataLoader(store: store)
-        return try localImageLoader.loadImageData(from: url)
-    }
-}
-
-private func loadAndCacheRemoteImage(url: URL) async throws -> Data {
-    let (data, response) = try await httpClient.get(from: url)
-    let imageData = try VideoImageDataMapper.map(data, from: response)
-    await store.schedule { [store] in
-        let localImageLoader = LocalVideoImageDataLoader(store: store)
-        try? localImageLoader.save(data, for: url)
-    }
-    return imageData
-}
-```
+`VideoService` owns `httpClient`, `store`, the `LocalVideoLoader`, and `baseURL`, and
+exposes `loadRemoteVideosWithLocalFallback()`, `loadLocalImageWithRemoteFallback(url:)`,
+`loadComments(for:)`, and `validateCache()`. Pagination (`makeFirstPage` / `makePage`
+and the remote load-more loader) is internal to `VideoService`.
 
 ---
 
@@ -343,13 +296,7 @@ func configureWindow() {
 }
 
 func sceneWillResignActive(_ scene: UIScene) {
-    scheduler.schedule { [localVideoLoader, logger] in
-        do {
-            try localVideoLoader.validateCache()
-        } catch {
-            logger.error("Failed to validate cache: \(error.localizedDescription)")
-        }
-    }
+    videoService.validateCache()
 }
 ```
 
@@ -399,12 +346,14 @@ flowchart TB
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
     classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
-    logging["LoggingVideoPlayerDecorator"]
+    stateful["StatefulVideoPlayer"]
     analytics["AnalyticsVideoPlayerDecorator"]
-    base["AVPlayerVideoPlayer<br/><i>base implementation</i>"]
-    logging --> analytics --> base
-    class logging neutral
+    logging["LoggingVideoPlayerDecorator"]
+    base["AVPlayerVideoPlayer<br/><i>base impl (StreamingCorePlayback)</i>"]
+    stateful --> analytics --> logging --> base
+    class stateful neutral
     class analytics neutral
+    class logging neutral
     class base impure
 ```
 

@@ -8,9 +8,9 @@ The Memory Management feature monitors system memory, detects pressure levels, a
 
 ```mermaid
 flowchart TB
-    PMM["PollingMemoryMonitor"] -->|statePublisher| MS["MemoryState<br/>.normal<br/>.warning<br/>.critical"]
+    PMM["PollingMemoryMonitor"] -->|statePublisher| MS["MemoryState<br/>pressureLevel(thresholds:)<br/>→ MemoryPressureLevel"]
     PMM --> RCC["ResourceCleanupCoordinator"]
-    RCC -->|cleaners| CL["VideoCacheCleaner<br/>ImageCacheCleaner<br/>BufferCleaner"]
+    RCC -->|cleaners| CL["VideoCacheCleaner<br/>ImageCacheCleaner"]
 ```
 
 ---
@@ -52,21 +52,38 @@ public protocol MemoryMonitor: MemoryStateProvider {
 
 ```swift
 public struct MemoryState: Equatable, Sendable {
-    public let availableMemory: UInt64
-    public let usedMemory: UInt64
-    public let pressure: MemoryPressure
+    public let availableBytes: UInt64
+    public let totalBytes: UInt64
+    public let usedBytes: UInt64
+    public let timestamp: Date
 
-    public enum MemoryPressure: Sendable {
-        case normal
-        case warning
-        case critical
-    }
+    public var availableMB: Double { Double(availableBytes) / 1_048_576.0 }
+    public var usedMB: Double { Double(usedBytes) / 1_048_576.0 }
 
     public var usagePercentage: Double {
-        let total = availableMemory + usedMemory
-        guard total > 0 else { return 0 }
-        return Double(usedMemory) / Double(total)
+        guard totalBytes > 0 else { return 0 }
+        return Double(usedBytes) / Double(totalBytes) * 100
     }
+
+    public func pressureLevel(thresholds: MemoryThresholds) -> MemoryPressureLevel {
+        thresholds.pressureLevel(for: availableMB)
+    }
+}
+```
+
+`MemoryState` stores raw byte counts and a `timestamp`. Pressure is not stored — it is computed on demand from the available-megabytes floors in `MemoryThresholds`. `usagePercentage` returns a `0–100` value.
+
+### MemoryPressureLevel
+
+**File:** `StreamingCore/StreamingCore/Video Performance Feature/PerformanceEvent.swift`
+
+The shared pressure enum used across memory monitoring and the cleanup coordinator:
+
+```swift
+public enum MemoryPressureLevel: Int, Sendable, Comparable, Codable, Equatable {
+    case normal = 0
+    case warning = 1
+    case critical = 2
 }
 ```
 
@@ -76,30 +93,25 @@ public struct MemoryState: Equatable, Sendable {
 
 ```swift
 public struct MemoryThresholds: Equatable, Sendable {
-    public let warningThreshold: Double   // e.g., 0.70 (70%)
-    public let criticalThreshold: Double  // e.g., 0.85 (85%)
+    public let warningAvailableMB: Double   // e.g., 100.0
+    public let criticalAvailableMB: Double  // e.g., 50.0
+    public let pollingInterval: TimeInterval // e.g., 2.0
 
     public static let `default` = MemoryThresholds(
-        warningThreshold: 0.70,
-        criticalThreshold: 0.85
+        warningAvailableMB: 100.0,
+        criticalAvailableMB: 50.0,
+        pollingInterval: 2.0
     )
 
-    public static let conservative = MemoryThresholds(
-        warningThreshold: 0.60,
-        criticalThreshold: 0.75
-    )
-
-    public func pressure(for usagePercentage: Double) -> MemoryState.MemoryPressure {
-        if usagePercentage >= criticalThreshold {
-            return .critical
-        } else if usagePercentage >= warningThreshold {
-            return .warning
-        } else {
-            return .normal
-        }
+    public func pressureLevel(for availableMB: Double) -> MemoryPressureLevel {
+        if availableMB < criticalAvailableMB { return .critical }
+        if availableMB < warningAvailableMB { return .warning }
+        return .normal
     }
 }
 ```
+
+Thresholds are available-megabytes *floors*, not usage-percentage ceilings: pressure escalates as free memory drops below the warning (100 MB) and critical (50 MB) marks. The polling cadence lives here (`pollingInterval`, default 2.0s), not on the monitor.
 
 ---
 
@@ -110,76 +122,90 @@ public struct MemoryThresholds: Equatable, Sendable {
 ```swift
 @MainActor
 public final class PollingMemoryMonitor: MemoryMonitor {
-    private let stateSubject = CurrentValueSubject<MemoryState, Never>(.normal)
+    private let memoryReader: () -> MemoryState
     private let thresholds: MemoryThresholds
-    private let pollingInterval: TimeInterval
-    private let memoryProvider: () -> (available: UInt64, used: UInt64)
-    private var timer: Timer?
+
+    private let stateSubject = CurrentValueSubject<MemoryState?, Never>(nil)
+    private var pollingTask: Task<Void, Never>?
+    private var isMonitoring = false
 
     public var statePublisher: AnyPublisher<MemoryState, Never> {
-        stateSubject.eraseToAnyPublisher()
+        stateSubject
+            .compactMap { $0 }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
     }
 
     public init(
-        thresholds: MemoryThresholds = .default,
-        pollingInterval: TimeInterval = 5.0,
-        memoryProvider: @escaping () -> (available: UInt64, used: UInt64) = Self.systemMemory
+        memoryReader: @escaping @Sendable () -> MemoryState,
+        thresholds: MemoryThresholds = .default
     ) {
+        self.memoryReader = memoryReader
         self.thresholds = thresholds
-        self.pollingInterval = pollingInterval
-        self.memoryProvider = memoryProvider
+    }
+
+    public func currentMemoryState() -> MemoryState {
+        memoryReader()
     }
 
     public func startMonitoring() {
-        stopMonitoring()
-        updateMemoryState()
+        guard !isMonitoring else { return }
+        isMonitoring = true
 
-        timer = Timer.scheduledTimer(withTimeInterval: pollingInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateMemoryState()
+        pollingTask = Task { [weak self, thresholds, memoryReader] in
+            while !Task.isCancelled {
+                guard let self = self else { break }
+                let state = memoryReader()
+                await MainActor.run { self.updateState(state) }
+                try? await Task.sleep(nanoseconds: UInt64(thresholds.pollingInterval * 1_000_000_000))
             }
         }
     }
 
     public func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
+        isMonitoring = false
+        pollingTask?.cancel()
+        pollingTask = nil
     }
 
-    public func currentMemoryState() -> MemoryState {
-        stateSubject.value
-    }
-
-    private func updateMemoryState() {
-        let memory = memoryProvider()
-        let total = memory.available + memory.used
-        let usagePercentage = total > 0 ? Double(memory.used) / Double(total) : 0
-
-        let state = MemoryState(
-            availableMemory: memory.available,
-            usedMemory: memory.used,
-            pressure: thresholds.pressure(for: usagePercentage)
-        )
-
+    private func updateState(_ state: MemoryState) {
         stateSubject.send(state)
     }
+}
+```
 
-    public static func systemMemory() -> (available: UInt64, used: UInt64) {
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
-        let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
-            }
-        }
+The monitor takes an injected `memoryReader: () -> MemoryState` seam (defaulting to nothing — the reader is always supplied) rather than reading system memory itself. Polling runs on a cancellable `Task` with `Task.sleep` at `thresholds.pollingInterval`, and `currentMemoryState()` calls the reader directly rather than returning a cached subject value.
 
-        guard result == KERN_SUCCESS else {
-            return (available: 0, used: 0)
-        }
+### SystemMemoryProvider & MemoryMonitorFactory
 
-        let used = UInt64(info.resident_size)
-        let available = ProcessInfo.processInfo.physicalMemory - used
-        return (available: available, used: used)
+**File:** `Tattva/Tattva/SystemMemoryProvider.swift` (app target)
+
+The real system reader lives in the composition target, keeping `StreamingCore` free of platform memory APIs. `SystemMemoryProvider.memoryReader` reads free memory via `os_proc_available_memory()`, and `MemoryMonitorFactory.makeSystemMemoryMonitor()` is the entry point the `SceneDelegate` calls:
+
+```swift
+public enum SystemMemoryProvider {
+    public static let memoryReader: @Sendable () -> MemoryState = {
+        let availableBytes = UInt64(os_proc_available_memory())
+        let totalBytes = ProcessInfo.processInfo.physicalMemory
+        let usedBytes = totalBytes > availableBytes ? totalBytes - availableBytes : 0
+        return MemoryState(
+            availableBytes: availableBytes,
+            totalBytes: totalBytes,
+            usedBytes: usedBytes,
+            timestamp: Date()
+        )
+    }
+}
+
+public enum MemoryMonitorFactory {
+    @MainActor
+    public static func makeSystemMemoryMonitor(
+        thresholds: MemoryThresholds = .default
+    ) -> PollingMemoryMonitor {
+        PollingMemoryMonitor(
+            memoryReader: SystemMemoryProvider.memoryReader,
+            thresholds: thresholds
+        )
     }
 }
 ```
@@ -194,7 +220,9 @@ public final class PollingMemoryMonitor: MemoryMonitor {
 
 ```swift
 public protocol ResourceCleaner: Sendable {
+    var resourceName: String { get }
     var priority: CleanupPriority { get }
+    func estimateCleanup() async -> UInt64
     func cleanup() async -> CleanupResult
 }
 ```
@@ -221,10 +249,28 @@ public enum CleanupPriority: Int, Comparable, Sendable {
 
 ```swift
 public struct CleanupResult: Equatable, Sendable {
-    public let cleanerName: String
+    public let resourceName: String
     public let bytesFreed: UInt64
+    public let itemsRemoved: Int
     public let success: Bool
     public let error: String?
+
+    public var freedMB: Double { Double(bytesFreed) / 1_048_576.0 }
+
+    public static func failure(resourceName: String, error: String) -> CleanupResult
+}
+```
+
+### ClearableCache
+
+**File:** `StreamingCore/StreamingCore/Resource Cleanup Feature/ClearableCache.swift`
+
+Abstraction for any cache a cleaner can clear and size. Methods are deliberately **synchronous** to avoid Swift interface-generation issues with async closures in public APIs when `BUILD_LIBRARY_FOR_DISTRIBUTION` is enabled:
+
+```swift
+public protocol ClearableCache: Sendable {
+    func clearAll() throws -> Int      // Returns number of items cleared
+    func estimateSize() -> UInt64      // Estimated size in bytes (0 if unknown)
 }
 ```
 
@@ -237,66 +283,85 @@ public struct CleanupResult: Equatable, Sendable {
 ```swift
 @MainActor
 public final class ResourceCleanupCoordinator {
-    private var cleaners: [(cleaner: ResourceCleaner, priority: CleanupPriority)] = []
-    private let cleanupResultsSubject = PassthroughSubject<[CleanupResult], Never>()
+    private var cleaners: [ResourceCleaner]
     private let memoryMonitor: MemoryMonitor
-    private var cancellables = Set<AnyCancellable>()
+    private var isAutoCleanupEnabled = false
+    private var monitoringCancellable: AnyCancellable?
+
+    private let cleanupSubject = PassthroughSubject<[CleanupResult], Never>()
 
     public var cleanupResultsPublisher: AnyPublisher<[CleanupResult], Never> {
-        cleanupResultsSubject.eraseToAnyPublisher()
+        cleanupSubject.eraseToAnyPublisher()
     }
 
-    public init(memoryMonitor: MemoryMonitor) {
+    public init(cleaners: [ResourceCleaner], memoryMonitor: MemoryMonitor) {
+        // Sort by priority (highest first for cleanup)
+        self.cleaners = cleaners.sorted { $0.priority > $1.priority }
         self.memoryMonitor = memoryMonitor
     }
 
     public func register(_ cleaner: ResourceCleaner) {
-        cleaners.append((cleaner: cleaner, priority: cleaner.priority))
-        cleaners.sort { $0.priority < $1.priority }
+        cleaners.append(cleaner)
+        cleaners.sort { $0.priority > $1.priority }
     }
 
     public func enableAutoCleanup() {
-        memoryMonitor.statePublisher
-            .removeDuplicates(by: { $0.pressure == $1.pressure })
+        guard !isAutoCleanupEnabled else { return }
+        isAutoCleanupEnabled = true
+
+        memoryMonitor.startMonitoring()
+
+        monitoringCancellable = memoryMonitor.statePublisher
+            .receive(on: RunLoop.main)
             .sink { [weak self] state in
-                Task { await self?.handleMemoryPressure(state.pressure) }
+                let pressureLevel = state.pressureLevel(thresholds: .default)
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    switch pressureLevel {
+                    case .critical:
+                        self.triggerCleanupResults(await self.cleanupAll())
+                    case .warning:
+                        let results = await self.cleanupUpTo(priority: .medium)
+                        if !results.isEmpty { self.triggerCleanupResults(results) }
+                    case .normal:
+                        break
+                    }
+                }
             }
-            .store(in: &cancellables)
     }
 
-    private func handleMemoryPressure(_ pressure: MemoryState.MemoryPressure) async {
-        switch pressure {
-        case .critical:
-            await cleanupAll()
-        case .warning:
-            await cleanupUpTo(priority: .medium)
-        case .normal:
-            break
-        }
+    public func disableAutoCleanup() {
+        isAutoCleanupEnabled = false
+        monitoringCancellable?.cancel()
+        monitoringCancellable = nil
+        memoryMonitor.stopMonitoring()
     }
 
     public func cleanupAll() async -> [CleanupResult] {
         var results: [CleanupResult] = []
-        for (cleaner, _) in cleaners {
-            let result = await cleaner.cleanup()
-            results.append(result)
+        for cleaner in cleaners {
+            results.append(await cleaner.cleanup())
         }
-        cleanupResultsSubject.send(results)
         return results
     }
 
     public func cleanupUpTo(priority: CleanupPriority) async -> [CleanupResult] {
         var results: [CleanupResult] = []
-        let toClean = cleaners.filter { $0.priority <= priority }
-        for (cleaner, _) in toClean {
-            let result = await cleaner.cleanup()
-            results.append(result)
+        for cleaner in cleaners where cleaner.priority <= priority {
+            results.append(await cleaner.cleanup())
         }
-        cleanupResultsSubject.send(results)
         return results
+    }
+
+    public func estimateTotalCleanup() async -> UInt64 {
+        var total: UInt64 = 0
+        for cleaner in cleaners { total += await cleaner.estimateCleanup() }
+        return total
     }
 }
 ```
+
+The coordinator takes its cleaners at init and stores them **highest-priority-first** (`$0.priority > $1.priority`). `enableAutoCleanup()` starts the monitor internally; `disableAutoCleanup()` cancels the subscription and stops it. `estimateTotalCleanup()` sums each cleaner's `estimateCleanup()` without freeing anything.
 
 ---
 
@@ -308,27 +373,43 @@ public final class ResourceCleanupCoordinator {
 
 ```swift
 public final class VideoCacheCleaner: ResourceCleaner, @unchecked Sendable {
-    public let priority: CleanupPriority = .medium
-    private let cache: ClearableCache
+    public let resourceName = "Video Cache"
+    public let priority: CleanupPriority = .high
 
-    public init(cache: ClearableCache) {
-        self.cache = cache
+    private let deleteAction: () throws -> Void
+    private let statisticsCallback: (() -> (bytesFreed: UInt64, itemsRemoved: Int))?
+    private let sizeEstimate: UInt64
+
+    public init(
+        deleteAction: @escaping () throws -> Void,
+        statisticsCallback: (() -> (bytesFreed: UInt64, itemsRemoved: Int))? = nil,
+        estimateSize: UInt64 = 0
+    ) {
+        self.deleteAction = deleteAction
+        self.statisticsCallback = statisticsCallback
+        self.sizeEstimate = estimateSize
     }
 
-    public func cleanup() async -> CleanupResult {
-        let sizeBefore = await cache.estimateCacheSize()
-        await cache.clearAllCaches()
-        let sizeAfter = await cache.estimateCacheSize()
+    public func estimateCleanup() async -> UInt64 { sizeEstimate }
 
-        return CleanupResult(
-            cleanerName: "VideoCacheCleaner",
-            bytesFreed: sizeBefore - sizeAfter,
-            success: true,
-            error: nil
-        )
+    public func cleanup() async -> CleanupResult {
+        do {
+            try deleteAction()
+            let (bytesFreed, itemsRemoved) = statisticsCallback?() ?? (0, 0)
+            return CleanupResult(
+                resourceName: resourceName,
+                bytesFreed: bytesFreed,
+                itemsRemoved: itemsRemoved,
+                success: true
+            )
+        } catch {
+            return .failure(resourceName: resourceName, error: error.localizedDescription)
+        }
     }
 }
 ```
+
+Video cache is `.high` priority — video files consume the most storage, so they are reserved for critical pressure. The cleaner injects a synchronous `deleteAction` closure rather than depending on a concrete cache.
 
 ### ImageCacheCleaner
 
@@ -336,26 +417,39 @@ public final class VideoCacheCleaner: ResourceCleaner, @unchecked Sendable {
 
 ```swift
 public final class ImageCacheCleaner: ResourceCleaner, @unchecked Sendable {
-    public let priority: CleanupPriority = .low
-    private let cache: ClearableCache
+    public let resourceName = "Image Cache"
+    public let priority: CleanupPriority = .medium
 
-    public init(cache: ClearableCache) {
-        self.cache = cache
+    private let clearAction: () throws -> Int
+    private let sizeEstimate: UInt64
+
+    public init(
+        clearAction: @escaping () throws -> Int,
+        estimateSize: UInt64 = 0
+    ) {
+        self.clearAction = clearAction
+        self.sizeEstimate = estimateSize
     }
 
-    public func cleanup() async -> CleanupResult {
-        let sizeBefore = await cache.estimateCacheSize()
-        await cache.clearAllCaches()
+    public func estimateCleanup() async -> UInt64 { sizeEstimate }
 
-        return CleanupResult(
-            cleanerName: "ImageCacheCleaner",
-            bytesFreed: sizeBefore,
-            success: true,
-            error: nil
-        )
+    public func cleanup() async -> CleanupResult {
+        do {
+            let itemsRemoved = try clearAction()
+            return CleanupResult(
+                resourceName: resourceName,
+                bytesFreed: 0, // NSCache doesn't expose size
+                itemsRemoved: itemsRemoved,
+                success: true
+            )
+        } catch {
+            return .failure(resourceName: resourceName, error: error.localizedDescription)
+        }
     }
 }
 ```
+
+Image cache is `.medium` priority and injects a synchronous `clearAction` returning the number of items removed. `bytesFreed` stays `0` because `NSCache` does not expose its size.
 
 ---
 
@@ -364,8 +458,8 @@ public final class ImageCacheCleaner: ResourceCleaner, @unchecked Sendable {
 ```mermaid
 flowchart TB
     N["Memory Pressure: Normal"] --> N2["No cleanup"]
-    W["Memory Pressure: Warning"] --> W2["Clean low priority <i>(images)</i><br/>Clean medium priority <i>(video metadata)</i>"]
-    C["Memory Pressure: Critical"] --> C2["Clean ALL priorities:<br/>Low <i>(images)</i><br/>Medium <i>(video metadata)</i><br/>High <i>(active buffers)</i>"]
+    W["Memory Pressure: Warning"] --> W2["Clean up to .medium priority<br/>Medium <i>(image cache)</i>"]
+    C["Memory Pressure: Critical"] --> C2["Clean ALL priorities:<br/>Medium <i>(image cache)</i><br/>High <i>(video cache)</i>"]
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
     classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
@@ -380,24 +474,26 @@ flowchart TB
 
 ```swift
 // In SceneDelegate
-func setupMemoryManagement() {
-    let memoryMonitor = PollingMemoryMonitor(
-        thresholds: .default,
-        pollingInterval: 5.0
+lazy var memoryMonitor: PollingMemoryMonitor = {
+    MemoryMonitorFactory.makeSystemMemoryMonitor()
+}()
+
+lazy var resourceCleanupCoordinator: ResourceCleanupCoordinator = {
+    let videoCleaner = VideoCacheCleaner(
+        deleteAction: { [store] in try store.deleteCachedVideos() }
     )
+    let imageCleaner = ImageCacheCleaner(
+        clearAction: { return 0 }
+    )
+    return ResourceCleanupCoordinator(
+        cleaners: [videoCleaner, imageCleaner],
+        memoryMonitor: memoryMonitor
+    )
+}()
 
-    let cleanupCoordinator = ResourceCleanupCoordinator(memoryMonitor: memoryMonitor)
-
-    // Register cleaners in priority order
-    cleanupCoordinator.register(ImageCacheCleaner(cache: imageCache))
-    cleanupCoordinator.register(VideoCacheCleaner(cache: videoCache))
-
-    // Enable automatic cleanup
-    cleanupCoordinator.enableAutoCleanup()
-
-    // Start monitoring
-    memoryMonitor.startMonitoring()
-}
+// Cleaners are passed at init (sorted highest-priority-first internally).
+// enableAutoCleanup() starts the monitor for you — no separate startMonitoring() call.
+resourceCleanupCoordinator.enableAutoCleanup()
 ```
 
 ---
@@ -408,40 +504,39 @@ func setupMemoryManagement() {
 
 ```swift
 @MainActor
-func test_statePublisher_emitsStateChanges() {
-    var emittedMemory: (available: UInt64, used: UInt64) = (100, 50)
+func test_emittedState_hasCorrectPressureLevel() async {
+    let lowMemoryState = makeMemoryState(availableBytes: 40_000_000) // 40MB = critical
+    let thresholds = MemoryThresholds.default
     let sut = PollingMemoryMonitor(
-        thresholds: .default,
-        pollingInterval: 0.1,
-        memoryProvider: { emittedMemory }
+        memoryReader: { lowMemoryState },
+        thresholds: thresholds
     )
-    var receivedStates: [MemoryState] = []
+    var receivedState: MemoryState?
 
-    let cancellable = sut.statePublisher.sink { receivedStates.append($0) }
+    let cancellable = sut.statePublisher.first().sink { receivedState = $0 }
 
     sut.startMonitoring()
+    // ... await the emission ...
 
-    // Simulate memory pressure
-    emittedMemory = (10, 90)  // 90% usage
-
-    RunLoop.current.run(until: Date().addingTimeInterval(0.2))
-
-    XCTAssertTrue(receivedStates.contains { $0.pressure == .critical })
+    XCTAssertEqual(receivedState?.pressureLevel(thresholds: thresholds), .critical)
     cancellable.cancel()
+    sut.stopMonitoring()
 }
 ```
+
+The monitor is injected with a `memoryReader: () -> MemoryState` seam, so tests supply a fixed `MemoryState` and assert on its computed `pressureLevel(thresholds:)` rather than a stored `pressure` field.
 
 ### Cleanup Coordinator Tests
 
 ```swift
 @MainActor
-func test_cleanupAll_cleansAllRegisteredCleaners() async {
-    let cleaner1 = ResourceCleanerSpy(priority: .low)
-    let cleaner2 = ResourceCleanerSpy(priority: .high)
-    let sut = ResourceCleanupCoordinator(memoryMonitor: MemoryMonitorSpy())
-
-    sut.register(cleaner1)
-    sut.register(cleaner2)
+func test_cleanupAll_callsCleanupOnAllCleaners() async {
+    let cleaner1 = ResourceCleanerSpy(name: "Cleaner 1", priority: .low)
+    let cleaner2 = ResourceCleanerSpy(name: "Cleaner 2", priority: .high)
+    let sut = ResourceCleanupCoordinator(
+        cleaners: [cleaner1, cleaner2],
+        memoryMonitor: MemoryMonitorSpy()
+    )
 
     _ = await sut.cleanupAll()
 

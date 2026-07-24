@@ -33,14 +33,14 @@ flowchart TB
 **File:** `StreamingCore/StreamingCore/Video Performance Feature/PerformanceEvent.swift`
 
 ```swift
-public enum NetworkQuality: Int, Comparable, Sendable {
+public enum NetworkQuality: Int, Sendable, Comparable, Codable, Equatable {
     case offline = 0
     case poor = 1
     case fair = 2
     case good = 3
     case excellent = 4
 
-    public static func < (lhs: NetworkQuality, rhs: NetworkQuality) -> Bool {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 }
@@ -48,73 +48,114 @@ public enum NetworkQuality: Int, Comparable, Sendable {
 
 ### NetworkQualityMonitor
 
-**File:** `StreamingCoreiOS/Video Performance iOS/NetworkQualityMonitor.swift`
+**File:** `StreamingCore/StreamingCoreiOS/Video Performance iOS/NetworkQualityMonitor.swift`
 
 ```swift
 import Network
 
-@MainActor
-public final class NetworkQualityMonitor {
+public final class NetworkQualityMonitor: @unchecked Sendable {
+
+    public enum ConnectionType: Sendable {
+        case wifi
+        case cellular
+        case wiredEthernet
+        case loopback
+        case other
+    }
+
     private let monitor: NWPathMonitor
     private let queue: DispatchQueue
-    private let qualitySubject = CurrentValueSubject<NetworkQuality, Never>(.good)
+    private var isMonitoring = false
 
-    public var qualityPublisher: AnyPublisher<NetworkQuality, Never> {
-        qualitySubject.eraseToAnyPublisher()
-    }
+    private let qualitySubject = CurrentValueSubject<NetworkQuality, Never>(.fair)
 
     public var currentQuality: NetworkQuality {
         qualitySubject.value
     }
 
-    public init() {
-        self.monitor = NWPathMonitor()
-        self.queue = DispatchQueue(label: "NetworkQualityMonitor")
+    public var qualityPublisher: AnyPublisher<NetworkQuality, Never> {
+        qualitySubject.eraseToAnyPublisher()
     }
 
-    public func startMonitoring() {
+    public init() {
+        self.monitor = NWPathMonitor()
+        self.queue = DispatchQueue(label: "com.streamingcore.networkmonitor", qos: .utility)
+    }
+
+    public func startMonitoring() async {
+        guard !isMonitoring else { return }
+        isMonitoring = true
+
         monitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in
-                self?.handlePathUpdate(path)
-            }
+            guard let self = self else { return }
+
+            let connectionType = Self.connectionType(from: path)
+            let quality = Self.determineQuality(
+                status: path.status,
+                isExpensive: path.isExpensive,
+                isConstrained: path.isConstrained,
+                connectionType: connectionType
+            )
+
+            self.qualitySubject.send(quality)
         }
+
         monitor.start(queue: queue)
     }
 
-    public func stopMonitoring() {
+    public func stopMonitoring() async {
+        guard isMonitoring else { return }
+        isMonitoring = false
         monitor.cancel()
     }
 
-    private func handlePathUpdate(_ path: NWPath) {
-        let quality = determineQuality(from: path)
-        qualitySubject.send(quality)
-    }
-
-    private func determineQuality(from path: NWPath) -> NetworkQuality {
-        guard path.status == .satisfied else {
+    public static func determineQuality(
+        status: NWPath.Status,
+        isExpensive: Bool,
+        isConstrained: Bool,
+        connectionType: ConnectionType
+    ) -> NetworkQuality {
+        // Offline check
+        guard status == .satisfied else {
             return .offline
         }
 
-        // Check if constrained (Low Data Mode)
-        if path.isConstrained {
+        // Constrained connections (e.g. Low Data Mode) are poor quality
+        if isConstrained {
             return .poor
         }
 
-        // Check if expensive (cellular)
-        if path.isExpensive {
-            return .fair
+        // Base quality by connection type
+        var quality: NetworkQuality
+        switch connectionType {
+        case .wifi, .wiredEthernet, .loopback:
+            quality = .excellent
+        case .cellular:
+            quality = .good
+        case .other:
+            quality = .fair
         }
 
-        // Check connection type
+        // Reduce quality if expensive (metered connection)
+        if isExpensive && quality > .fair {
+            quality = .fair
+        }
+
+        return quality
+    }
+
+    private static func connectionType(from path: NWPath) -> ConnectionType {
         if path.usesInterfaceType(.wifi) {
-            return .excellent
-        } else if path.usesInterfaceType(.wiredEthernet) {
-            return .excellent
+            return .wifi
         } else if path.usesInterfaceType(.cellular) {
-            return .good
+            return .cellular
+        } else if path.usesInterfaceType(.wiredEthernet) {
+            return .wiredEthernet
+        } else if path.usesInterfaceType(.loopback) {
+            return .loopback
+        } else {
+            return .other
         }
-
-        return .fair
     }
 }
 ```
@@ -123,75 +164,71 @@ public final class NetworkQualityMonitor {
 
 ## Bandwidth Estimation
 
-### BandwidthEstimator
+> The bandwidth estimation types (`NetworkBandwidthEstimator`, `BandwidthSample`,
+> `BandwidthEstimate`) live in the platform-agnostic `StreamingCorePlayback`
+> module and are wired on both iOS and tvOS (see `TattvaTV/TVPlayerComposer.swift`).
+> `NetworkQualityMonitor` above, by contrast, lives in the iOS-only `StreamingCoreiOS` layer.
+
+### NetworkBandwidthEstimator
 
 **File:** `StreamingCore/StreamingCorePlayback/NetworkBandwidthEstimator.swift`
 
 ```swift
 @MainActor
 public final class NetworkBandwidthEstimator {
-    private var samples: [BandwidthSample] = []
+
     private let maxSamples: Int
-    private let sampleWindow: TimeInterval
+    private var samples: [BandwidthSample] = []
 
-    public init(maxSamples: Int = 10, sampleWindow: TimeInterval = 30) {
+    /// Number of samples currently stored
+    public var sampleCount: Int {
+        samples.count
+    }
+
+    /// Current bandwidth estimate based on stored samples
+    public var currentEstimate: BandwidthEstimate {
+        calculateEstimate()
+    }
+
+    public init(maxSamples: Int = 30) {
         self.maxSamples = maxSamples
-        self.sampleWindow = sampleWindow
     }
 
-    public func recordSample(bytes: UInt64, duration: TimeInterval) {
-        guard duration > 0 else { return }
+    /// Record a new bandwidth sample. Invalid samples (non-positive duration or
+    /// bytes) are ignored. When over the limit, the oldest samples are trimmed
+    /// by count (there is no time-based windowing).
+    public func recordSample(_ sample: BandwidthSample) {
+        guard sample.duration > 0, sample.bytesTransferred > 0 else { return }
 
-        let bitsPerSecond = Double(bytes * 8) / duration
-        let sample = BandwidthSample(
-            bandwidth: bitsPerSecond,
-            timestamp: Date()
-        )
         samples.append(sample)
-        trimOldSamples()
-    }
-
-    public func estimatedBandwidth() -> Double {
-        trimOldSamples()
-        guard !samples.isEmpty else { return 0 }
-
-        // Use weighted average (newer samples weighted more)
-        var weightedSum: Double = 0
-        var totalWeight: Double = 0
-
-        for (index, sample) in samples.enumerated() {
-            let weight = Double(index + 1)
-            weightedSum += sample.bandwidth * weight
-            totalWeight += weight
-        }
-
-        return totalWeight > 0 ? weightedSum / totalWeight : 0
-    }
-
-    public func networkQuality() -> NetworkQuality {
-        let bandwidth = estimatedBandwidth()
-
-        switch bandwidth {
-        case 0:
-            return .offline
-        case ..<500_000:      // < 500 Kbps
-            return .poor
-        case ..<2_000_000:    // < 2 Mbps
-            return .fair
-        case ..<5_000_000:    // < 5 Mbps
-            return .good
-        default:              // >= 5 Mbps
-            return .excellent
-        }
-    }
-
-    private func trimOldSamples() {
-        let cutoff = Date().addingTimeInterval(-sampleWindow)
-        samples = samples.filter { $0.timestamp > cutoff }
 
         if samples.count > maxSamples {
-            samples = Array(samples.suffix(maxSamples))
+            samples.removeFirst(samples.count - maxSamples)
         }
+    }
+
+    /// Clear all stored samples
+    public func clear() {
+        samples.removeAll()
+    }
+
+    private func calculateEstimate() -> BandwidthEstimate {
+        guard !samples.isEmpty else { return .empty }
+
+        let bandwidths = samples.map { $0.bitsPerSecond }
+        // Simple (unweighted) average across all stored samples.
+        let average = bandwidths.reduce(0, +) / Double(bandwidths.count)
+        let peak = bandwidths.max() ?? 0
+        let minimum = bandwidths.min() ?? 0
+
+        return BandwidthEstimate(
+            averageBandwidthBps: average,
+            peakBandwidthBps: peak,
+            minimumBandwidthBps: minimum,
+            stability: /* coefficient-of-variation score */ 0,
+            confidence: /* grows with sample count */ 0,
+            sampleCount: samples.count
+        )
     }
 }
 ```
@@ -201,23 +238,53 @@ public final class NetworkBandwidthEstimator {
 **File:** `StreamingCore/StreamingCorePlayback/BandwidthSample.swift`
 
 ```swift
-public struct BandwidthSample: Sendable {
-    public let bandwidth: Double  // bits per second
+public struct BandwidthSample: Equatable, Sendable {
+    public let bytesTransferred: Int64
+    public let duration: TimeInterval        // seconds
     public let timestamp: Date
+
+    /// Calculated bandwidth in bits per second
+    public var bitsPerSecond: Double {
+        guard duration > 0 else { return 0 }
+        return Double(bytesTransferred * 8) / duration
+    }
+
+    /// Calculated bandwidth in megabits per second
+    public var megabitsPerSecond: Double {
+        bitsPerSecond / 1_000_000
+    }
 }
 ```
 
----
+### BandwidthEstimate
 
-## Quality Thresholds
+**File:** `StreamingCore/StreamingCorePlayback/BandwidthEstimate.swift`
 
-| Quality Level | Bandwidth | Description |
-|---------------|-----------|-------------|
-| Offline | 0 | No connectivity |
-| Poor | < 500 Kbps | Very slow, audio only |
-| Fair | 500 Kbps - 2 Mbps | Low quality video |
-| Good | 2 - 5 Mbps | Standard quality |
-| Excellent | > 5 Mbps | HD quality |
+The output type of `NetworkBandwidthEstimator.currentEstimate`.
+
+```swift
+public struct BandwidthEstimate: Equatable, Sendable {
+    public let averageBandwidthBps: Double
+    public let peakBandwidthBps: Double
+    public let minimumBandwidthBps: Double
+    public let stability: Double      // 0-1, 1 is most stable (from coefficient of variation)
+    public let confidence: Double     // 0-1, grows with sample count
+    public let sampleCount: Int
+
+    /// Conservative recommended maximum bitrate (70% of minimum observed bandwidth)
+    public var recommendedMaxBitrate: Int {
+        Int(minimumBandwidthBps * 0.7)
+    }
+
+    /// Whether this estimate is reliable enough to base decisions on
+    public var isReliable: Bool {
+        confidence >= 0.5 && stability >= 0.5 && sampleCount >= 3
+    }
+
+    /// Empty estimate representing no bandwidth data
+    public static let empty: BandwidthEstimate
+}
+```
 
 ---
 
@@ -226,12 +293,15 @@ public struct BandwidthSample: Sendable {
 **File:** `StreamingCore/StreamingCorePlayback/AVPlayerPerformanceObserver.swift`
 
 ```swift
-@MainActor
-public final class AVPlayerPerformanceObserver {
+public final class AVPlayerPerformanceObserver: @unchecked Sendable {
     private weak var player: AVPlayer?
-    private let playbackStateSubject = PassthroughSubject<ObserverPlaybackState, Never>()
-    private let bufferingStateSubject = PassthroughSubject<BufferingState, Never>()
-    private var observers: [NSKeyValueObservation] = []
+
+    private let playbackStateSubject = CurrentValueSubject<ObserverPlaybackState, Never>(.idle)
+    private let bufferingStateSubject = CurrentValueSubject<BufferingState, Never>(.unknown)
+    private let performanceEventSubject = PassthroughSubject<PerformanceEvent, Never>()
+
+    public var currentPlaybackState: ObserverPlaybackState { playbackStateSubject.value }
+    public var currentBufferingState: BufferingState { bufferingStateSubject.value }
 
     public var playbackStatePublisher: AnyPublisher<ObserverPlaybackState, Never> {
         playbackStateSubject.eraseToAnyPublisher()
@@ -241,70 +311,60 @@ public final class AVPlayerPerformanceObserver {
         bufferingStateSubject.eraseToAnyPublisher()
     }
 
-    public func startObserving(_ player: AVPlayer) {
-        self.player = player
-
-        // Observe time control status
-        let timeControlObserver = player.observe(\.timeControlStatus) { [weak self] player, _ in
-            self?.handleTimeControlStatus(player.timeControlStatus)
-        }
-        observers.append(timeControlObserver)
-
-        // Observe buffer status
-        if let item = player.currentItem {
-            let bufferObserver = item.observe(\.isPlaybackLikelyToKeepUp) { [weak self] item, _ in
-                self?.handleBufferStatus(item)
-            }
-            observers.append(bufferObserver)
-        }
+    public var performanceEventPublisher: AnyPublisher<PerformanceEvent, Never> {
+        performanceEventSubject.eraseToAnyPublisher()
     }
 
-    private func handleTimeControlStatus(_ status: AVPlayer.TimeControlStatus) {
+    // Player is injected at init; startObserving() takes no argument.
+    public init(player: AVPlayer) {
+        self.player = player
+    }
+
+    public func startObserving() {
+        guard let player = player else { return }
+        // KVO on timeControlStatus + currentItem, and item buffer/status
+        // observation, all wired here. See source for details.
+        _ = player
+    }
+
+    public func stopObserving() {
+        // Invalidate all KVO observers and remove notification tokens.
+    }
+
+    private func handleTimeControlStatusChange(_ status: AVPlayer.TimeControlStatus) {
         switch status {
-        case .playing:
-            playbackStateSubject.send(.playing)
         case .paused:
             playbackStateSubject.send(.paused)
+        case .playing:
+            playbackStateSubject.send(.playing)
         case .waitingToPlayAtSpecifiedRate:
             playbackStateSubject.send(.buffering)
-            bufferingStateSubject.send(.started)
         @unknown default:
             break
         }
     }
-
-    private func handleBufferStatus(_ item: AVPlayerItem) {
-        if item.isPlaybackLikelyToKeepUp {
-            bufferingStateSubject.send(.ended)
-        }
-    }
 }
 
-public enum ObserverPlaybackState {
+public enum ObserverPlaybackState: Equatable, Sendable {
+    case idle
     case playing
     case paused
     case buffering
+    case stalled
+    case failed(Error)
 }
 
-public enum BufferingState {
-    case started
-    case ended
+public enum BufferingState: Equatable, Sendable {
+    case unknown
+    case buffering
+    case ready
+    case stalled
 }
 ```
 
 ---
 
 ## Integration with Other Features
-
-### Buffer Management
-
-```swift
-networkMonitor.qualityPublisher
-    .sink { [weak bufferManager] quality in
-        bufferManager?.updateForNetworkQuality(quality)
-    }
-    .store(in: &cancellables)
-```
 
 ### Bitrate Strategy
 
@@ -333,7 +393,7 @@ let videosToPreload = preloadStrategy.videosToPreload(
 // In SceneDelegate
 func setupNetworkMonitoring() -> NetworkQualityMonitor {
     let networkMonitor = NetworkQualityMonitor()
-    networkMonitor.startMonitoring()
+    Task { await networkMonitor.startMonitoring() }  // startMonitoring() is async
 
     // Subscribe to quality changes
     networkMonitor.qualityPublisher
@@ -370,24 +430,17 @@ final class NetworkQualityMonitorStub: NetworkQualityMonitor {
 ### Bandwidth Estimator Tests
 
 ```swift
-func test_estimatedBandwidth_calculatesWeightedAverage() {
+@MainActor
+func test_currentEstimate_afterMultipleSamples_calculatesCorrectAverage() {
     let sut = NetworkBandwidthEstimator()
 
-    sut.recordSample(bytes: 1_000_000, duration: 1.0)  // 8 Mbps
-    sut.recordSample(bytes: 2_000_000, duration: 1.0)  // 16 Mbps
+    // 1,000,000 bytes / 1 sec = 8,000,000 bps
+    sut.recordSample(BandwidthSample(bytesTransferred: 1_000_000, duration: 1.0, timestamp: Date()))
+    // 2,000,000 bytes / 1 sec = 16,000,000 bps
+    sut.recordSample(BandwidthSample(bytesTransferred: 2_000_000, duration: 1.0, timestamp: Date()))
 
-    let estimated = sut.estimatedBandwidth()
-
-    // Newer sample weighted more heavily
-    XCTAssertGreaterThan(estimated, 12_000_000)
-}
-
-func test_networkQuality_returnsCorrectLevel() {
-    let sut = NetworkBandwidthEstimator()
-
-    sut.recordSample(bytes: 100_000, duration: 1.0)  // 800 Kbps
-
-    XCTAssertEqual(sut.networkQuality(), .fair)
+    // Simple (unweighted) average: (8,000,000 + 16,000,000) / 2 = 12,000,000 bps
+    XCTAssertEqual(sut.currentEstimate.averageBandwidthBps, 12_000_000)
 }
 ```
 

@@ -34,7 +34,7 @@ We follow a comprehensive testing approach with multiple test levels:
 
 **Purpose**: Test multiple components working together with real infrastructure
 
-**Scheme**: `StreamingCoreCacheIntegrationTests`
+**Test target**: `StreamingCoreCacheIntegrationTests` (run inside the `CI_iOS` scheme; no standalone shared scheme)
 
 **When to Run**: Before pushing, in CI pipeline
 
@@ -53,7 +53,7 @@ We follow a comprehensive testing approach with multiple test levels:
 
 **Purpose**: Test complete system with real backend API
 
-**Scheme**: `StreamingCoreAPIEndToEndTests`
+**Test target**: `StreamingCoreAPIEndToEndTests` (run inside the `CI_iOS` scheme; no standalone shared scheme)
 
 **When to Run**: Before releases, in CI pipeline
 
@@ -72,7 +72,7 @@ We follow a comprehensive testing approach with multiple test levels:
 
 **Purpose**: Run ALL tests for CI/CD and pre-release validation
 
-**Scheme**: `CI_iOS`
+**Scheme**: `CI_iOS` (a workspace scheme in `Tattva.xcworkspace`, run with `-workspace`, not `-project`). Companion CI schemes `CI_macOS` (ThreadSanitizer gate) and `CI_tvOS` (Apple TV) live alongside it.
 
 **When to Run**:
 - In CI/CD pipeline
@@ -87,12 +87,12 @@ We follow a comprehensive testing approach with multiple test levels:
 2. StreamingCoreiOSTests (iOS unit tests)
 3. StreamingCoreCacheIntegrationTests (integration tests)
 4. StreamingCoreAPIEndToEndTests (E2E tests)
+5. TattvaTests (app integration tests; `VideoPlayerPerformanceAdapterTests` skipped)
 
 **Key Features**:
-- ✅ Code coverage enabled
-- ✅ Random test execution order (catches test dependencies)
 - ✅ Parallel test execution (faster CI runs)
-- ✅ CoreData concurrency debugging enabled
+
+> Code coverage is enabled via the CLI (`-enableCodeCoverage YES`), not in the scheme. The `CI_iOS` scheme does not set code coverage, random execution order, or CoreData concurrency debugging.
 
 ## Scheme Configuration Details
 
@@ -128,13 +128,12 @@ xcodebuild test -project StreamingCore.xcodeproj \
 ```xml
 <TestAction
     buildConfiguration = "Debug"
-    codeCoverageEnabled = "YES"
-    onlyGenerateCoverageForSpecifiedTargets = "YES">
+    shouldUseLaunchSchemeArgsEnv = "YES"
+    shouldAutocreateTestPlan = "YES">
     <Testables>
         <TestableReference
             skipped = "NO"
-            parallelizable = "YES"
-            testExecutionOrdering = "random">
+            parallelizable = "YES">
             <!-- All test targets -->
         </TestableReference>
     </Testables>
@@ -144,12 +143,12 @@ xcodebuild test -project StreamingCore.xcodeproj \
 **Usage**:
 ```bash
 # Run ALL tests (CI mode)
-xcodebuild test -project StreamingCore.xcodeproj \
+xcodebuild test -workspace Tattva.xcworkspace \
     -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # Run with result bundle for detailed analysis
-xcodebuild test -project StreamingCore.xcodeproj \
+xcodebuild test -workspace Tattva.xcworkspace \
     -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17' \
     -resultBundlePath ./TestResults.xcresult
@@ -248,7 +247,7 @@ xcodebuild test -scheme StreamingCoreCacheIntegrationTests -destination 'platfor
 
 ```bash
 # Run full test suite with coverage
-xcodebuild test -scheme CI_iOS \
+xcodebuild test -workspace Tattva.xcworkspace -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17' \
     -enableCodeCoverage YES \
     -resultBundlePath ./TestResults.xcresult
@@ -261,37 +260,66 @@ xcodebuild test -scheme CI_iOS \
 xcodebuild test -scheme StreamingCoreAPIEndToEndTests -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # Then run full CI suite
-xcodebuild test -scheme CI_iOS -destination 'platform=iOS Simulator,name=iPhone 17'
+xcodebuild test -workspace Tattva.xcworkspace -scheme CI_iOS -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
 ## CI/CD Integration
 
 ### GitHub Actions Example
 
+The live pipeline is `.github/workflows/ci.yml`. It runs three parallel jobs on `macos-26` (selecting Xcode 26.5 when present), each driving a workspace scheme:
+
+- **build-ios** — `CI_iOS` on `platform=iOS Simulator,name=iPhone 17,OS=26.5`
+- **build-macos** — `CI_macOS` on `platform=macOS` with `-enableThreadSanitizer YES` (the concurrency-safety gate)
+- **build-tvos** — `CI_tvOS` on `platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest` (see `docs/features/APPLE-TV.md`)
+
 ```yaml
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  test:
-    runs-on: macos-latest
-
+  build-ios:
+    runs-on: macos-26
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Run Tests
+      - uses: actions/checkout@v4
+      - name: Run iOS Tests
         run: |
           xcodebuild test \
-            -project StreamingCore.xcodeproj \
+            -workspace Tattva.xcworkspace \
             -scheme CI_iOS \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
-            -enableCodeCoverage YES \
-            -resultBundlePath ./TestResults.xcresult
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' \
+            -resultBundlePath TestResults-iOS.xcresult \
+            CODE_SIGNING_ALLOWED=NO
 
-      - name: Generate Coverage Report
+  build-macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run macOS Tests (ThreadSanitizer)
         run: |
-          xcrun xccov view --report --json TestResults.xcresult > coverage.json
+          xcodebuild test \
+            -workspace Tattva.xcworkspace \
+            -scheme CI_macOS \
+            -destination 'platform=macOS' \
+            -enableThreadSanitizer YES \
+            CODE_SIGNING_ALLOWED=NO
+
+  build-tvos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tvOS Tests
+        run: |
+          xcodebuild test \
+            -workspace Tattva.xcworkspace \
+            -scheme CI_tvOS \
+            -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest' \
+            CODE_SIGNING_ALLOWED=NO
 ```
 
 ## Test Naming Conventions
@@ -312,9 +340,10 @@ func test_<method>_<condition>_<expectedBehavior>() {
 
 ## Code Coverage Targets
 
-The CI_iOS scheme is configured to generate coverage for:
-- StreamingCore.framework
-- StreamingCoreiOS.framework
+When run with `-enableCodeCoverage YES`, the CI_iOS scheme generates coverage for the built frameworks:
+- StreamingCore.framework (domain logic, API, cache)
+- StreamingCoreiOS.framework (UI components, presenters)
+- StreamingCorePlayback.framework (AVFoundation playback: `AVPlayerVideoPlayer`, `StatefulVideoPlayer`, `PlaybackCoordinator`, bandwidth estimation)
 
 **Target**: Aim for >80% code coverage, >90% for critical paths
 
@@ -325,10 +354,6 @@ xcrun xccov view --report TestResults.xcresult
 ```
 
 ## Debugging Tests
-
-### CoreData Concurrency Issues
-
-All schemes include `-com.apple.CoreData.ConcurrencyDebug 1` which will crash immediately on threading violations.
 
 ### Test Failures
 
@@ -342,7 +367,7 @@ xcodebuild test -scheme StreamingCore \
 2. Check test order dependencies:
 ```bash
 # Tests should pass in any order
-xcodebuild test -scheme CI_iOS \
+xcodebuild test -workspace Tattva.xcworkspace -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17' \
     -test-iterations 5
 ```
@@ -367,11 +392,11 @@ Check for:
 | Unit Test Schemes | ✅ EssentialFeed, EssentialFeediOS | ✅ StreamingCore, StreamingCoreiOS |
 | Integration Scheme | ✅ EssentialFeedCacheIntegrationTests | ✅ StreamingCoreCacheIntegrationTests |
 | E2E Scheme | ✅ EssentialFeedAPIEndToEndTests | ✅ StreamingCoreAPIEndToEndTests |
-| CI Scheme | ✅ CI_macOS, CI_iOS | ✅ CI_iOS |
+| CI Scheme | ✅ CI_macOS, CI_iOS | ✅ CI_iOS, CI_macOS, CI_tvOS |
 | Code Coverage | ✅ Enabled in CI | ✅ Enabled in CI |
-| Random Execution | ✅ Yes | ✅ Yes |
+| Random Execution | ✅ Yes | ➖ Not set in `CI_iOS` scheme |
 | Parallel Tests | ✅ Yes | ✅ Yes |
-| CoreData Debug | ✅ Yes | ✅ Yes |
+| CoreData Debug | ✅ Yes | ➖ Not set in `CI_iOS` scheme |
 
 ## Best Practices
 

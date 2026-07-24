@@ -98,7 +98,7 @@ final class OSLogLoggerTests: XCTestCase {
 
 	private func makeSUT(minimumLevel: LogLevel = .info) -> OSLogLogger {
 		OSLogLogger(
-			subsystem: "com.streamingvideoapp.test",
+			subsystem: "com.tattva.test",
 			category: "UnitTests",
 			minimumLevel: minimumLevel
 		)

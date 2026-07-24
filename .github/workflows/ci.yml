@@ -37,7 +37,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild test \
-          -workspace StreamingVideoApp.xcworkspace \
+          -workspace Tattva.xcworkspace \
           -scheme CI_iOS \
           -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' \
           -resultBundlePath TestResults-iOS.xcresult \
@@ -73,7 +73,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild test \
-          -workspace StreamingVideoApp.xcworkspace \
+          -workspace Tattva.xcworkspace \
           -scheme CI_macOS \
           -destination 'platform=macOS' \
           -enableThreadSanitizer YES \
@@ -113,7 +113,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild test \
-          -workspace StreamingVideoApp.xcworkspace \
+          -workspace Tattva.xcworkspace \
           -scheme CI_tvOS \
           -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest' \
           -resultBundlePath TestResults-tvOS.xcresult \
