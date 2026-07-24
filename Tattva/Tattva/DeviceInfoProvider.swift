@@ -9,7 +9,7 @@ import UIKit
 import StreamingCore
 
 public enum DeviceInfoProvider {
-    public static func current() -> DeviceInfo {
+    @MainActor public static func current() -> DeviceInfo {
         DeviceInfo(
             model: UIDevice.current.model,
             osVersion: UIDevice.current.systemVersion,

@@ -32,3 +32,5 @@ extension CellController: nonisolated Hashable {
         hasher.combine(id)
     }
 }
+
+extension CellController: @unchecked Sendable {}

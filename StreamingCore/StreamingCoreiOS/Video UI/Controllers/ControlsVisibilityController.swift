@@ -9,10 +9,11 @@ import Foundation
 public protocol ControlsVisibilityDelegate: AnyObject {
 	func controlsDidShow()
 	func controlsDidHide()
-	func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping () -> Void)
+	func scheduleTimer(withDelay delay: TimeInterval, callback: @escaping @MainActor () -> Void)
 	func cancelTimer()
 }
 
+@MainActor
 public final class ControlsVisibilityController {
 	public private(set) var areControlsVisible: Bool = true
 

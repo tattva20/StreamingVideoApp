@@ -9,7 +9,7 @@ import StreamingCoreiOS
 import StreamingCorePlayback
 
 extension AVPlayerVideoPlayer {
-	func attach(to playerView: PlayerView) {
+	@MainActor func attach(to playerView: PlayerView) {
 		playerView.playerLayer.player = player
 	}
 }

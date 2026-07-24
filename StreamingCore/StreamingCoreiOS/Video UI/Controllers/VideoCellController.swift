@@ -12,6 +12,7 @@ public protocol VideoCellControllerDelegate {
 	func didCancelImageRequest()
 }
 
+@MainActor
 public final class VideoCellController: NSObject {
 	public typealias ResourceViewModel = UIImage
 
