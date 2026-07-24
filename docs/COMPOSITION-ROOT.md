@@ -50,7 +50,7 @@ flowchart TB
 - **Testable Design** - Convenience init for test injection
 
 > The iOS `SceneDelegate` described here has a parallel composition root in the
-> `StreamingVideoAppTV` target (its own `SceneDelegate` plus `TVVideosUIComposer`,
+> `TattvaTV` target (its own `SceneDelegate` plus `TVVideosUIComposer`,
 > `TVPlayerComposer`, and `TVCommentsUIComposer`). See [Apple TV](features/APPLE-TV.md).
 
 ---
@@ -130,7 +130,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 ### VideosUIComposer
 
-**File:** `StreamingVideoApp/StreamingVideoApp/VideosUIComposer.swift`
+**File:** `Tattva/Tattva/VideosUIComposer.swift`
 
 ```swift
 @MainActor
@@ -171,7 +171,7 @@ public final class VideosUIComposer {
 }
 ```
 
-**File:** `StreamingVideoApp/StreamingVideoApp/VideoPlayerUIComposer.swift`
+**File:** `Tattva/Tattva/VideoPlayerUIComposer.swift`
 
 `AVPlayerVideoPlayer` and the playback stack (decorators, `StatefulVideoPlayer`,
 `PlaybackCoordinator`, `NetworkBandwidthEstimator`, `VideoPlayerPerformanceAdapter`,

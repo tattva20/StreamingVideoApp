@@ -238,7 +238,7 @@ extension HTTPURLResponse {
 
 ## Usage in Composition Root
 
-Both the iOS (`StreamingVideoApp/SceneDelegate.swift`) and tvOS (`StreamingVideoAppTV/SceneDelegate.swift`) composition roots wire the same `HTTPClient` and inject it into a `VideoService` (in the `StreamingCorePlayback` framework), which owns the remote get + map pipeline:
+Both the iOS (`Tattva/SceneDelegate.swift`) and tvOS (`TattvaTV/SceneDelegate.swift`) composition roots wire the same `HTTPClient` and inject it into a `VideoService` (in the `StreamingCorePlayback` framework), which owns the remote get + map pipeline:
 
 ```swift
 // SceneDelegate.swift (iOS and tvOS)

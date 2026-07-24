@@ -13,7 +13,7 @@ where those assets live and how they are wired.
 
 | Purpose | Location | Consumed by |
 |---------|----------|-------------|
-| **Shipped app assets** (Apple TV) | `StreamingVideoApp/StreamingVideoAppTV/Assets.xcassets/AppIcon.brandassets` | the tvOS app at runtime / on the Home screen |
+| **Shipped app assets** (Apple TV) | `Tattva/TattvaTV/Assets.xcassets/AppIcon.brandassets` | the tvOS app at runtime / on the Home screen |
 | **Repo presentation** (README/docs) | `docs/images/brand/` | GitHub README + docs |
 
 ## tvOS Brand Assets (`AppIcon.brandassets`)

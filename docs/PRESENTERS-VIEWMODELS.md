@@ -576,7 +576,7 @@ flowchart TB
     class macOS test;
 ```
 
-The two shipping UI surfaces are **iOS** (`StreamingVideoApp`) and **tvOS** (`StreamingVideoAppTV`), both UIKit. There is no macOS AppKit app; macOS appears only as a unit-test/CI destination (`CI_macOS` scheme) that exercises `StreamingCore` logic under ThreadSanitizer.
+The two shipping UI surfaces are **iOS** (`Tattva`) and **tvOS** (`TattvaTV`), both UIKit. There is no macOS AppKit app; macOS appears only as a unit-test/CI destination (`CI_macOS` scheme) that exercises `StreamingCore` logic under ThreadSanitizer.
 
 ---
 

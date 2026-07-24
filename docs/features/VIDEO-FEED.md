@@ -207,9 +207,9 @@ Triggers pagination when visible.
 
 ## tvOS Feed Surface
 
-The video feed also ships on tvOS via the `StreamingVideoAppTV` target, reusing the same `StreamingCore` `VideoLoader` and `Paginated<Video>` pipeline behind a focus-based UICollectionView.
+The video feed also ships on tvOS via the `TattvaTV` target, reusing the same `StreamingCore` `VideoLoader` and `Paginated<Video>` pipeline behind a focus-based UICollectionView.
 
-**Files:** `StreamingVideoApp/StreamingVideoAppTV/`
+**Files:** `Tattva/TattvaTV/`
 
 - `TVVideoFeedViewController.swift` - Collection view with `onRefresh` / `onLoadMore` pagination
 - `TVVideoPosterCell.swift` - Poster cell for the tvOS grid
@@ -275,7 +275,7 @@ public final class VideoLoaderWithFallbackComposite: VideoLoader {
 
 ## Composition
 
-**File:** `StreamingVideoApp/StreamingVideoApp/VideosUIComposer.swift`
+**File:** `Tattva/Tattva/VideosUIComposer.swift`
 
 ```swift
 @MainActor

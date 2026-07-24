@@ -299,7 +299,7 @@ extension UIImageView {
 
 The image loader is an `(URL) async throws -> Data` closure, wired in `SceneDelegate` straight from the video service and threaded through `VideosUIComposer` -> `VideosViewAdapter` (which builds an `ImageDataPresentationAdapter` per cell):
 
-**File:** `StreamingVideoApp/StreamingVideoApp/SceneDelegate.swift`
+**File:** `Tattva/Tattva/SceneDelegate.swift`
 
 ```swift
 VideosUIComposer.videosComposedWith(
@@ -345,7 +345,7 @@ func test_load_deliversCachedDataOnCacheHit() async throws {
 
 The tvOS app has its own thumbnail path on a `UICollectionView` feed. `TVVideoCellController` holds the same `(@Sendable (URL) async throws -> Data)?` image-loader closure and loads posters into `TVVideoPosterCell.posterImageView` using async/await, cancelling in-flight work via `imageTask?.cancel()` and `Task.isCancelled`. There is no shimmer; the poster uses focus-driven scale and border styling instead.
 
-**Files:** `StreamingVideoApp/StreamingVideoAppTV/TVVideoCellController.swift`, `TVVideoPosterCell.swift`
+**Files:** `Tattva/TattvaTV/TVVideoCellController.swift`, `TVVideoPosterCell.swift`
 
 See [Apple TV](APPLE-TV.md) for the full tvOS surface.
 

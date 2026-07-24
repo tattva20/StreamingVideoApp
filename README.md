@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml">
-    <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml/badge.svg" alt="CI">
+  <a href="https://github.com/tattva20/TATTVA-TV/actions/workflows/ci.yml">
+    <img src="https://github.com/tattva20/TATTVA-TV/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
   <img src="https://img.shields.io/badge/Platform-iOS%2026.1%2B%20%7C%20tvOS%2026.0%2B-blue.svg" alt="Platform: iOS 26.1+ | tvOS 26.0+">
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6">
@@ -90,7 +90,7 @@ Detailed documentation for infrastructure components and patterns:
 
 ## Overview
 
-StreamingVideoApp demonstrates professional iOS and tvOS development practices with a modular, testable architecture. Both apps — the iOS app (`StreamingVideoApp`) and the Apple TV app (`StreamingVideoAppTV`, branded **TATTVA TV**) — sit on top of the same shared `StreamingCore` and `StreamingCorePlayback` frameworks.
+Tattva demonstrates professional iOS and tvOS development practices with a modular, testable architecture. Both apps — the iOS app (`Tattva`) and the Apple TV app (`TattvaTV`, branded **TATTVA TV**) — sit on top of the same shared `StreamingCore` and `StreamingCorePlayback` frameworks.
 
 ### Key Highlights
 
@@ -146,12 +146,12 @@ StreamingVideoApp demonstrates professional iOS and tvOS development practices w
 
 ## Architecture
 
-StreamingVideoApp follows a **modular Clean Architecture** with strict layer boundaries:
+Tattva follows a **modular Clean Architecture** with strict layer boundaries:
 
 ```mermaid
 flowchart TB
-    iOSApp["StreamingVideoApp<br/><i>iOS app · composition root</i>"]
-    tvApp["StreamingVideoAppTV<br/><i>tvOS app · composition root</i>"]
+    iOSApp["Tattva<br/><i>iOS app · composition root</i>"]
+    tvApp["TattvaTV<br/><i>tvOS app · composition root</i>"]
     iOS["StreamingCoreiOS<br/><i>UIKit UI</i>"]
     Playback["StreamingCorePlayback<br/><i>AVFoundation · reused playback stack</i>"]
     Core["StreamingCore<br/><i>domain · use cases · presenters · protocols</i><br/>🚫 No UIKit / AVKit"]
@@ -177,11 +177,11 @@ flowchart TB
 ### Module Structure
 
 ```
-StreamingVideoApp.xcworkspace — dependencies point inward to StreamingCore
+Tattva.xcworkspace — dependencies point inward to StreamingCore
 
 apps · composition roots
-├── StreamingVideoApp      iOS app    → Core · CoreiOS · CorePlayback   (custom UIKit player)
-└── StreamingVideoAppTV    tvOS app   → Core · CorePlayback             (native AVPlayerViewController)
+├── Tattva      iOS app    → Core · CoreiOS · CorePlayback   (custom UIKit player)
+└── TattvaTV    tvOS app   → Core · CorePlayback             (native AVPlayerViewController)
 
 frameworks
 ├── StreamingCoreiOS       UIKit          → Core   iOS feed / player / comments UI
@@ -192,7 +192,7 @@ frameworks
 
 tests
 └── StreamingCoreTests · StreamingCoreiOSTests · StreamingCoreAPIEndToEndTests ·
-    StreamingCoreCacheIntegrationTests · StreamingVideoAppTests · StreamingVideoAppTVTests
+    StreamingCoreCacheIntegrationTests · TattvaTests · TattvaTVTests
 
 CI · .github/workflows/ci.yml
 └── build-ios · build-macos · build-tvos
@@ -334,17 +334,17 @@ public final class URLSessionHTTPClient: HTTPClient { ... }
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/tattva20/StreamingVideoApp.git
-   cd StreamingVideoApp
+   git clone https://github.com/tattva20/TATTVA-TV.git
+   cd TATTVA-TV
    ```
 
 2. **Open the workspace**
    ```bash
-   open StreamingVideoApp.xcworkspace
+   open Tattva.xcworkspace
    ```
 
 3. **Select scheme and run**
-   - Choose `StreamingVideoApp` (iOS) or `StreamingVideoAppTV` (Apple TV)
+   - Choose `Tattva` (iOS) or `TattvaTV` (Apple TV)
    - Select a simulator or device
    - Press `Cmd + R` to run
 
@@ -353,13 +353,13 @@ public final class URLSessionHTTPClient: HTTPClient { ... }
 ```bash
 # Run all tests
 xcodebuild test \
-  -workspace StreamingVideoApp.xcworkspace \
-  -scheme StreamingVideoApp \
+  -workspace Tattva.xcworkspace \
+  -scheme Tattva \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # Run with ThreadSanitizer (CI mode)
 xcodebuild clean build test \
-  -workspace StreamingVideoApp.xcworkspace \
+  -workspace Tattva.xcworkspace \
   -scheme "CI_iOS" \
   CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
   -sdk iphonesimulator \
@@ -383,7 +383,7 @@ xcodebuild clean build test \
 |----------|----------|-------------|
 | **Unit** | `StreamingCoreTests/` | Test single units with mocks |
 | **iOS Unit** | `StreamingCoreiOSTests/` | Test UI components |
-| **Integration** | `StreamingVideoAppTests/` | Test composed systems |
+| **Integration** | `TattvaTests/` | Test composed systems |
 | **API E2E** | `StreamingCoreAPIEndToEndTests/` | Test against real API |
 | **Cache Integration** | `StreamingCoreCacheIntegrationTests/` | Test real CoreData |
 
@@ -434,7 +434,7 @@ The `main` branch is protected with the following rules:
 ### Setting Up Branch Protection
 
 Configure branch protection manually at:
-`https://github.com/tattva20/StreamingVideoApp/settings/branches`
+`https://github.com/tattva20/TATTVA-TV/settings/branches`
 
 ---
 
@@ -554,7 +554,7 @@ Clean up while ensuring tests still pass. Extract protocols if needed. Remove du
 
 #### Step 5: Add Integration Tests
 
-If the feature involves composition, write tests in `StreamingVideoAppTests/`.
+If the feature involves composition, write tests in `TattvaTests/`.
 
 #### Step 6: Verify All Tests Pass
 
@@ -738,7 +738,7 @@ final class NewFeatureViewControllerTests: XCTestCase {
 #### 1. Create Composer
 
 ```swift
-// StreamingVideoApp/NewFeatureUIComposer.swift
+// Tattva/NewFeatureUIComposer.swift
 enum NewFeatureUIComposer {
     static func compose(
         loader: NewFeatureLoader

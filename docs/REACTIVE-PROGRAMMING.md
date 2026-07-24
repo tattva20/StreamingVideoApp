@@ -1,18 +1,18 @@
-# Reactive Programming with Combine in StreamingVideoApp
+# Reactive Programming with Combine in Tattva
 
-This document explains the Combine patterns and reactive programming practices used throughout the StreamingVideoApp codebase.
+This document explains the Combine patterns and reactive programming practices used throughout the Tattva codebase.
 
 ---
 
 ## Overview
 
-StreamingVideoApp uses Apple's **Combine framework** for **observation and state streams**. The video feed and comments loaders now use async/await; Combine backs the parts of the system that are genuinely stream-shaped:
+Tattva uses Apple's **Combine framework** for **observation and state streams**. The video feed and comments loaders now use async/await; Combine backs the parts of the system that are genuinely stream-shaped:
 - Playback state and transition streams
 - Buffer, memory, and performance monitoring
 - Resource cleanup events
 - Main-thread dispatch and image-data caching helpers (`CombineHelpers.swift`)
 
-These streams live in the platform-agnostic cores (`StreamingCore` and `StreamingCorePlayback`) and are shared by both the iOS (`StreamingVideoApp`) and tvOS (`StreamingVideoAppTV`) apps. The AVPlayer-facing Combine plumbing — `StatefulVideoPlayer.statePublisher`, `AVPlayerStateAdapter`, `AVPlayerPerformanceObserver`, `AVPlayerBufferAdapter` — lives in `StreamingCorePlayback`.
+These streams live in the platform-agnostic cores (`StreamingCore` and `StreamingCorePlayback`) and are shared by both the iOS (`Tattva`) and tvOS (`TattvaTV`) apps. The AVPlayer-facing Combine plumbing — `StatefulVideoPlayer.statePublisher`, `AVPlayerStateAdapter`, `AVPlayerPerformanceObserver`, `AVPlayerBufferAdapter` — lives in `StreamingCorePlayback`.
 
 ---
 

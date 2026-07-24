@@ -1,4 +1,4 @@
-# State Machine Design in StreamingVideoApp
+# State Machine Design in Tattva
 
 This document explains the pure state machine implementation used for video playback control, demonstrating how functional programming principles create predictable, testable state management.
 
@@ -473,7 +473,7 @@ final class DefaultPlaybackStateMachineTests: XCTestCase {
 
 ### AVPlayerStateAdapter
 
-The adapter bridges AVPlayer observations to pure state machine actions. It lives in the platform-agnostic `StreamingCorePlayback` framework (`StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`, guarded with `#if !os(macOS)`) and is wired up by `PlaybackCoordinator`. Because it is platform-agnostic, both the iOS app and the tvOS app (`StreamingVideoAppTV/TVPlayerComposer.swift`, `TVPlayerViewController.swift`) drive the same state machine through it — see [Apple TV](features/APPLE-TV.md).
+The adapter bridges AVPlayer observations to pure state machine actions. It lives in the platform-agnostic `StreamingCorePlayback` framework (`StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`, guarded with `#if !os(macOS)`) and is wired up by `PlaybackCoordinator`. Because it is platform-agnostic, both the iOS app and the tvOS app (`TattvaTV/TVPlayerComposer.swift`, `TVPlayerViewController.swift`) drive the same state machine through it — see [Apple TV](features/APPLE-TV.md).
 
 ```swift
 public final class AVPlayerStateAdapter {

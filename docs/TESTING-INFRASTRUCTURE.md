@@ -562,10 +562,10 @@ StreamingCoreiOSTests/
 The same reusable helpers are also duplicated into the app project's test targets, which consume the patterns documented above:
 
 ```
-StreamingVideoApp/
-├── StreamingVideoAppTests/
+Tattva/
+├── TattvaTests/
 │     └── Helpers/                XCTestCase+MemoryLeakTracking.swift · SharedTestHelpers.swift · LoaderSpy.swift · VideoPlayerStub.swift · UIKit test extensions
-└── StreamingVideoAppTVTests/     tvOS integration tests (TVVideoFeedViewControllerTests, TVPlayerViewControllerTests, ...) — see features/APPLE-TV.md
+└── TattvaTVTests/     tvOS integration tests (TVVideoFeedViewControllerTests, TVPlayerViewControllerTests, ...) — see features/APPLE-TV.md
 ```
 
 ---

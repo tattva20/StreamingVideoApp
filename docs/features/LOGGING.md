@@ -341,7 +341,7 @@ All entries with `[cid:a1b2c3d4]` belong to the same playback session.
 ## Composition
 
 Logger construction lives in the `LoggingConfiguration` enum
-(`StreamingVideoApp/LoggingConfiguration.swift`); `SceneDelegate` only calls
+(`Tattva/LoggingConfiguration.swift`); `SceneDelegate` only calls
 `LoggingConfiguration.makeLogger()`.
 
 ```swift
@@ -357,7 +357,7 @@ public enum LoggingConfiguration {
     private static func makeDebugLogger() -> any Logger {
         let consoleLogger = ConsoleLogger(minimumLevel: .debug)
         let osLogLogger = OSLogLogger(
-            subsystem: "com.streamingvideoapp.StreamingVideoApp",
+            subsystem: "com.tattva.Tattva",
             category: "VideoPlayer",
             minimumLevel: .debug
         )
@@ -369,7 +369,7 @@ public enum LoggingConfiguration {
 
     private static func makeReleaseLogger() -> any Logger {
         OSLogLogger(
-            subsystem: "com.streamingvideoapp.StreamingVideoApp",
+            subsystem: "com.tattva.Tattva",
             category: "VideoPlayer",
             minimumLevel: .info
         )
@@ -409,7 +409,7 @@ OSLog renders `entry.formattedMessage` via `os_log`:
 
 ```
 type: info
-subsystem: com.streamingvideoapp.StreamingVideoApp
+subsystem: com.tattva.Tattva
 category: VideoPlayer
 message: [VideoPlayer] [info] Play requested [cid:a1b2c3d4]
 ```

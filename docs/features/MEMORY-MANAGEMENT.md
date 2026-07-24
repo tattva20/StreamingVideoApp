@@ -178,7 +178,7 @@ The monitor takes an injected `memoryReader: () -> MemoryState` seam (defaulting
 
 ### SystemMemoryProvider & MemoryMonitorFactory
 
-**File:** `StreamingVideoApp/StreamingVideoApp/SystemMemoryProvider.swift` (app target)
+**File:** `Tattva/Tattva/SystemMemoryProvider.swift` (app target)
 
 The real system reader lives in the composition target, keeping `StreamingCore` free of platform memory APIs. `SystemMemoryProvider.memoryReader` reads free memory via `os_proc_available_memory()`, and `MemoryMonitorFactory.makeSystemMemoryMonitor()` is the entry point the `SceneDelegate` calls:
 

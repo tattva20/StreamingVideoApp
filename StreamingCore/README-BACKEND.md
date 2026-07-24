@@ -28,7 +28,7 @@ different host, change `baseURL` in `VideoService.swift`.
 
 1. Start the local server:
 ```bash
-cd /Users/octaviorojas/Development/active/StreamingVideoApp/StreamingCore
+cd /Users/octaviorojas/Development/active/Tattva/StreamingCore
 python3 serve-videos.py
 ```
 
@@ -52,7 +52,7 @@ python3 serve-videos.py
 
 ```bash
 cd /path/to/your/repo
-cp /Users/octaviorojas/Development/active/StreamingVideoApp/StreamingCore/videos.json .
+cp /Users/octaviorojas/Development/active/Tattva/StreamingCore/videos.json .
 git add videos.json
 git commit -m "Add videos API endpoint"
 git push origin main
@@ -83,7 +83,7 @@ You can also host the JSON on Vercel or Netlify for free:
 
 ### Vercel:
 ```bash
-cd /Users/octaviorojas/Development/active/StreamingVideoApp/StreamingCore
+cd /Users/octaviorojas/Development/active/Tattva/StreamingCore
 vercel --prod
 ```
 

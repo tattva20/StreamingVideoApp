@@ -1,6 +1,6 @@
-# Design Patterns in StreamingVideoApp
+# Design Patterns in Tattva
 
-This document explains the key design patterns used throughout the StreamingVideoApp codebase with concrete implementation examples.
+This document explains the key design patterns used throughout the Tattva codebase with concrete implementation examples.
 
 ---
 
@@ -472,7 +472,7 @@ public struct AdjacentVideoPreloadStrategy: PredictivePreloadStrategy, Sendable 
 
 > *"Compose the object graph in a single location near the entry point."*
 
-There are two composition roots — the iOS `StreamingVideoApp/SceneDelegate.swift` and the tvOS `StreamingVideoAppTV/SceneDelegate.swift`. Both wire their object graph through a `VideoService`, which encapsulates the remote-then-local fallback and cache behavior:
+There are two composition roots — the iOS `Tattva/SceneDelegate.swift` and the tvOS `TattvaTV/SceneDelegate.swift`. Both wire their object graph through a `VideoService`, which encapsulates the remote-then-local fallback and cache behavior:
 
 ```swift
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {

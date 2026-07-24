@@ -1,12 +1,12 @@
-# Performance Optimization in StreamingVideoApp
+# Performance Optimization in Tattva
 
-This document explains the performance strategies, monitoring systems, and optimization patterns used in the StreamingVideoApp.
+This document explains the performance strategies, monitoring systems, and optimization patterns used in the Tattva.
 
 ---
 
 ## Overview
 
-StreamingVideoApp implements several performance optimization strategies:
+Tattva implements several performance optimization strategies:
 - Adaptive bitrate selection
 - Predictive video preloading
 - Intelligent buffer management

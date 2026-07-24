@@ -220,7 +220,7 @@ The comments controller is built and injected during composition (see below), no
 
 ## Composition
 
-**File:** `StreamingVideoApp/VideoCommentsUIComposer.swift`
+**File:** `Tattva/VideoCommentsUIComposer.swift`
 
 ```swift
 @MainActor
@@ -366,7 +366,7 @@ The tvOS app renders comments through a separate UI layer that reuses the shared
 - **`TVCommentsUIComposer`** / **`TVCommentCell`** - composition and cell for the tvOS surface.
 - Wired via `TVPlayerViewController`, which surfaces comments as an `AVPlayerViewController` info panel (`customInfoViewControllers`) alongside the player rather than below it.
 
-**Files:** `StreamingVideoApp/StreamingVideoAppTV/TVCommentsViewController.swift`, `TVCommentsUIComposer.swift`, `TVCommentCell.swift`
+**Files:** `Tattva/TattvaTV/TVCommentsViewController.swift`, `TVCommentsUIComposer.swift`, `TVCommentCell.swift`
 
 See [Apple TV](APPLE-TV.md) for the full tvOS surface.
 

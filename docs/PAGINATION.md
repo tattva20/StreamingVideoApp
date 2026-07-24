@@ -168,7 +168,7 @@ Integration tests drive pagination through an `AsyncThrowingStream`-backed `Load
 `async` test methods:
 
 ```swift
-// StreamingVideoAppTests/Helpers/VideosUIIntegrationTests+LoaderSpy.swift (abridged)
+// TattvaTests/Helpers/VideosUIIntegrationTests+LoaderSpy.swift (abridged)
 @MainActor
 final class LoaderSpy {
     var loadCallCount: Int { /* pending first-load requests */ }

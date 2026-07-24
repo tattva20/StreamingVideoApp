@@ -1,6 +1,6 @@
 # Apple TV (tvOS) — TATTVA TV
 
-The Apple TV app (`StreamingVideoAppTV`, branded **TATTVA TV**) is a native tvOS
+The Apple TV app (`TattvaTV`, branded **TATTVA TV**) is a native tvOS
 front end that reuses the **entire** `StreamingCore` + `StreamingCorePlayback`
 stack and adds only tvOS-native UI. No domain, networking, caching, playback, or
 presentation logic is duplicated — the tvOS target contributes a focus-driven
@@ -20,7 +20,7 @@ The iOS app and the tvOS app are two composition roots over the same core:
 
 ```mermaid
 flowchart TB
-    tvApp["StreamingVideoAppTV<br/><i>tvOS composition root</i>"]
+    tvApp["TattvaTV<br/><i>tvOS composition root</i>"]
     Playback["StreamingCorePlayback<br/><i>AVFoundation playback stack</i>"]
     Core["StreamingCore<br/><i>domain · use cases · presenters · protocols</i>"]
 
@@ -109,7 +109,7 @@ calls `showPlayer`, which builds the comments controller via
 ## Brand assets
 
 The tvOS target ships purpose-built TATTVA TV brand assets in
-`StreamingVideoAppTV/Assets.xcassets/AppIcon.brandassets`:
+`TattvaTV/Assets.xcassets/AppIcon.brandassets`:
 
 - **App Icon** — layered imagestacks (`App Icon.imagestack`,
   `App Icon - App Store.imagestack`) with Back / Middle / Front layers, full-bleed
@@ -120,7 +120,7 @@ See [BRANDING](../BRANDING.md) for the asset pipeline.
 
 ## Tests & CI
 
-- Tests live in `StreamingVideoAppTVTests` (composers, presentation adapter,
+- Tests live in `TattvaTVTests` (composers, presentation adapter,
   cell controllers, comments states).
 - The `build-tvos` CI job (scheme `CI_tvOS`) builds and tests on the
   **Apple TV 4K (3rd generation)** simulator on every push and PR to `main`,

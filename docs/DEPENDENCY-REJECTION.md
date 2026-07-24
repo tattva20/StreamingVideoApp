@@ -1,6 +1,6 @@
-# Dependency Rejection Pattern in StreamingVideoApp
+# Dependency Rejection Pattern in Tattva
 
-This document explains how StreamingVideoApp implements **Mark Seemann's Dependency Rejection pattern** - a functional programming approach that eliminates dependency injection in favor of pure functions.
+This document explains how Tattva implements **Mark Seemann's Dependency Rejection pattern** - a functional programming approach that eliminates dependency injection in favor of pure functions.
 
 ---
 
@@ -350,7 +350,7 @@ class VideoCommentsPresenter {
 }
 ```
 
-### Dependency Rejection (Used in StreamingVideoApp):
+### Dependency Rejection (Used in Tattva):
 
 ```swift
 // Better - Reject dependencies, accept parameters:

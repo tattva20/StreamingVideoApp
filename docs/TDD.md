@@ -1,12 +1,12 @@
-# Test-Driven Development in StreamingVideoApp
+# Test-Driven Development in Tattva
 
-This document explains the TDD practices, testing strategies, and patterns used throughout the StreamingVideoApp codebase.
+This document explains the TDD practices, testing strategies, and patterns used throughout the Tattva codebase.
 
 ---
 
 ## The TDD Workflow
 
-Every feature in StreamingVideoApp is developed following the **Red-Green-Refactor** cycle:
+Every feature in Tattva is developed following the **Red-Green-Refactor** cycle:
 
 ```mermaid
 flowchart LR
@@ -26,7 +26,7 @@ flowchart LR
 
 ## Test Pyramid
 
-StreamingVideoApp follows the test pyramid with emphasis on unit tests:
+Tattva follows the test pyramid with emphasis on unit tests:
 
 <p align="center">
   <img src="images/test-pyramid.svg" alt="Test pyramid: ~893 unit tests (isolated components), ~276 integration (composed systems), ~2 end-to-end (real API)" width="520">
@@ -38,12 +38,12 @@ StreamingVideoApp follows the test pyramid with emphasis on unit tests:
 |----------|----------|-------------|
 | **Unit** | `StreamingCoreTests/` | Test single units with mocks |
 | **iOS Unit** | `StreamingCoreiOSTests/` | Test UI components |
-| **Integration** | `StreamingVideoAppTests/` | Test composed systems |
-| **tvOS** | `StreamingVideoAppTVTests/` | Test tvOS feed & player UI (see [Apple TV](features/APPLE-TV.md)) |
+| **Integration** | `TattvaTests/` | Test composed systems |
+| **tvOS** | `TattvaTVTests/` | Test tvOS feed & player UI (see [Apple TV](features/APPLE-TV.md)) |
 | **API E2E** | `StreamingCoreAPIEndToEndTests/` | Test against real API |
 | **Cache Integration** | `StreamingCoreCacheIntegrationTests/` | Test real CoreData |
 
-> **Note:** The AVFoundation playback types (`AVPlayerVideoPlayer`, `StatefulVideoPlayer`) live in the `StreamingCorePlayback` framework but have no dedicated test target — they are exercised from `StreamingVideoAppTests` (`AVPlayerVideoPlayerTests`, `StatefulVideoPlayerTests`, `StatefulVideoPlayerIntegrationTests`).
+> **Note:** The AVFoundation playback types (`AVPlayerVideoPlayer`, `StatefulVideoPlayer`) live in the `StreamingCorePlayback` framework but have no dedicated test target — they are exercised from `TattvaTests` (`AVPlayerVideoPlayerTests`, `StatefulVideoPlayerTests`, `StatefulVideoPlayerIntegrationTests`).
 
 ---
 

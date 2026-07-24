@@ -12,9 +12,9 @@ platform-agnostic framework (iOS · tvOS · macOS) so both apps reuse it without
 duplicating a line.
 
 ```
-StreamingVideoApp (iOS) ─┐
+Tattva (iOS) ─┐
                          ├─► StreamingCorePlayback ──► StreamingCore
-StreamingVideoAppTV (tvOS)┘
+TattvaTV (tvOS)┘
 ```
 
 The framework imports AVFoundation but **no UIKit** — it stays UI-agnostic, so

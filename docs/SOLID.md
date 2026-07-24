@@ -1,6 +1,6 @@
-# SOLID Principles in StreamingVideoApp
+# SOLID Principles in Tattva
 
-This document demonstrates how each SOLID principle is applied throughout the StreamingVideoApp codebase with concrete examples.
+This document demonstrates how each SOLID principle is applied throughout the Tattva codebase with concrete examples.
 
 ---
 

@@ -359,7 +359,7 @@ public final class FileSystemVideoImageDataStore: VideoImageDataStore {
 
 ## Usage in Composition Root
 
-The caching infrastructure is platform-agnostic and is wired identically by both composition roots — iOS (`StreamingVideoApp/SceneDelegate.swift`) and tvOS (`StreamingVideoAppTV/SceneDelegate.swift`) — each building the same store type and a `VideoService`. See [Apple TV Support](features/APPLE-TV.md) for the tvOS wiring.
+The caching infrastructure is platform-agnostic and is wired identically by both composition roots — iOS (`Tattva/SceneDelegate.swift`) and tvOS (`TattvaTV/SceneDelegate.swift`) — each building the same store type and a `VideoService`. See [Apple TV Support](features/APPLE-TV.md) for the tvOS wiring.
 
 ```swift
 // SceneDelegate.swift

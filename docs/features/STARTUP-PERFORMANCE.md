@@ -239,7 +239,7 @@ In the shipped app, `StartupTimeTracker` is not driven by the pseudo-code above.
 - **`StreamingCorePlayback/VideoPlayerPerformanceAdapter.swift`** — forwards `.loadStarted` (line 53) and records `.firstFrameRendered` (lines 56, 136) into the performance service.
 - **`StreamingCore/Video Performance Feature/PlaybackPerformanceService.swift`** — the real consumer. In `recordEvent(_:)` it calls `startupTracker.recordLoadStart` (line 83) and `startupTracker.recordFirstFrame` (line 86), then `checkStartupTime` (line 162) emits a `PerformanceAlert` when TTFF crosses the warning/critical thresholds.
 
-Because `StartupTimeTracker` lives in the platform-agnostic `StreamingCore` framework and the AVFoundation plumbing lives in `StreamingCorePlayback`, TTFF tracking applies to both shipped surfaces — the iOS app and the tvOS `StreamingVideoAppTV` target. See [Apple TV](APPLE-TV.md).
+Because `StartupTimeTracker` lives in the platform-agnostic `StreamingCore` framework and the AVFoundation plumbing lives in `StreamingCorePlayback`, TTFF tracking applies to both shipped surfaces — the iOS app and the tvOS `TattvaTV` target. See [Apple TV](APPLE-TV.md).
 
 ---
 

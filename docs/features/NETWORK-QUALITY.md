@@ -166,7 +166,7 @@ public final class NetworkQualityMonitor: @unchecked Sendable {
 
 > The bandwidth estimation types (`NetworkBandwidthEstimator`, `BandwidthSample`,
 > `BandwidthEstimate`) live in the platform-agnostic `StreamingCorePlayback`
-> module and are wired on both iOS and tvOS (see `StreamingVideoAppTV/TVPlayerComposer.swift`).
+> module and are wired on both iOS and tvOS (see `TattvaTV/TVPlayerComposer.swift`).
 > `NetworkQualityMonitor` above, by contrast, lives in the iOS-only `StreamingCoreiOS` layer.
 
 ### NetworkBandwidthEstimator

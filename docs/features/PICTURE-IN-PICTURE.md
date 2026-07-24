@@ -187,7 +187,7 @@ public final class PlayerView: UIView {
 
 ### Composition Root Wiring
 
-PiP is wired in `StreamingVideoApp/VideoPlayerUIComposer.swift`. The controller is
+PiP is wired in `Tattva/VideoPlayerUIComposer.swift`. The controller is
 created, handed the player view, and stored on the view controller; the PiP button
 toggles it through the `onPipToggle` closure:
 

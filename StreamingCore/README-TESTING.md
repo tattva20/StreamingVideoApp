@@ -72,7 +72,7 @@ We follow a comprehensive testing approach with multiple test levels:
 
 **Purpose**: Run ALL tests for CI/CD and pre-release validation
 
-**Scheme**: `CI_iOS` (a workspace scheme in `StreamingVideoApp.xcworkspace`, run with `-workspace`, not `-project`). Companion CI schemes `CI_macOS` (ThreadSanitizer gate) and `CI_tvOS` (Apple TV) live alongside it.
+**Scheme**: `CI_iOS` (a workspace scheme in `Tattva.xcworkspace`, run with `-workspace`, not `-project`). Companion CI schemes `CI_macOS` (ThreadSanitizer gate) and `CI_tvOS` (Apple TV) live alongside it.
 
 **When to Run**:
 - In CI/CD pipeline
@@ -87,7 +87,7 @@ We follow a comprehensive testing approach with multiple test levels:
 2. StreamingCoreiOSTests (iOS unit tests)
 3. StreamingCoreCacheIntegrationTests (integration tests)
 4. StreamingCoreAPIEndToEndTests (E2E tests)
-5. StreamingVideoAppTests (app integration tests; `VideoPlayerPerformanceAdapterTests` skipped)
+5. TattvaTests (app integration tests; `VideoPlayerPerformanceAdapterTests` skipped)
 
 **Key Features**:
 - ✅ Parallel test execution (faster CI runs)
@@ -143,12 +143,12 @@ xcodebuild test -project StreamingCore.xcodeproj \
 **Usage**:
 ```bash
 # Run ALL tests (CI mode)
-xcodebuild test -workspace StreamingVideoApp.xcworkspace \
+xcodebuild test -workspace Tattva.xcworkspace \
     -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # Run with result bundle for detailed analysis
-xcodebuild test -workspace StreamingVideoApp.xcworkspace \
+xcodebuild test -workspace Tattva.xcworkspace \
     -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17' \
     -resultBundlePath ./TestResults.xcresult
@@ -247,7 +247,7 @@ xcodebuild test -scheme StreamingCoreCacheIntegrationTests -destination 'platfor
 
 ```bash
 # Run full test suite with coverage
-xcodebuild test -workspace StreamingVideoApp.xcworkspace -scheme CI_iOS \
+xcodebuild test -workspace Tattva.xcworkspace -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17' \
     -enableCodeCoverage YES \
     -resultBundlePath ./TestResults.xcresult
@@ -260,7 +260,7 @@ xcodebuild test -workspace StreamingVideoApp.xcworkspace -scheme CI_iOS \
 xcodebuild test -scheme StreamingCoreAPIEndToEndTests -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # Then run full CI suite
-xcodebuild test -workspace StreamingVideoApp.xcworkspace -scheme CI_iOS -destination 'platform=iOS Simulator,name=iPhone 17'
+xcodebuild test -workspace Tattva.xcworkspace -scheme CI_iOS -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
 ## CI/CD Integration
@@ -290,7 +290,7 @@ jobs:
       - name: Run iOS Tests
         run: |
           xcodebuild test \
-            -workspace StreamingVideoApp.xcworkspace \
+            -workspace Tattva.xcworkspace \
             -scheme CI_iOS \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' \
             -resultBundlePath TestResults-iOS.xcresult \
@@ -303,7 +303,7 @@ jobs:
       - name: Run macOS Tests (ThreadSanitizer)
         run: |
           xcodebuild test \
-            -workspace StreamingVideoApp.xcworkspace \
+            -workspace Tattva.xcworkspace \
             -scheme CI_macOS \
             -destination 'platform=macOS' \
             -enableThreadSanitizer YES \
@@ -316,7 +316,7 @@ jobs:
       - name: Run tvOS Tests
         run: |
           xcodebuild test \
-            -workspace StreamingVideoApp.xcworkspace \
+            -workspace Tattva.xcworkspace \
             -scheme CI_tvOS \
             -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest' \
             CODE_SIGNING_ALLOWED=NO
@@ -367,7 +367,7 @@ xcodebuild test -scheme StreamingCore \
 2. Check test order dependencies:
 ```bash
 # Tests should pass in any order
-xcodebuild test -workspace StreamingVideoApp.xcworkspace -scheme CI_iOS \
+xcodebuild test -workspace Tattva.xcworkspace -scheme CI_iOS \
     -destination 'platform=iOS Simulator,name=iPhone 17' \
     -test-iterations 5
 ```
