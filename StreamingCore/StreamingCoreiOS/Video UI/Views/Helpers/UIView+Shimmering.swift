@@ -50,7 +50,7 @@ extension UIView {
 
 			add(makeShimmerAnimation(), forKey: "shimmer")
 
-			nonisolated(unsafe) weak var layer = self
+			nonisolated(unsafe) weak let layer = self
 			observer = NotificationCenter.default.addObserver(
 				forName: UIApplication.willEnterForegroundNotification,
 				object: nil,

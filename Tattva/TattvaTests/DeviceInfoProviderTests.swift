@@ -9,6 +9,7 @@ import XCTest
 import StreamingCore
 @testable import Tattva
 
+@MainActor
 final class DeviceInfoProviderTests: XCTestCase {
 
     func test_current_returnsDeviceInfoWithModel() {

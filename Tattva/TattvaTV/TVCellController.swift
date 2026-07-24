@@ -26,3 +26,5 @@ extension TVCellController: nonisolated Hashable {
 		hasher.combine(id)
 	}
 }
+
+extension TVCellController: @unchecked Sendable {}
