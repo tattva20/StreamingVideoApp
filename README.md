@@ -1,17 +1,21 @@
 # StreamingVideoApp
 
 <p align="center">
+  <img src="docs/images/brand/tattva-tv-hero.jpg" alt="TATTVA TV — Meaningful stories. Beautifully streamed." width="760">
+</p>
+
+<p align="center">
   <a href="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml">
     <img src="https://github.com/tattva20/StreamingVideoApp/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
-  <img src="https://img.shields.io/badge/Platform-iOS%2015%2B-blue.svg" alt="Platform: iOS 15+">
+  <img src="https://img.shields.io/badge/Platform-iOS%2026.1%2B%20%7C%20tvOS%2026.0%2B-blue.svg" alt="Platform: iOS 26.1+ | tvOS 26.0+">
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6">
-  <img src="https://img.shields.io/badge/Xcode-16-blue.svg" alt="Xcode 16">
+  <img src="https://img.shields.io/badge/Xcode-26.5-blue.svg" alt="Xcode 26.5">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
 </p>
 
 <p align="center">
-  A portfolio-grade iOS video streaming application built with <strong>Test-Driven Development (TDD)</strong>, <strong>SOLID principles</strong>, and <strong>Clean Architecture</strong>.
+  A portfolio-grade <strong>iOS and tvOS</strong> video streaming application built with <strong>Test-Driven Development (TDD)</strong>, <strong>SOLID principles</strong>, and <strong>Clean Architecture</strong>.
 </p>
 
 ---
@@ -37,6 +41,7 @@ Detailed documentation for each streaming feature:
 
 | Feature | Description |
 |---------|-------------|
+| [Apple TV (tvOS)](docs/features/APPLE-TV.md) | Native TATTVA TV app reusing the full core: focus feed, native player, comments |
 | [Video Feed](docs/features/VIDEO-FEED.md) | Paginated video list with infinite scroll and caching |
 | [Video Playback](docs/features/VIDEO-PLAYBACK.md) | Full-featured player with state machine and controls |
 | [Video Comments](docs/features/VIDEO-COMMENTS.md) | Threaded comments with relative timestamps |
@@ -84,7 +89,7 @@ Detailed documentation for infrastructure components and patterns:
 
 ## Overview
 
-StreamingVideoApp demonstrates professional iOS development practices with a modular, testable architecture.
+StreamingVideoApp demonstrates professional iOS and tvOS development practices with a modular, testable architecture. Both apps — the iOS app (`StreamingVideoApp`) and the Apple TV app (`StreamingVideoAppTV`, branded **TATTVA TV**) — sit on top of the same shared `StreamingCore` and `StreamingCorePlayback` frameworks.
 
 ### Key Highlights
 
@@ -124,6 +129,17 @@ StreamingVideoApp demonstrates professional iOS development practices with a mod
 - CoreData persistence for video metadata
 - Image caching for offline viewing
 - Cache-first loading strategy with remote fallback
+
+### Apple TV (tvOS) — TATTVA TV
+- Native 10-foot playback via `AVPlayerViewController`
+- Focus-engine video feed (`UICollectionView` + diffable data source) with load-more pagination
+- Comments beside the player, with loading / empty / error states
+- Reuses the entire `StreamingCore` + `StreamingCorePlayback` stack — tvOS adds only its UI
+- Purpose-built brand assets: layered App Icon + Top Shelf
+
+<p align="center">
+  <img src="docs/images/brand/top-shelf.jpg" alt="TATTVA TV Top Shelf art" width="720">
+</p>
 
 ---
 
@@ -178,7 +194,7 @@ tests
     StreamingCoreCacheIntegrationTests · StreamingVideoAppTests · StreamingVideoAppTVTests
 
 CI · .github/workflows/ci.yml
-└── build-ios · build-macos          (build-tvos planned)
+└── build-ios · build-macos · build-tvos
 ```
 
 ### Design Patterns
@@ -210,7 +226,7 @@ Test-Driven Development is not optional in this codebase:
 Clean Architecture keeps the codebase maintainable as it grows:
 
 - **Business logic survives UI changes** - Core doesn't know about UIKit
-- **Platform-agnostic core enables reuse** - Same core for iOS, macOS, watchOS
+- **Platform-agnostic core enables reuse** - Same core for iOS, tvOS, macOS
 - **Clear boundaries prevent coupling** - Dependencies flow inward only
 - **Easy to test in isolation** - No framework dependencies in tests
 
@@ -297,8 +313,8 @@ public protocol HTTPClient {
     func get(from url: URL) async throws -> (Data, HTTPURLResponse)
 }
 
-// StreamingVideoApp provides implementations (concretions)
-final class URLSessionHTTPClient: HTTPClient { ... }
+// StreamingCore provides the URLSession implementation (concretion)
+public final class URLSessionHTTPClient: HTTPClient { ... }
 
 // Business logic never knows about URLSession
 ```
@@ -309,9 +325,9 @@ final class URLSessionHTTPClient: HTTPClient { ... }
 
 ### Requirements
 
-- **Xcode 16.0+**
-- **iOS 15.0+**
-- **Swift 6 toolchain** (project builds in Swift 5 language mode)
+- **Xcode 26.5+**
+- **iOS 26.1+** · **tvOS 26.0+**
+- **Swift 6 toolchain** (Swift 6 language mode)
 
 ### Installation
 
@@ -327,7 +343,7 @@ final class URLSessionHTTPClient: HTTPClient { ... }
    ```
 
 3. **Select scheme and run**
-   - Choose `StreamingVideoApp` scheme
+   - Choose `StreamingVideoApp` (iOS) or `StreamingVideoAppTV` (Apple TV)
    - Select a simulator or device
    - Press `Cmd + R` to run
 
@@ -338,7 +354,7 @@ final class URLSessionHTTPClient: HTTPClient { ... }
 xcodebuild test \
   -workspace StreamingVideoApp.xcworkspace \
   -scheme StreamingVideoApp \
-  -destination 'platform=iOS Simulator,name=iPhone 15'
+  -destination 'platform=iOS Simulator,name=iPhone 17'
 
 # Run with ThreadSanitizer (CI mode)
 xcodebuild clean build test \
@@ -346,7 +362,7 @@ xcodebuild clean build test \
   -scheme "CI_iOS" \
   CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
   -sdk iphonesimulator \
-  -destination "platform=iOS Simulator,name=iPhone 15" \
+  -destination "platform=iOS Simulator,name=iPhone 17" \
   -enableThreadSanitizer YES
 ```
 
@@ -384,17 +400,18 @@ xcodebuild clean build test \
 
 ### GitHub Actions Workflow
 
-A single workflow (`.github/workflows/ci.yml`) runs two jobs on every push and PR to `main`:
+A single workflow (`.github/workflows/ci.yml`) runs three jobs on every push and PR to `main`:
 
 | Job | Trigger | Description |
 |----------|---------|-------------|
-| **build-ios** | Push/PR to main | Full test suite on the iOS Simulator (scheme `CI_iOS`) |
-| **build-macos** | Push/PR to main | Platform-agnostic Core tests, no simulator (scheme `CI_macOS`) |
+| **build-ios** | Push/PR to main | Full test suite on the iOS Simulator (scheme `CI_iOS`, iPhone 17 / iOS 26.5) |
+| **build-macos** | Push/PR to main | Platform-agnostic Core tests, no simulator, ThreadSanitizer on (scheme `CI_macOS`) |
+| **build-tvos** | Push/PR to main | Full test suite on the Apple TV Simulator (scheme `CI_tvOS`, Apple TV 4K 3rd gen) |
 
 ### CI Features
 
-- **ThreadSanitizer** - Detects data races and threading issues
-- **Two-platform jobs** - iOS Simulator and macOS run concurrently
+- **ThreadSanitizer** - Detects data races and threading issues (macOS job)
+- **Three-platform jobs** - iOS Simulator, macOS, and tvOS Simulator run concurrently
 - **Multiple Xcode Versions** - Fallback Xcode selection
 - **Test result bundles** - `.xcresult` uploaded as artifacts on failure
 
@@ -440,6 +457,7 @@ The app connects to a custom API deployed on Vercel, base URL `https://streaming
       "id": "550e8400-e29b-41d4-a716-446655440001",
       "title": "Big Buck Bunny",
       "description": "A large and lovable rabbit deals with three tiny bullies.",
+      "duration": 596,
       "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/330px-Big_buck_bunny_poster_big.jpg"
     }
@@ -541,7 +559,7 @@ If the feature involves composition, write tests in `StreamingVideoAppTests/`.
 
 ```bash
 xcodebuild test -scheme CI_iOS \
-  -destination 'platform=iOS Simulator,name=iPhone 15'
+  -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
 #### Step 7: Submit PR
