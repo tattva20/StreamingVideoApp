@@ -27,7 +27,8 @@ flowchart TB
 - **Toggle Support** - Tap-to-toggle visibility pattern
 - **Delegate Pattern** - Clean separation from UI animation logic
 - **State Tracking** - `areControlsVisible` property for external queries
-- **Testable** - No direct Timer dependency, delegate-based timing
+- **VoiceOver-Aware** - Auto-hide is suppressed while VoiceOver is running so controls stay visible for assistive-technology users
+- **Testable** - No direct Timer dependency, delegate-based timing, injectable VoiceOver check
 
 ---
 
@@ -52,10 +53,12 @@ public final class ControlsVisibilityController {
 
     private let hideDelay: TimeInterval
     private weak var delegate: ControlsVisibilityDelegate?
+    private let isVoiceOverRunning: () -> Bool
 
-    public init(hideDelay: TimeInterval, delegate: ControlsVisibilityDelegate) {
+    public init(hideDelay: TimeInterval, delegate: ControlsVisibilityDelegate, isVoiceOverRunning: @escaping () -> Bool = { false }) {
         self.hideDelay = hideDelay
         self.delegate = delegate
+        self.isVoiceOverRunning = isVoiceOverRunning
     }
 
     public func show() {
@@ -80,6 +83,7 @@ public final class ControlsVisibilityController {
 
     public func scheduleHide() {
         delegate?.cancelTimer()
+        guard !isVoiceOverRunning() else { return }
         delegate?.scheduleTimer(withDelay: hideDelay) { [weak self] in
             self?.hide()
         }
@@ -155,12 +159,14 @@ public func toggle() {
 ### scheduleHide()
 
 1. Cancels any existing timer
-2. Schedules new timer with configured delay
-3. Timer callback calls `hide()`
+2. Skips scheduling while VoiceOver is running (controls stay visible for assistive-technology users)
+3. Otherwise schedules new timer with configured delay
+4. Timer callback calls `hide()`
 
 ```swift
 public func scheduleHide() {
     delegate?.cancelTimer()
+    guard !isVoiceOverRunning() else { return }
     delegate?.scheduleTimer(withDelay: hideDelay) { [weak self] in
         self?.hide()
     }
@@ -405,6 +411,15 @@ func test_hide_cancelsTimer() {
 
     XCTAssertEqual(delegate.cancelTimerCallCount, 2) // Once from scheduleHide, once from hide
 }
+
+func test_scheduleHide_doesNotScheduleWhenVoiceOverIsRunning() {
+    let delegate = ControlsVisibilityDelegateSpy()
+    let sut = ControlsVisibilityController(hideDelay: 5.0, delegate: delegate, isVoiceOverRunning: { true })
+
+    sut.scheduleHide()
+
+    XCTAssertFalse(delegate.messages.contains(.didScheduleTimer(5.0)))
+}
 ```
 
 ---
@@ -425,6 +440,7 @@ func test_hide_cancelsTimer() {
 - No `Timer` dependency in controller
 - Delegate spy enables synchronous testing
 - Timer callback can be triggered manually in tests
+- `isVoiceOverRunning` is injected as a closure (default `{ false }`), so tests drive VoiceOver on/off without a device
 
 ### Flexibility
 

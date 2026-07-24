@@ -2,6 +2,8 @@
 
 The AVPlayer Integration feature provides clean abstractions over Apple's AVPlayer, bridging platform-specific events to domain-agnostic state machine actions and performance metrics.
 
+`AVPlayerStateAdapter` and `AVPlayerPerformanceObserver` live in the platform-agnostic `StreamingCorePlayback` framework and are shared by both the iOS app and the tvOS app (see [Apple TV](APPLE-TV.md)); they also compile for the macOS test/CI destination.
+
 ---
 
 ## Overview
@@ -279,6 +281,8 @@ public enum PerformanceEvent: Equatable, Sendable {
 | `AVPlayerItemFailedToPlayToEndTime` | Playback failure | `.didFail` |
 | `AVAudioSession.interruptionNotification` | Phone calls, etc. | `.audioSessionInterrupted` |
 
+> **Platform note:** `AVAudioSession` interruption handling is compiled out on macOS. `startObserving()` gates `setupNotificationObservers()` (and the `.audioSessionInterrupted` / `.audioSessionResumed` actions) behind `#if !os(macOS)`, so this row applies to iOS and tvOS only — not the macOS test/CI destination.
+
 ---
 
 ## Usage Example
@@ -440,7 +444,7 @@ func test_performanceEventPublisher_emitsLoadStarted() {
 ```mermaid
 flowchart TB
     P["Presentation Layer<br/><i>VideoPlayerViewController</i>"]
-    D["Domain Layer<br/><i>PlaybackStateMachine (pure, testable)<br/>PerformanceService (platform-agnostic)</i>"]
+    D["Domain Layer<br/><i>PlaybackStateMachine (pure, testable)<br/>PlaybackPerformanceService (platform-agnostic)</i>"]
     I["Infrastructure Layer (Adapters)<br/><i>AVPlayerStateAdapter (AVPlayer &rarr; PlaybackAction)<br/>AVPlayerPerformanceObserver (AVPlayer &rarr; PerformanceEvent)</i>"]
     PL["Platform Layer<br/><i>AVPlayer, AVPlayerItem, AVAudioSession</i>"]
     P --> D --> I --> PL

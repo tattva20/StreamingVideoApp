@@ -32,13 +32,11 @@ The Thumbnail Loading feature provides lazy image loading with caching for video
 
 ```swift
 public protocol VideoImageDataLoader {
-    func loadImageData(from url: URL) async throws -> Data
-}
-
-public extension VideoImageDataLoader {
-    typealias Publisher = AnyPublisher<Data, Error>
+    func loadImageData(from url: URL) throws -> Data
 }
 ```
+
+The Combine bridge (`typealias Publisher = AnyPublisher<Data, Error>`, `loadImageDataPublisher(from:)`, and the `caching(to:for:)` helper) lives in `StreamingCore/StreamingCore/Shared Combine/CombineHelpers.swift`, not in the protocol file.
 
 ### Cache Protocol
 
@@ -54,15 +52,16 @@ public protocol VideoImageDataCache {
 
 ## Remote Loading
 
-### RemoteVideoImageDataLoader
+Remote fetches are performed by the video service, not a dedicated loader class. `VideoService.loadLocalImageWithRemoteFallback(url:)` tries the local disk cache first and, on failure, fetches over HTTP, validates the response, and writes the result back to the cache:
+
+**File:** `StreamingCore/StreamingCorePlayback/VideoService.swift`
 
 ```swift
-public final class RemoteVideoImageDataLoader: VideoImageDataLoader {
-    private let client: HTTPClient
-
-    public func loadImageData(from url: URL) async throws -> Data {
-        let (data, response) = try await client.get(from: url)
-        return try VideoImageDataMapper.map(data, from: response)
+public func loadLocalImageWithRemoteFallback(url: URL) async throws -> Data {
+    do {
+        return try await loadLocalImage(url: url)
+    } catch {
+        return try await loadAndCacheRemoteImage(url: url)
     }
 }
 ```
@@ -134,36 +133,18 @@ public final class FileSystemVideoImageDataStore: VideoImageDataStore {
 
 ---
 
-## Cache Decorator
+## Caching on Success
 
-### VideoImageDataLoaderCacheDecorator
+There is no decorator or composite class. Local-with-remote-fallback is the `loadLocalImageWithRemoteFallback` flow shown above; caching-on-success is expressed either by the private `loadAndCacheRemoteImage` step in `VideoService` (which writes back through `LocalVideoImageDataLoader.save`) or, for Combine consumers, by the `caching(to:for:)` publisher helper:
 
-```swift
-public final class VideoImageDataLoaderCacheDecorator: VideoImageDataLoader {
-    private let decoratee: VideoImageDataLoader
-    private let cache: VideoImageDataCache
-
-    public func loadImageData(from url: URL) async throws -> Data {
-        let data = try await decoratee.loadImageData(from: url)
-        try? cache.save(data, for: url)  // Cache on success
-        return data
-    }
-}
-```
-
-### Fallback Composite
+**File:** `StreamingCore/StreamingCore/Shared Combine/CombineHelpers.swift`
 
 ```swift
-public final class VideoImageDataLoaderWithFallbackComposite: VideoImageDataLoader {
-    private let primary: VideoImageDataLoader
-    private let fallback: VideoImageDataLoader
-
-    public func loadImageData(from url: URL) async throws -> Data {
-        do {
-            return try await primary.loadImageData(from: url)
-        } catch {
-            return try await fallback.loadImageData(from: url)
-        }
+public extension Publisher where Output == Data {
+    func caching(to cache: VideoImageDataCache, for url: URL) -> AnyPublisher<Output, Failure> {
+        handleEvents(receiveOutput: { data in
+            try? cache.save(data, for: url)
+        }).eraseToAnyPublisher()
     }
 }
 ```
@@ -202,55 +183,56 @@ flowchart TB
 
 ### VideoCellController
 
+The controller is delegate-driven, not Combine-driven. It holds a `VideoCellControllerDelegate` and asks it to load or cancel; the delegate (an `ImageDataPresentationAdapter`) drives the actual async request and reports back through the `ResourceView` / `ResourceLoadingView` / `ResourceErrorView` conformances. Shimmer is toggled via `videoImageContainer.isShimmering`, and the loaded image is set on `videoImageView`:
+
+**File:** `StreamingCoreiOS/Video UI/Controllers/VideoCellController.swift`
+
 ```swift
+public protocol VideoCellControllerDelegate {
+    func didRequestImage()
+    func didCancelImageRequest()
+}
+
 public final class VideoCellController: NSObject {
-    private let imageLoader: (URL) -> VideoImageDataLoader.Publisher
-    private var cancellable: AnyCancellable?
+    private let viewModel: VideoViewModel
+    private let delegate: VideoCellControllerDelegate
+    private let selection: () -> Void
     private var cell: VideoCell?
+}
 
-    func preload() {
-        loadImage()
+extension VideoCellController: ResourceView, ResourceLoadingView, ResourceErrorView {
+    public func display(_ viewModel: UIImage) {
+        cell?.videoImageView.setImageAnimated(viewModel)
     }
 
-    func cancelLoad() {
-        cancellable?.cancel()
-        cancellable = nil
+    public func display(_ viewModel: ResourceLoadingViewModel) {
+        cell?.videoImageContainer.isShimmering = viewModel.isLoading
     }
 
-    private func loadImage() {
-        cell?.thumbnailImageView.startShimmering()
-
-        cancellable = imageLoader(viewModel.thumbnailURL)
-            .dispatchOnMainThread()
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    if case .failure = completion {
-                        self?.cell?.thumbnailImageView.stopShimmering()
-                    }
-                },
-                receiveValue: { [weak self] data in
-                    self?.cell?.thumbnailImageView.stopShimmering()
-                    self?.cell?.thumbnailImageView.setImageAnimated(UIImage(data: data))
-                }
-            )
+    public func display(_ viewModel: ResourceErrorViewModel) {
+        cell?.videoImageRetryButton.isHidden = viewModel.message == nil
     }
 }
 ```
 
 ### UITableViewDataSourcePrefetching
 
-```swift
-extension ListViewController: UITableViewDataSourcePrefetching {
-    public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        indexPaths.forEach { indexPath in
-            cellController(at: indexPath)?.preload()
-        }
-    }
+`ListViewController` is itself the prefetching conformer. It forwards each index path to the cell controller's `dataSourcePrefetching` (the `VideoCellController` conforms to `UITableViewDataSourcePrefetching`), which requests or cancels the image via the delegate:
 
-    public func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
-        indexPaths.forEach { indexPath in
-            cellController(at: indexPath)?.cancelLoad()
-        }
+**File:** `StreamingCoreiOS/Shared UI/Controllers/ListViewController.swift`
+
+```swift
+public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+    indexPaths.forEach { indexPath in
+        let dsp = cellController(at: indexPath)?.dataSourcePrefetching
+        dsp?.tableView(tableView, prefetchRowsAt: [indexPath])
+    }
+}
+
+public func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
+    indexPaths.forEach { indexPath in
+        let dsp = cellController(at: indexPath)?.dataSourcePrefetching
+        dsp?.tableView?(tableView, cancelPrefetchingForRowsAt: [indexPath])
     }
 }
 ```
@@ -315,23 +297,15 @@ extension UIImageView {
 
 ## Composition
 
-```swift
-// In SceneDelegate
-func makeImageLoader() -> (URL) -> VideoImageDataLoader.Publisher {
-    return { [httpClient, localImageLoader, imageCache] url in
-        let remoteLoader = RemoteVideoImageDataLoader(client: httpClient)
-        let cachedRemoteLoader = VideoImageDataLoaderCacheDecorator(
-            decoratee: remoteLoader,
-            cache: imageCache
-        )
-        let loaderWithFallback = VideoImageDataLoaderWithFallbackComposite(
-            primary: cachedRemoteLoader,
-            fallback: localImageLoader
-        )
+The image loader is an `(URL) async throws -> Data` closure, wired in `SceneDelegate` straight from the video service and threaded through `VideosUIComposer` -> `VideosViewAdapter` (which builds an `ImageDataPresentationAdapter` per cell):
 
-        return loaderWithFallback.loadPublisher(from: url)
-    }
-}
+**File:** `StreamingVideoApp/StreamingVideoApp/SceneDelegate.swift`
+
+```swift
+VideosUIComposer.videosComposedWith(
+    videoLoader: videoService.loadRemoteVideosWithLocalFallback,
+    imageLoader: videoService.loadLocalImageWithRemoteFallback,
+    selection: showVideoPlayer)
 ```
 
 ---
@@ -367,8 +341,19 @@ func test_load_deliversCachedDataOnCacheHit() async throws {
 
 ---
 
+## tvOS Thumbnail Loading
+
+The tvOS app has its own thumbnail path on a `UICollectionView` feed. `TVVideoCellController` holds the same `(@Sendable (URL) async throws -> Data)?` image-loader closure and loads posters into `TVVideoPosterCell.posterImageView` using async/await, cancelling in-flight work via `imageTask?.cancel()` and `Task.isCancelled`. There is no shimmer; the poster uses focus-driven scale and border styling instead.
+
+**Files:** `StreamingVideoApp/StreamingVideoAppTV/TVVideoCellController.swift`, `TVVideoPosterCell.swift`
+
+See [Apple TV](APPLE-TV.md) for the full tvOS surface.
+
+---
+
 ## Related Documentation
 
 - [Video Feed](VIDEO-FEED.md) - Feed integration
 - [Offline Support](OFFLINE-SUPPORT.md) - Cache strategies
+- [Apple TV](APPLE-TV.md) - tvOS feed and poster surface
 - [Design Patterns](../DESIGN-PATTERNS.md) - Decorator pattern

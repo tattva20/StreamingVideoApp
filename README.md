@@ -84,6 +84,7 @@ Detailed documentation for infrastructure components and patterns:
 | [Controls Visibility](docs/CONTROLS-VISIBILITY.md) | Auto-hide controls with timer management |
 | [Bandwidth Estimation](docs/BANDWIDTH-ESTIMATION.md) | Network measurement, quality monitoring, bitrate recommendations |
 | [Testing Infrastructure](docs/TESTING-INFRASTRUCTURE.md) | Spy patterns, memory leak tracking, spec assertions |
+| [Branding](docs/BRANDING.md) | TATTVA TV brand assets — layered tvOS App Icon + Top Shelf pipeline |
 
 ---
 

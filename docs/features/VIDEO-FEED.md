@@ -33,10 +33,24 @@ The Video Feed feature provides a paginated, cacheable list of videos with pull-
 public struct Video: Hashable, Sendable {
     public let id: UUID
     public let title: String
-    public let description: String
+    public let description: String?
     public let url: URL
     public let thumbnailURL: URL
     public let duration: TimeInterval
+
+    public init(id: UUID,
+                title: String,
+                description: String? = nil,
+                url: URL,
+                thumbnailURL: URL,
+                duration: TimeInterval) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.url = url
+        self.thumbnailURL = thumbnailURL
+        self.duration = duration
+    }
 }
 ```
 
@@ -51,11 +65,14 @@ public enum VideoEndpoint {
     public func url(baseURL: URL) -> URL {
         switch self {
         case let .get(video):
-            var components = URLComponents(url: baseURL.appendingPathComponent("/v1/videos"), resolvingAgainstBaseURL: false)!
-            components.queryItems = [URLQueryItem(name: "limit", value: "10")]
-            if let video {
-                components.queryItems?.append(URLQueryItem(name: "after_id", value: video.id.uuidString))
-            }
+            var components = URLComponents()
+            components.scheme = baseURL.scheme
+            components.host = baseURL.host
+            components.path = baseURL.path + "/v1/videos"
+            components.queryItems = [
+                URLQueryItem(name: "limit", value: "10"),
+                video.map { URLQueryItem(name: "after_id", value: $0.id.uuidString) },
+            ].compactMap { $0 }
             return components.url!
         }
     }
@@ -142,7 +159,7 @@ flowchart TB
 
 ### List View Controller
 
-**File:** `StreamingCoreiOS/Shared UI/Controllers/ListViewController.swift`
+**File:** `StreamingCore/StreamingCoreiOS/Shared UI/Controllers/ListViewController.swift`
 
 Generic list controller handling:
 - Table view setup
@@ -152,7 +169,7 @@ Generic list controller handling:
 
 ### Video Cell
 
-**File:** `StreamingCoreiOS/Video UI/Views/VideoCell.swift`
+**File:** `StreamingCore/StreamingCoreiOS/Video UI/Views/VideoCell.swift`
 
 Displays:
 - Thumbnail image (lazy loaded)
@@ -162,7 +179,7 @@ Displays:
 
 ### Video Cell Controller
 
-**File:** `StreamingCoreiOS/Video UI/Controllers/VideoCellController.swift`
+**File:** `StreamingCore/StreamingCoreiOS/Video UI/Controllers/VideoCellController.swift`
 
 ```swift
 public final class VideoCellController: NSObject {
@@ -182,9 +199,26 @@ public final class VideoCellController: NSObject {
 
 ### Load More Cell
 
-**File:** `StreamingCoreiOS/Video UI/Views/LoadMoreCell.swift`
+**File:** `StreamingCore/StreamingCoreiOS/Video UI/Views/LoadMoreCell.swift`
 
 Triggers pagination when visible.
+
+---
+
+## tvOS Feed Surface
+
+The video feed also ships on tvOS via the `StreamingVideoAppTV` target, reusing the same `StreamingCore` `VideoLoader` and `Paginated<Video>` pipeline behind a focus-based UICollectionView.
+
+**Files:** `StreamingVideoApp/StreamingVideoAppTV/`
+
+- `TVVideoFeedViewController.swift` - Collection view with `onRefresh` / `onLoadMore` pagination
+- `TVVideoPosterCell.swift` - Poster cell for the tvOS grid
+- `TVVideoCellController.swift` - Cell controller binding `VideoViewModel`
+- `TVVideosUIComposer.swift` - Composes the feed with a paginated loader
+
+Load-more pagination is covered by `TVVideoFeedPaginationTests` and `TVVideoFeedLoaderIntegrationTests`.
+
+See [Apple TV](APPLE-TV.md) for the full tvOS surface.
 
 ---
 
@@ -241,18 +275,21 @@ public final class VideoLoaderWithFallbackComposite: VideoLoader {
 
 ## Composition
 
-**File:** `StreamingVideoApp/VideosUIComposer.swift`
+**File:** `StreamingVideoApp/StreamingVideoApp/VideosUIComposer.swift`
 
 ```swift
-public enum VideosUIComposer {
+@MainActor
+public final class VideosUIComposer {
+    private init() {}
+
     public static func videosComposedWith(
         videoLoader: @MainActor @escaping () async throws -> Paginated<Video>,
         imageLoader: @MainActor @escaping (URL) async throws -> Data,
-        selection: @escaping (Video) -> Void
+        selection: @MainActor @escaping (Video) -> Void = { _ in }
     ) -> ListViewController {
-        let controller = ListViewController()
-
         let presentationAdapter = AsyncLoadResourcePresentationAdapter(loader: videoLoader)
+
+        let controller = makeVideosViewController()
         controller.onRefresh = presentationAdapter.loadResource
 
         presentationAdapter.presenter = LoadResourcePresenter(
@@ -265,6 +302,14 @@ public enum VideosUIComposer {
             errorView: WeakRefVirtualProxy(controller)
         )
 
+        return controller
+    }
+
+    private static func makeVideosViewController() -> ListViewController {
+        let bundle = Bundle(for: ListViewController.self)
+        let storyboard = UIStoryboard(name: "Videos", bundle: bundle)
+        let controller = storyboard.instantiateInitialViewController() as! ListViewController
+        controller.title = VideosPresenter.title
         return controller
     }
 }
@@ -281,7 +326,7 @@ public enum VideosUIComposer {
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "title": "Big Buck Bunny",
       "description": "A large rabbit deals with three bullying rodents.",
-      "video_url": "https://example.com/video.mp4",
+      "url": "https://example.com/video.mp4",
       "thumbnail_url": "https://example.com/thumbnail.jpg",
       "duration": 596
     }

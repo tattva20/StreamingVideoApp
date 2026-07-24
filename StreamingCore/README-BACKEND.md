@@ -9,17 +9,35 @@ The app uses:
 - **LocalVideoLoader**: Caches videos in CoreData
 - **VideoService**: Coordinates remote-with-local-fallback loading (`loadRemoteVideosWithLocalFallback()`) and saves successful remote loads to the cache
 
+### Production Backend
+
+The shipped app targets a hosted API on Vercel. The base URL is defined in
+`StreamingCorePlayback/VideoService.swift` (a single `VideoService` instance serves
+both the iOS and tvOS app targets — it is not set in `SceneDelegate.swift`):
+
+- **Base URL**: `https://streaming-videos-api.vercel.app`
+- **Videos** (paginated): `/v1/videos?limit=10&after_id=<uuid>`
+- **Comments**: `/v1/videos/{id}/comments`
+- Video and image URLs are returned inline in the API response.
+
+The static `videos.json` format described below is used only by the local
+`serve-videos.py` development server. To point the app at a local server or a
+different host, change `baseURL` in `VideoService.swift`.
+
 ## Option 1: Local Development Server (Fastest)
 
 1. Start the local server:
 ```bash
-cd /Users/octaviorojas/Development/StreamingVideoApp/StreamingCore
+cd /Users/octaviorojas/Development/active/StreamingVideoApp/StreamingCore
 python3 serve-videos.py
 ```
 
 2. The server will serve `videos.json` at `http://localhost:8000/videos.json`
 
-3. Run the app - it's already configured to use localhost!
+3. Point the app at the local server by changing `baseURL` in
+   `StreamingCorePlayback/VideoService.swift` (it defaults to the Vercel URL), then run
+   the app. Note: `serve-videos.py` serves a single flat `videos.json`, whereas the app
+   requests the paginated `/v1/videos` endpoint, so match the path when using local dev.
 
 ## Option 2: GitHub Pages (Production-Ready)
 
@@ -34,7 +52,7 @@ python3 serve-videos.py
 
 ```bash
 cd /path/to/your/repo
-cp /Users/octaviorojas/Development/StreamingVideoApp/StreamingCore/videos.json .
+cp /Users/octaviorojas/Development/active/StreamingVideoApp/StreamingCore/videos.json .
 git add videos.json
 git commit -m "Add videos API endpoint"
 git push origin main
@@ -47,14 +65,17 @@ git push origin main
 3. Branch: main / (root)
 4. Save
 
-### Step 4: Update SceneDelegate.swift
+### Step 4: Update the base URL
 
-Replace the localhost URL with:
+The base URL is defined in `StreamingCorePlayback/VideoService.swift`, not in
+`SceneDelegate.swift`. Change it to your host:
 ```swift
-let apiURL = URL(string: "https://YOUR_GITHUB_USERNAME.github.io/streaming-videos-api/videos.json")!
+private lazy var baseURL = URL(string: "https://YOUR_GITHUB_USERNAME.github.io/streaming-videos-api")!
 ```
 
-Your JSON will be available at: `https://YOUR_GITHUB_USERNAME.github.io/streaming-videos-api/videos.json`
+Note: static GitHub Pages hosting serves a flat JSON file, while the app requests the
+paginated `/v1/videos` endpoint. The shipped app instead uses the Vercel API at
+`https://streaming-videos-api.vercel.app` (see Current Architecture above).
 
 ## Option 3: Vercel/Netlify (Alternative)
 
@@ -62,7 +83,7 @@ You can also host the JSON on Vercel or Netlify for free:
 
 ### Vercel:
 ```bash
-cd /Users/octaviorojas/Development/StreamingVideoApp/StreamingCore
+cd /Users/octaviorojas/Development/active/StreamingVideoApp/StreamingCore
 vercel --prod
 ```
 
@@ -140,8 +161,9 @@ To add more videos to the JSON:
 ## Troubleshooting
 
 ### App Transport Security (ATS)
-If using HTTP (localhost), ATS is already configured in Info.plist.
-For production, always use HTTPS.
+`Info.plist` does not define an `NSAppTransportSecurity` key, so default ATS applies and
+the shipped app uses the HTTPS Vercel endpoint. To reach an HTTP `localhost` server for
+local dev, add an ATS exception in `Info.plist`. For production, always use HTTPS.
 
 ### Cache Issues
 Clear cache by deleting the app and reinstalling.

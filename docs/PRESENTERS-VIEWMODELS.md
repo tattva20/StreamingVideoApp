@@ -62,11 +62,13 @@ flowchart TB
 Generic presenter for loading any resource with consistent loading/error states.
 
 ```swift
+@MainActor
 public protocol ResourceView {
     associatedtype ResourceViewModel
     func display(_ viewModel: ResourceViewModel)
 }
 
+@MainActor
 public final class LoadResourcePresenter<Resource, View: ResourceView> {
     public typealias Mapper = (Resource) throws -> View.ResourceViewModel
 
@@ -288,6 +290,65 @@ public struct VideoViewModel {
 
 ---
 
+## Comments Presentation
+
+### VideoCommentsPresenter
+
+**File:** `StreamingCore/StreamingCore/Video Comments Presentation/VideoCommentsPresenter.swift`
+
+Provides the localized comments title and maps `VideoComment` domain models to display view models, converting `createdAt` into a relative date string via `RelativeDateTimeFormatter`. Consumed by both iOS (`VideoCommentsUIComposer`) and tvOS (`TVCommentsUIComposer`).
+
+```swift
+public struct VideoCommentsViewModel: Sendable {
+    public let comments: [VideoCommentViewModel]
+}
+
+public struct VideoCommentViewModel: Hashable, Sendable {
+    public let message: String
+    public let date: String
+    public let username: String
+
+    public init(message: String, date: String, username: String) {
+        self.message = message
+        self.date = date
+        self.username = username
+    }
+}
+
+public final class VideoCommentsPresenter {
+    public static var title: String {
+        NSLocalizedString(
+            "VIDEO_COMMENTS_VIEW_TITLE",
+            tableName: "VideoComments",
+            bundle: Bundle(for: VideoCommentsPresenter.self),
+            comment: "Title for the video comments view")
+    }
+
+    public static func map(
+        _ comments: [VideoComment],
+        currentDate: Date = Date(),
+        calendar: Calendar = .current,
+        locale: Locale = .current
+    ) -> VideoCommentsViewModel {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.calendar = calendar
+        formatter.locale = locale
+
+        return VideoCommentsViewModel(
+            comments: comments.map { comment in
+                VideoCommentViewModel(
+                    message: comment.message,
+                    date: formatter.localizedString(for: comment.createdAt, relativeTo: currentDate),
+                    username: comment.username)
+            })
+    }
+}
+```
+
+The injectable `currentDate`, `calendar`, and `locale` parameters keep the relative-date formatting deterministic and unit-testable. See [Apple TV](features/APPLE-TV.md) for the tvOS comments surface.
+
+---
+
 ## Data Flow
 
 ```mermaid
@@ -501,17 +562,21 @@ Presenter                          ViewModel                     View
 ```mermaid
 flowchart TB
     subgraph Core["StreamingCore (Platform-Agnostic)"]
-        P["VideoPlayerPresenter &rarr; used in iOS, macOS, tvOS<br/>VideoPlayerViewModel &rarr; same data structure anywhere"]
+        P["VideoPlayerPresenter &rarr; used in iOS, tvOS<br/>VideoPlayerViewModel &rarr; same data structure anywhere"]
     end
     P --> iOS["iOS View<br/><i>(UIKit)</i>"]
-    P --> macOS["macOS View<br/><i>(AppKit)</i>"]
     P --> tvOS["tvOS View<br/><i>(UIKit)</i>"]
+    P -.-> macOS["macOS<br/><i>(test/CI destination only)</i>"]
 
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef app fill:#e8f0fe,stroke:#4285f4,color:#202124;
+    classDef test fill:#f1f3f4,stroke:#9aa0a6,color:#202124;
     class P core;
-    class iOS,macOS,tvOS app;
+    class iOS,tvOS app;
+    class macOS test;
 ```
+
+The two shipping UI surfaces are **iOS** (`StreamingVideoApp`) and **tvOS** (`StreamingVideoAppTV`), both UIKit. There is no macOS AppKit app; macOS appears only as a unit-test/CI destination (`CI_macOS` scheme) that exercises `StreamingCore` logic under ThreadSanitizer.
 
 ---
 

@@ -10,7 +10,9 @@ StreamingVideoApp uses Apple's **Combine framework** for **observation and state
 - Playback state and transition streams
 - Buffer, memory, and performance monitoring
 - Resource cleanup events
-- CoreData store scheduling (`AnyScheduler`)
+- Main-thread dispatch and image-data caching helpers (`CombineHelpers.swift`)
+
+These streams live in the platform-agnostic cores (`StreamingCore` and `StreamingCorePlayback`) and are shared by both the iOS (`StreamingVideoApp`) and tvOS (`StreamingVideoAppTV`) apps. The AVPlayer-facing Combine plumbing — `StatefulVideoPlayer.statePublisher`, `AVPlayerStateAdapter`, `AVPlayerPerformanceObserver`, `AVPlayerBufferAdapter` — lives in `StreamingCorePlayback`.
 
 ---
 
@@ -20,7 +22,6 @@ StreamingVideoApp uses Apple's **Combine framework** for **observation and state
 |-----------|---------|---------|
 | `CurrentValueSubject` | State storage with current value access | `PlaybackState` |
 | `PassthroughSubject` | Event streams without state | `PlaybackTransition` |
-| `AnyScheduler` | Type-erased scheduler for CoreData work | Cache scheduling |
 | `AnyPublisher` | Type-erased publisher for observation | `statePublisher` |
 
 ---
@@ -79,18 +80,33 @@ public final class DefaultPlaybackStateMachine {
 
 ---
 
-## 3. Scheduling with AnyScheduler
+## 3. Combine Helpers
 
 **File:** `StreamingCore/StreamingCore/Shared Combine/CombineHelpers.swift`
 
-CoreData work is dispatched through a type-erased `AnyScheduler`, keeping store access on the store's own queue:
+Two reusable helpers back the Combine surfaces. `dispatchOnMainThread()` delivers downstream on the main thread, running synchronously when already on it (used by `PerformanceMonitor`):
 
 ```swift
-public typealias AnyDispatchQueueScheduler = AnyScheduler<DispatchQueue.SchedulerTimeType, DispatchQueue.SchedulerOptions>
+public extension Publisher {
+    func dispatchOnMainThread() -> AnyPublisher<Output, Failure> {
+        receive(on: DispatchQueue.immediateWhenOnMainThreadScheduler).eraseToAnyPublisher()
+    }
+}
+```
 
-public extension AnyDispatchQueueScheduler {
-    static func scheduler(for store: CoreDataVideoStore) -> AnyDispatchQueueScheduler {
-        CoreDataVideoStoreScheduler(store: store).eraseToAnyScheduler()
+`loadImageDataPublisher(from:)` bridges the synchronous `VideoImageDataLoader` into a publisher:
+
+```swift
+public extension VideoImageDataLoader {
+    typealias Publisher = AnyPublisher<Data, Error>
+
+    func loadImageDataPublisher(from url: URL) -> Publisher {
+        Deferred {
+            Future { completion in
+                completion(Result { try self.loadImageData(from: url) })
+            }
+        }
+        .eraseToAnyPublisher()
     }
 }
 ```
@@ -118,9 +134,9 @@ public extension Publisher where Output == Data {
 The feed and comments loaders are **not** Combine. They compose with async/await — remote fetch, cache write, and local fallback expressed directly:
 
 ```swift
-func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
+public func loadRemoteVideosWithLocalFallback() async throws -> Paginated<Video> {
     do {
-        let items = try await makeRemoteVideoLoader()
+        let items = try await loadRemoteVideos()
         try? localVideoLoader.save(items)
         return makeFirstPage(items: items)
     } catch {
@@ -129,27 +145,26 @@ func makeRemoteVideoLoaderWithLocalFallback() async throws -> Paginated<Video> {
 }
 ```
 
+Defined in `StreamingCore/StreamingCorePlayback/VideoService.swift`.
+
 ---
 
-## 6. State Machine Subscriptions
+## 6. State Publisher Subscriptions
+
+`ResourceCleanupCoordinator` (`StreamingCore/Resource Cleanup Feature/ResourceCleanupCoordinator.swift`) subscribes to a memory `statePublisher` to drive cleanup under pressure:
 
 ```swift
-@MainActor
-final class VideoPlayerViewController: UIViewController {
-    private var cancellables = Set<AnyCancellable>()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        stateMachine.statePublisher
-            .removeDuplicates()
-            .sink { [weak self] state in
-                self?.updateUI(for: state)
-            }
-            .store(in: &cancellables)
+monitoringCancellable = memoryMonitor.statePublisher
+    .receive(on: RunLoop.main)
+    .sink { [weak self] state in
+        guard let self = self else { return }
+        let thresholds = MemoryThresholds.default
+        let pressureLevel = state.pressureLevel(thresholds: thresholds)
+        // dispatch cleanup for pressureLevel...
     }
-}
 ```
+
+`StatefulVideoPlayer` (`StreamingCorePlayback/StatefulVideoPlayer.swift`) instead re-publishes `stateMachine.statePublisher` so UI can observe playback state without touching the state machine directly.
 
 ---
 

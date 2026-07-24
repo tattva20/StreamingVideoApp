@@ -37,12 +37,16 @@ flowchart LR
 
 ```swift
 @MainActor
-public protocol BufferManager: AnyObject {
-    var configuration: BufferConfiguration { get }
+public protocol BufferSizeProvider: AnyObject {
+    var currentConfiguration: BufferConfiguration { get }
+}
+
+@MainActor
+public protocol BufferManager: BufferSizeProvider {
     var configurationPublisher: AnyPublisher<BufferConfiguration, Never> { get }
 
-    func updateForMemoryState(_ state: MemoryState)
-    func updateForNetworkQuality(_ quality: NetworkQuality)
+    func updateMemoryState(_ state: MemoryState)
+    func updateNetworkQuality(_ quality: NetworkQuality)
 }
 ```
 
@@ -52,32 +56,32 @@ public protocol BufferManager: AnyObject {
 
 ```swift
 public struct BufferConfiguration: Equatable, Sendable {
+    public let strategy: BufferStrategy
     public let preferredForwardBufferDuration: TimeInterval
-    public let minimumForwardBufferDuration: TimeInterval
-    public let maximumBufferSize: UInt64
+    public let reason: String
 
     public static let minimal = BufferConfiguration(
-        preferredForwardBufferDuration: 5,
-        minimumForwardBufferDuration: 2,
-        maximumBufferSize: 10_000_000  // 10 MB
+        strategy: .minimal,
+        preferredForwardBufferDuration: 2.0,
+        reason: "Memory critical - minimal buffering"
     )
 
     public static let conservative = BufferConfiguration(
-        preferredForwardBufferDuration: 15,
-        minimumForwardBufferDuration: 5,
-        maximumBufferSize: 30_000_000  // 30 MB
+        strategy: .conservative,
+        preferredForwardBufferDuration: 5.0,
+        reason: "Limited resources - conservative buffering"
     )
 
     public static let balanced = BufferConfiguration(
-        preferredForwardBufferDuration: 30,
-        minimumForwardBufferDuration: 10,
-        maximumBufferSize: 50_000_000  // 50 MB
+        strategy: .balanced,
+        preferredForwardBufferDuration: 10.0,
+        reason: "Normal conditions - balanced buffering"
     )
 
     public static let aggressive = BufferConfiguration(
-        preferredForwardBufferDuration: 60,
-        minimumForwardBufferDuration: 20,
-        maximumBufferSize: 100_000_000  // 100 MB
+        strategy: .aggressive,
+        preferredForwardBufferDuration: 30.0,
+        reason: "Optimal conditions - aggressive buffering"
     )
 }
 ```
@@ -87,18 +91,22 @@ public struct BufferConfiguration: Equatable, Sendable {
 **File:** `StreamingCore/StreamingCore/Buffer Management Feature/Domain/BufferStrategy.swift`
 
 ```swift
-public enum BufferStrategy: String, Sendable {
-    case minimal      // Critical memory or offline
-    case conservative // Poor network or warning memory
-    case balanced     // Normal conditions
-    case aggressive   // Good network and plenty of memory
+public enum BufferStrategy: Int, Sendable, CaseIterable, Comparable {
+    case minimal = 0      // Critical memory or offline
+    case conservative = 1 // Poor network or warning memory
+    case balanced = 2     // Normal conditions
+    case aggressive = 3   // Good network and plenty of memory
 
-    public var configuration: BufferConfiguration {
+    public static func < (lhs: BufferStrategy, rhs: BufferStrategy) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+
+    public var description: String {
         switch self {
-        case .minimal: return .minimal
-        case .conservative: return .conservative
-        case .balanced: return .balanced
-        case .aggressive: return .aggressive
+        case .minimal: return "Minimal (memory critical)"
+        case .conservative: return "Conservative (low resources)"
+        case .balanced: return "Balanced (normal)"
+        case .aggressive: return "Aggressive (optimal conditions)"
         }
     }
 }
@@ -113,56 +121,68 @@ public enum BufferStrategy: String, Sendable {
 ```swift
 @MainActor
 public final class AdaptiveBufferManager: BufferManager {
-    private let configurationSubject: CurrentValueSubject<BufferConfiguration, Never>
-    private var memoryState: MemoryState = .normal
+    private var memoryPressure: MemoryPressureLevel = .normal
     private var networkQuality: NetworkQuality = .good
+    private var _currentConfiguration: BufferConfiguration = .balanced
+    private let thresholds: MemoryThresholds
 
-    public var configuration: BufferConfiguration {
-        configurationSubject.value
-    }
+    private let configurationSubject = CurrentValueSubject<BufferConfiguration, Never>(.balanced)
 
     public var configurationPublisher: AnyPublisher<BufferConfiguration, Never> {
-        configurationSubject.eraseToAnyPublisher()
+        configurationSubject
+            .removeDuplicates()
+            .eraseToAnyPublisher()
     }
 
-    public init(initialConfiguration: BufferConfiguration = .balanced) {
-        self.configurationSubject = CurrentValueSubject(initialConfiguration)
+    public var currentConfiguration: BufferConfiguration {
+        _currentConfiguration
     }
 
-    public func updateForMemoryState(_ state: MemoryState) {
-        memoryState = state
-        recalculateConfiguration()
+    public init(thresholds: MemoryThresholds = .default) {
+        self.thresholds = thresholds
     }
 
-    public func updateForNetworkQuality(_ quality: NetworkQuality) {
+    public func updateMemoryState(_ state: MemoryState) {
+        memoryPressure = state.pressureLevel(thresholds: thresholds)
+        recalculateStrategy()
+    }
+
+    public func updateNetworkQuality(_ quality: NetworkQuality) {
         networkQuality = quality
-        recalculateConfiguration()
+        recalculateStrategy()
     }
 
-    private func recalculateConfiguration() {
-        let strategy = determineStrategy()
-        configurationSubject.send(strategy.configuration)
+    private func recalculateStrategy() {
+        let newConfig = calculateConfiguration(memory: memoryPressure, network: networkQuality)
+
+        if newConfig != _currentConfiguration {
+            _currentConfiguration = newConfig
+            configurationSubject.send(newConfig)
+        }
     }
 
-    private func determineStrategy() -> BufferStrategy {
-        // Memory pressure takes precedence
-        switch memoryState.pressure {
+    private func calculateConfiguration(memory: MemoryPressureLevel, network: NetworkQuality) -> BufferConfiguration {
+        // Priority: Memory pressure takes precedence over network quality
+        switch memory {
         case .critical:
             return .minimal
         case .warning:
+            // Even with good network, stay conservative when memory is tight
             return .conservative
         case .normal:
-            break
-        }
-
-        // Then consider network
-        switch networkQuality {
-        case .offline, .poor:
-            return .conservative
-        case .fair:
-            return .balanced
-        case .good, .excellent:
-            return .aggressive
+            // Normal memory - base on network quality
+            switch network {
+            case .offline, .poor:
+                return BufferConfiguration(
+                    strategy: .conservative,
+                    preferredForwardBufferDuration: 5.0,
+                    reason: "Poor network - conservative buffering to reduce rebuffering"
+                )
+            case .fair:
+                return .balanced
+            case .good, .excellent:
+                return .aggressive
+            }
         }
     }
 }
@@ -191,7 +211,7 @@ public final class AdaptiveBufferManager: BufferManager {
 ```swift
 @MainActor
 public final class AVPlayerBufferAdapter<Player: BufferConfigurablePlayer> {
-    private let player: Player
+    public let player: Player
     private var cancellables = Set<AnyCancellable>()
 
     public init(player: Player, bufferManager: any BufferManager, observeChanges: Bool = true) {
@@ -234,24 +254,22 @@ func setupBufferManagement(
     // Subscribe to memory changes
     memoryMonitor.statePublisher
         .sink { [weak bufferManager] state in
-            bufferManager?.updateForMemoryState(state)
+            bufferManager?.updateMemoryState(state)
         }
         .store(in: &cancellables)
 
     // Subscribe to network changes
     networkMonitor.qualityPublisher
         .sink { [weak bufferManager] quality in
-            bufferManager?.updateForNetworkQuality(quality)
+            bufferManager?.updateNetworkQuality(quality)
         }
         .store(in: &cancellables)
 
     // Apply to player
-    if let playerItem = player.currentItem {
-        let adapter = AVPlayerBufferAdapter(
-            playerItem: playerItem,
-            bufferManager: bufferManager
-        )
-    }
+    let adapter = AVPlayerBufferAdapter(
+        player: player,
+        bufferManager: bufferManager
+    )
 }
 ```
 
@@ -262,9 +280,9 @@ func setupBufferManagement(
 ### Minimal (Memory Critical)
 
 ```swift
-preferredForwardBufferDuration: 5 seconds
-minimumForwardBufferDuration: 2 seconds
-maximumBufferSize: 10 MB
+strategy: .minimal
+preferredForwardBufferDuration: 2 seconds
+reason: "Memory critical - minimal buffering"
 ```
 
 Use when:
@@ -274,21 +292,26 @@ Use when:
 ### Conservative (Poor Network/Warning Memory)
 
 ```swift
-preferredForwardBufferDuration: 15 seconds
-minimumForwardBufferDuration: 5 seconds
-maximumBufferSize: 30 MB
+strategy: .conservative
+preferredForwardBufferDuration: 5 seconds
+reason: "Limited resources - conservative buffering"
 ```
 
 Use when:
 - Network is poor or offline
 - Memory pressure is warning
 
+> For the Normal-memory + Poor/Offline-network branch, `AdaptiveBufferManager` builds a
+> bespoke `.conservative`-strategy configuration inline (5s, reason
+> `"Poor network - conservative buffering to reduce rebuffering"`) rather than returning the
+> shared `.conservative` constant.
+
 ### Balanced (Normal Conditions)
 
 ```swift
-preferredForwardBufferDuration: 30 seconds
-minimumForwardBufferDuration: 10 seconds
-maximumBufferSize: 50 MB
+strategy: .balanced
+preferredForwardBufferDuration: 10 seconds
+reason: "Normal conditions - balanced buffering"
 ```
 
 Use when:
@@ -298,9 +321,9 @@ Use when:
 ### Aggressive (Optimal Conditions)
 
 ```swift
-preferredForwardBufferDuration: 60 seconds
-minimumForwardBufferDuration: 20 seconds
-maximumBufferSize: 100 MB
+strategy: .aggressive
+preferredForwardBufferDuration: 30 seconds
+reason: "Optimal conditions - aggressive buffering"
 ```
 
 Use when:
@@ -313,10 +336,10 @@ Use when:
 
 ```mermaid
 flowchart LR
-    A["Memory: Normal<br/>Network: Good"] --> AG["Aggressive<br/><i>60s buffer</i>"]
-    B["Memory: Normal<br/>Network: Poor"] --> CO["Conservative<br/><i>15s buffer</i>"]
+    A["Memory: Normal<br/>Network: Good"] --> AG["Aggressive<br/><i>30s buffer</i>"]
+    B["Memory: Normal<br/>Network: Poor"] --> CO["Conservative<br/><i>5s buffer</i>"]
     C["Memory: Warning<br/>Network: Any"] --> CO
-    D["Memory: Critical<br/>Network: Any"] --> MI["Minimal<br/><i>5s buffer</i>"]
+    D["Memory: Critical<br/>Network: Any"] --> MI["Minimal<br/><i>2s buffer</i>"]
     classDef core fill:#e6f4ea,stroke:#34a853,color:#202124;
     classDef neutral fill:#fef7e0,stroke:#f9ab00,color:#202124;
     classDef impure fill:#fce8e6,stroke:#ea4335,color:#202124;
@@ -333,31 +356,34 @@ flowchart LR
 
 ```swift
 @MainActor
-func test_updateForMemoryState_critical_switchesToMinimal() {
-    let sut = AdaptiveBufferManager(initialConfiguration: .aggressive)
+func test_updateMemoryState_withCriticalPressure_setsMinimalStrategy() async {
+    let sut = AdaptiveBufferManager()
+    let criticalMemoryState = makeMemoryState(availableBytes: 40_000_000) // 40MB = critical
 
-    sut.updateForMemoryState(MemoryState(pressure: .critical))
+    sut.updateMemoryState(criticalMemoryState)
 
-    XCTAssertEqual(sut.configuration, .minimal)
+    XCTAssertEqual(sut.currentConfiguration.strategy, .minimal)
 }
 
 @MainActor
-func test_updateForNetworkQuality_poor_switchesToConservative() {
-    let sut = AdaptiveBufferManager(initialConfiguration: .aggressive)
+func test_updateNetworkQuality_withPoorNetwork_setsConservativeStrategy() async {
+    let sut = AdaptiveBufferManager()
+    let normalMemoryState = makeMemoryState(availableBytes: 200_000_000)
 
-    sut.updateForNetworkQuality(.poor)
+    sut.updateMemoryState(normalMemoryState)
+    sut.updateNetworkQuality(.poor)
 
-    XCTAssertEqual(sut.configuration, .conservative)
+    XCTAssertEqual(sut.currentConfiguration.strategy, .conservative)
 }
 
 @MainActor
-func test_memoryPressure_takesPrecedenceOverNetwork() {
+func test_memoryPressure_takesPriorityOverNetwork() async {
     let sut = AdaptiveBufferManager()
 
-    sut.updateForNetworkQuality(.excellent)
-    sut.updateForMemoryState(MemoryState(pressure: .critical))
+    sut.updateNetworkQuality(.excellent)
+    sut.updateMemoryState(makeMemoryState(availableBytes: 40_000_000))
 
-    XCTAssertEqual(sut.configuration, .minimal)
+    XCTAssertEqual(sut.currentConfiguration.strategy, .minimal)
 }
 ```
 
@@ -365,17 +391,18 @@ func test_memoryPressure_takesPrecedenceOverNetwork() {
 
 ```swift
 @MainActor
-func test_configurationPublisher_emitsChanges() {
+func test_configurationPublisher_emitsOnStrategyChange() async {
     let sut = AdaptiveBufferManager()
     var receivedConfigs: [BufferConfiguration] = []
 
-    let cancellable = sut.configurationPublisher
+    sut.configurationPublisher
         .sink { receivedConfigs.append($0) }
+        .store(in: &cancellables)
 
-    sut.updateForNetworkQuality(.poor)
-    sut.updateForNetworkQuality(.excellent)
+    // Trigger a change (publisher drops duplicates)
+    sut.updateMemoryState(makeMemoryState(availableBytes: 40_000_000))
 
-    XCTAssertEqual(receivedConfigs.count, 3)  // Initial + 2 changes
+    XCTAssertEqual(receivedConfigs.last?.strategy, .minimal)
 }
 ```
 

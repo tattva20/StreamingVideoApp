@@ -44,14 +44,18 @@ public protocol AudioSessionConfiguring {
 **File:** `StreamingCoreiOS/Video UI/Controllers/AudioSessionProtocol.swift`
 
 ```swift
-public protocol AudioSessionProtocol {
+protocol AudioSessionProtocol {
     func setCategory(_ category: AVAudioSession.Category, options: AVAudioSession.CategoryOptions) throws
     func setActive(_ active: Bool) throws
 }
 
 extension AVAudioSession: AudioSessionProtocol {
-    public func setCategory(_ category: AVAudioSession.Category, options: AVAudioSession.CategoryOptions) throws {
+    func setCategory(_ category: AVAudioSession.Category, options: AVAudioSession.CategoryOptions) throws {
         try setCategory(category, mode: .default, options: options)
+    }
+
+    func setActive(_ active: Bool) throws {
+        try setActive(active, options: [])
     }
 }
 ```
@@ -101,7 +105,11 @@ For video streaming, `.playback` is the correct choice as it:
 
 ## Interruption Handling
 
-Interruptions are handled by the `AVPlayerStateAdapter` through notification observation:
+Interruptions are handled by the `AVPlayerStateAdapter` through notification observation.
+
+**File:** `StreamingCore/StreamingCorePlayback/AVPlayerStateAdapter.swift`
+
+Note the split: audio-session *configuration* (`AudioSessionConfiguring` / `AVAudioSessionAdapter`) stays iOS-only in `StreamingCoreiOS`, while interruption *handling* lives in the platform-agnostic `StreamingCorePlayback` framework (guarded by `#if !os(macOS)`).
 
 ```swift
 private func setupNotificationObservers() {

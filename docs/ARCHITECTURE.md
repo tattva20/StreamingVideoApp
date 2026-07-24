@@ -135,11 +135,17 @@ Mirrors the iOS root, minus the custom UI. Depends on `StreamingCore` + `Streami
 
 ```
 StreamingVideoAppTV/  (tvOS composition root)  → StreamingCore · StreamingCorePlayback
-├── AppDelegate · SceneDelegate   composes VideoService; roots the player on the first remote video
+├── AppDelegate · SceneDelegate   composes VideoService into the tvOS feed (TVVideosUIComposer);
+│                                 presents the player on video selection
+├── TVVideoFeedViewController · TVVideosUIComposer · TVVideoPosterCell ·
+│   TVVideoCellController · TVFeedLoaderPresentationAdapter   feed + load-more pagination
+├── TVCommentsViewController · TVCommentsUIComposer · TVCommentCell   comments beside the player
 ├── TVPlayerComposer              builds AVPlayerVideoPlayer → Logging → Analytics →
 │                                 StatefulVideoPlayer + PlaybackCoordinator (the reused chain)
 └── TVPlayerViewController        subclasses AVPlayerViewController (native 10-foot transport)
 ```
+
+See [Apple TV](features/APPLE-TV.md) for the full tvOS surface.
 
 ---
 
@@ -153,7 +159,7 @@ public protocol HTTPClient {
     func get(from url: URL) async throws -> (Data, HTTPURLResponse)
 }
 
-// StreamingVideoApp provides the implementation
+// StreamingCore provides the implementation (Video API/)
 final class URLSessionHTTPClient: HTTPClient {
     private let session: URLSession
 
@@ -174,7 +180,7 @@ public protocol VideoStore {
     func retrieve() throws -> CachedVideos?
 }
 
-// StreamingVideoApp provides CoreData implementation
+// StreamingCore provides the CoreData implementation (Video Cache/)
 final class CoreDataVideoStore: VideoStore {
     private let container: NSPersistentContainer
     // ...

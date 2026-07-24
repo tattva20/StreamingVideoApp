@@ -42,6 +42,8 @@ flowchart TB
 
 ## Core Components
 
+> **Platform scope.** `BandwidthSample`, `BandwidthEstimate`, and `NetworkBandwidthEstimator` live in the platform-agnostic `StreamingCorePlayback` framework and run on both iOS and tvOS (the tvOS app wires the estimator in `TVPlayerComposer.swift`). `NetworkQualityMonitor` lives in `StreamingCoreiOS` and is iOS-only. See [Apple TV](features/APPLE-TV.md).
+
 ### BandwidthSample
 
 **File:** `StreamingCore/StreamingCorePlayback/BandwidthSample.swift`
@@ -347,6 +349,8 @@ public static func determineQuality(
 ---
 
 ## Usage Examples
+
+> **Illustrative, not the wired path.** The classes below (`VideoDownloadObserver`, `AdaptivePlayer`, `selectBitrate`) are examples and do not exist in the codebase. The real runtime wiring is `VideoPlayerPerformanceAdapter.recordBandwidthSample(bytesTransferred:duration:)` (`StreamingCore/StreamingCorePlayback/VideoPlayerPerformanceAdapter.swift`), which builds a `BandwidthSample` and calls `estimator.recordSample`. The estimator is composed in `VideoPlayerUIComposer.swift`, `PerformanceMonitoringComposer.swift`, and `TVPlayerComposer.swift`; its estimate feeds the `preferredPeakBitRate` cap via `PlaybackCoordinator.setPreferredPeakBitRate(_:)`.
 
 ### Recording Samples
 

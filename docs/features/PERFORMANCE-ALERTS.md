@@ -2,6 +2,8 @@
 
 The Performance Alerts feature monitors streaming quality metrics and generates alerts when thresholds are exceeded, enabling proactive issue detection and user experience protection.
 
+The feature lives entirely in the platform-agnostic `StreamingCore` framework (no UIKit/AVFoundation), so its alert model and thresholds are shared across the iOS, tvOS, and macOS-test targets rather than being iOS-specific. See [Apple TV Support](APPLE-TV.md) for the tvOS target.
+
 ---
 
 ## Overview
@@ -184,6 +186,8 @@ public static let strictStreaming = PerformanceThresholds(
 ---
 
 ## Usage Example
+
+> **Production producer:** In the shipping code, alerts are emitted by `PlaybackPerformanceService` (conforming to the `PerformanceMonitor` protocol), which exposes `alertPublisher: AnyPublisher<PerformanceAlert, Never>` and builds each `PerformanceAlert` internally via `emitAlert(...)`. See `StreamingCore/StreamingCore/Video Performance Feature/PlaybackPerformanceService.swift` and `PerformanceMonitor.swift`. The class names below are illustrative only.
 
 ### Alert Generation
 

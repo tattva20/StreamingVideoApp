@@ -116,7 +116,7 @@ The tvOS target ships purpose-built TATTVA TV brand assets in
   so tvOS applies its own rounded-rectangle mask and parallax.
 - **Top Shelf** — `Top Shelf Image` (2.67:1) and `Top Shelf Image Wide` imagesets.
 
-See [BRANDING](../BRANDING.md) for the asset pipeline (proposed).
+See [BRANDING](../BRANDING.md) for the asset pipeline.
 
 ## Tests & CI
 

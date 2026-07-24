@@ -83,6 +83,8 @@ public enum PreloadPriority: Int, Sendable, Comparable, CaseIterable {
 | High | User showing intent (hovering, slow scroll) |
 | Immediate | User initiated navigation |
 
+> **Note:** `.immediate` is the only priority that changes runtime behavior. In `DefaultVideoPreloader`, all priorities start the download fire-and-forget except `.immediate`, which awaits the download task's completion before returning.
+
 ---
 
 ## VideoPreloader Protocol
@@ -101,6 +103,18 @@ public protocol VideoPreloader: AnyObject, Sendable {
     func cancelAllPreloads()
 }
 ```
+
+---
+
+## DefaultVideoPreloader
+
+**File:** `StreamingCore/StreamingCore/Video Performance Feature/DefaultVideoPreloader.swift`
+
+The only concrete `VideoPreloader`. It is an `actor` built on `HTTPClient`, tracking one `Task` per video in `activeTasks` (keyed by video `id`). Starting a preload for a video that already has an in-flight task cancels the prior task first.
+
+`preload(_:priority:)` is fire-and-forget for all priorities except `.immediate`, which awaits the download task's completion (see the priority note above). Preload failures are silently ignored — preloading is opportunistic.
+
+`cancelPreload(for:)` and `cancelAllPreloads()` are `nonisolated`, so callers can cancel from any context without `await`; each hops onto the actor to mutate `activeTasks`.
 
 ---
 

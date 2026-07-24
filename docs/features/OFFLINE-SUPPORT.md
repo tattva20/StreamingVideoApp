@@ -76,10 +76,7 @@ public protocol VideoStore {
     func retrieve() throws -> CachedVideos?
 }
 
-public struct CachedVideos {
-    public let videos: [LocalVideo]
-    public let timestamp: Date
-}
+public typealias CachedVideos = (videos: [LocalVideo], timestamp: Date)
 ```
 
 ---
@@ -136,7 +133,7 @@ public final class InMemoryVideoStore: VideoStore {
     private var cache: CachedVideos?
 
     public func insert(_ videos: [LocalVideo], timestamp: Date) throws {
-        cache = CachedVideos(videos: videos, timestamp: timestamp)
+        cache = (videos, timestamp)
     }
 
     public func retrieve() throws -> CachedVideos? {
@@ -160,20 +157,9 @@ public final class LocalVideoLoader {
     private let store: VideoStore
     private let currentDate: () -> Date
 
-    public init(store: VideoStore, currentDate: @escaping () -> Date = Date.init) {
+    public init(store: VideoStore, currentDate: @escaping () -> Date) {
         self.store = store
         self.currentDate = currentDate
-    }
-}
-
-// MARK: - VideoLoader
-extension LocalVideoLoader: VideoLoader {
-    public func load() throws -> [Video] {
-        if let cache = try store.retrieve(),
-           VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
-            return cache.videos.toModels()
-        }
-        return []
     }
 }
 
@@ -181,78 +167,126 @@ extension LocalVideoLoader: VideoLoader {
 extension LocalVideoLoader: VideoCache {
     public func save(_ videos: [Video]) throws {
         try store.deleteCachedVideos()
-        try store.insert(videos.toLocal(), timestamp: currentDate())
+        let localVideos = videos.map { video in
+            LocalVideo(
+                id: video.id,
+                title: video.title,
+                description: video.description,
+                url: video.url,
+                thumbnailURL: video.thumbnailURL,
+                duration: video.duration
+            )
+        }
+        try store.insert(localVideos, timestamp: currentDate())
     }
 }
-```
 
----
-
-## Composition Patterns
-
-### Cache Decorator
-
-```swift
-public final class VideoLoaderCacheDecorator: VideoLoader {
-    private let decoratee: VideoLoader
-    private let cache: VideoCache
-
-    public init(decoratee: VideoLoader, cache: VideoCache) {
-        self.decoratee = decoratee
-        self.cache = cache
-    }
-
-    public func load() async throws -> [Video] {
-        let videos = try await decoratee.load()
-        try cache.save(videos)  // Save to cache on success
-        return videos
+// MARK: - Loading
+extension LocalVideoLoader {
+    public func load() throws -> [Video] {
+        if let cache = try store.retrieve(),
+           VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
+            return cache.videos.map { local in
+                Video(
+                    id: local.id,
+                    title: local.title,
+                    description: local.description,
+                    url: local.url,
+                    thumbnailURL: local.thumbnailURL,
+                    duration: local.duration
+                )
+            }
+        }
+        return []
     }
 }
-```
 
-### Fallback Composite
-
-```swift
-public final class VideoLoaderWithFallbackComposite: VideoLoader {
-    private let primary: VideoLoader
-    private let fallback: VideoLoader
-
-    public init(primary: VideoLoader, fallback: VideoLoader) {
-        self.primary = primary
-        self.fallback = fallback
-    }
-
-    public func load() async throws -> [Video] {
+// MARK: - Validation
+extension LocalVideoLoader {
+    public func validateCache() throws {
         do {
-            return try await primary.load()
+            if let cache = try store.retrieve(),
+               !VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
+                try store.deleteCachedVideos()
+            }
         } catch {
-            return try await fallback.load()  // Use cache on failure
+            try store.deleteCachedVideos()
         }
     }
 }
 ```
 
-### Complete Composition
+> **Note:** `LocalVideoLoader` does not conform to the `@MainActor async` `VideoLoader`
+> protocol — its `load()` is synchronous `throws`. It is the local cache
+> reader/writer (`VideoCache` for saving, plus `load()`/`validateCache()`), not a
+> drop-in `VideoLoader`. `Video`↔`LocalVideo` mapping is done inline.
+
+---
+
+## Orchestration: VideoService
+
+**File:** `StreamingCore/StreamingCorePlayback/VideoService.swift`
+
+The remote-with-caching and local-fallback flow is orchestrated by `VideoService`,
+a `@MainActor` type that wraps an `HTTPClient` and a store (which is both a
+`VideoStore` and a `VideoImageDataStore`). It owns a `LocalVideoLoader` internally
+and exposes closures that the UI composers consume as their video and image loaders.
+
+### Remote-with-caching + local fallback
 
 ```swift
-// In SceneDelegate
-func makeVideoLoader() -> VideoLoader {
-    let remoteLoader = RemoteVideoLoader(client: httpClient, url: videosURL)
-    let localLoader = LocalVideoLoader(store: coreDataStore)
-
-    // Remote with caching
-    let cachedRemoteLoader = VideoLoaderCacheDecorator(
-        decoratee: remoteLoader,
-        cache: localLoader
-    )
-
-    // Fallback to local on failure
-    return VideoLoaderWithFallbackComposite(
-        primary: cachedRemoteLoader,
-        fallback: localLoader
-    )
+public func loadRemoteVideosWithLocalFallback() async throws -> Paginated<Video> {
+    do {
+        let items = try await loadRemoteVideos()
+        try? localVideoLoader.save(items)     // Cache on success
+        return makeFirstPage(items: items)
+    } catch {
+        return makeFirstPage(items: try localVideoLoader.load())  // Fall back to cache
+    }
 }
 ```
+
+Load-more merges the cached items with the newly fetched page before re-caching:
+
+```swift
+private func loadMoreRemoteVideos(last: Video?) async throws -> Paginated<Video> {
+    async let remote = loadRemoteVideos(after: last)
+    let cachedItems = try localVideoLoader.load()
+    let newItems = try await remote
+    let items = cachedItems + newItems
+    try? localVideoLoader.save(items)
+    return makePage(items: items, last: newItems.last)
+}
+```
+
+Images follow the mirror-image policy (local first, remote fallback that caches):
+
+```swift
+public func loadLocalImageWithRemoteFallback(url: URL) async throws -> Data {
+    do {
+        return try await loadLocalImage(url: url)
+    } catch {
+        return try await loadAndCacheRemoteImage(url: url)
+    }
+}
+```
+
+### Composition
+
+Both scene delegates construct a `VideoService` and pass its loader closures to the
+UI composer — the offline behavior is identical on iOS and tvOS:
+
+```swift
+// In SceneDelegate (iOS and tvOS)
+private lazy var videoService = VideoService(httpClient: httpClient, store: store, logger: logger)
+
+// ...composed with:
+//   videoLoader: videoService.loadRemoteVideosWithLocalFallback
+//   imageLoader: videoService.loadLocalImageWithRemoteFallback
+```
+
+The tvOS surface wires these into `TVVideosUIComposer` — see
+[Apple TV Support](APPLE-TV.md) — so caching and fallback are shared, not iOS-only.
 
 ---
 
@@ -280,31 +314,29 @@ public final class FileSystemVideoImageDataStore: VideoImageDataStore {
     private let storeURL: URL
 
     public func insert(_ data: Data, for url: URL) throws {
-        let fileURL = cacheURL(for: url)
-        try FileManager.default.createDirectory(
-            at: storeURL,
-            withIntermediateDirectories: true
-        )
-        try data.write(to: fileURL)
+        let data = CodableVideoImageData(data: data, url: url)
+        let encoded = try JSONEncoder().encode(data)
+        try encoded.write(to: storeURL)
     }
 
     public func retrieve(dataForURL url: URL) throws -> Data? {
-        let fileURL = cacheURL(for: url)
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        guard let data = try? Data(contentsOf: storeURL) else {
             return nil
         }
-        return try Data(contentsOf: fileURL)
+        let decoded = try JSONDecoder().decode(CodableVideoImageData.self, from: data)
+        return decoded.url == url ? decoded.data : nil
     }
 
-    private func cacheURL(for url: URL) -> URL {
-        let filename = url.absoluteString
-            .data(using: .utf8)!
-            .base64EncodedString()
-            .replacingOccurrences(of: "/", with: "_")
-        return storeURL.appendingPathComponent(filename)
+    private struct CodableVideoImageData: Codable {
+        let data: Data
+        let url: URL
     }
 }
 ```
+
+The image cache persists a single `CodableVideoImageData` (`data` + `url`) as JSON
+at `storeURL`; retrieval decodes it and returns the bytes only when the stored `url`
+matches the requested one.
 
 ---
 
@@ -316,11 +348,32 @@ public final class FileSystemVideoImageDataStore: VideoImageDataStore {
 // In LocalVideoLoader.load()
 if let cache = try store.retrieve(),
    VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
-    return cache.videos.toModels()
+    return cache.videos.map { local in Video(/* map LocalVideo -> Video */) }
 }
 // Expired or no cache - return empty
 return []
 ```
+
+### Explicit Invalidation
+
+`LocalVideoLoader.validateCache()` deletes the cache when the 7-day policy fails
+*or* when retrieval throws:
+
+```swift
+public func validateCache() throws {
+    do {
+        if let cache = try store.retrieve(),
+           !VideoCachePolicy.validate(cache.timestamp, against: currentDate()) {
+            try store.deleteCachedVideos()
+        }
+    } catch {
+        try store.deleteCachedVideos()
+    }
+}
+```
+
+`VideoService.validateCache()` schedules this on the store (called from the
+`SceneDelegate` on scene lifecycle events).
 
 ### Manual Clearing
 
@@ -341,41 +394,32 @@ try FileManager.default.removeItem(at: imageCacheURL)
 **File:** `StreamingCore/StreamingCore/Video Cache/LocalVideo.swift`
 
 ```swift
-public struct LocalVideo: Equatable {
+public struct LocalVideo: Equatable, Sendable {
     public let id: UUID
     public let title: String
-    public let description: String
+    public let description: String?
     public let url: URL
     public let thumbnailURL: URL
     public let duration: TimeInterval
-}
 
-extension Array where Element == Video {
-    func toLocal() -> [LocalVideo] {
-        map { LocalVideo(
-            id: $0.id,
-            title: $0.title,
-            description: $0.description,
-            url: $0.url,
-            thumbnailURL: $0.thumbnailURL,
-            duration: $0.duration
-        )}
-    }
-}
-
-extension Array where Element == LocalVideo {
-    func toModels() -> [Video] {
-        map { Video(
-            id: $0.id,
-            title: $0.title,
-            description: $0.description,
-            url: $0.url,
-            thumbnailURL: $0.thumbnailURL,
-            duration: $0.duration
-        )}
+    public init(id: UUID,
+                title: String,
+                description: String? = nil,
+                url: URL,
+                thumbnailURL: URL,
+                duration: TimeInterval) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.url = url
+        self.thumbnailURL = thumbnailURL
+        self.duration = duration
     }
 }
 ```
+
+`Video`↔`LocalVideo` mapping is performed inline inside `LocalVideoLoader.save()`
+and `load()` (see above) — there is no dedicated `toLocal()`/`toModels()` extension.
 
 ---
 
@@ -400,7 +444,7 @@ func test_validate_returnsFalseOnSevenDaysOldCache() {
 ```swift
 func test_load_deliversCachedVideosOnCacheHit() async throws {
     let store = InMemoryVideoStore()
-    let sut = LocalVideoLoader(store: store)
+    let sut = LocalVideoLoader(store: store, currentDate: Date.init)
     let videos = [makeVideo(), makeVideo()]
 
     try sut.save(videos)

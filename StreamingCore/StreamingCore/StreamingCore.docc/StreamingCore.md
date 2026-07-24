@@ -87,7 +87,7 @@ State machine implementation for managing playback lifecycle.
 - ``PlaybackAction``
 - ``PlaybackError``
 - ``PlaybackTransition``
-- ``PlaybackStateMachine``
+- ``DefaultPlaybackStateMachine``
 
 ### Performance Monitoring
 
@@ -116,7 +116,7 @@ Proactive video loading for smooth playback transitions.
 - ``VideoPreloader``
 - ``PreloadableVideo``
 - ``PreloadPriority``
-- ``PreloadStrategy``
+- ``PredictivePreloadStrategy``
 - ``AdjacentVideoPreloadStrategy``
 
 ### Buffer Management
@@ -124,7 +124,6 @@ Proactive video loading for smooth playback transitions.
 Adaptive buffering strategies based on system conditions.
 
 - ``BufferManager``
-- ``BufferState``
 - ``BufferConfiguration``
 - ``BufferStrategy``
 - ``AdaptiveBufferManager``
@@ -193,5 +192,6 @@ HTTP client abstraction for API communication.
 
 Video comments feature.
 
-- ``VideoCommentLoader``
-- ``RemoteVideoCommentLoader``
+- ``VideoCommentsPresenter``
+- ``VideoCommentsMapper``
+- ``VideoCommentsEndpoint``
